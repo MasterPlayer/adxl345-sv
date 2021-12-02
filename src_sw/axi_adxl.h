@@ -23,12 +23,20 @@
 #define ERR_TIMEOUT_AXI_CFG -3
 #define ERR_RESET_INFINITE -4
 #define ERR_DEVICE_MSMT_UNSTOP -5
+#define ERR_AXICFG_DISABLE -6
+
+typedef struct {
+    uint16_t x;
+    uint16_t y;
+    uint16_t z;
+} adxl_axis;
 
 
 typedef struct {
     int has_init;
     adxl345_cfg *cfg;
     adxl345_dev *dev;
+    adxl_axis axis;
 } adxl;
 
 
@@ -37,12 +45,6 @@ typedef struct {
     uint8_t y;
     uint8_t z;
 } offset_param;
-
-typedef struct {
-    uint16_t x;
-    uint16_t y;
-    uint16_t z;
-} axis;
 
 
 enum mask {
@@ -97,7 +99,7 @@ int axi_adxl_dev_enable(adxl *adxl_ptr, uint8_t i2c_addr, uint32_t request_inter
 int axi_adxl_dev_disable(adxl *adxl_ptr);
 int axi_adxl_dev_change_bw(adxl *adxl_ptr, uint8_t value);
 int axi_adxl_dev_get_mode(adxl *adxl_ptr);
-int axi_adxl_dev_get_axis(adxl *adxl_ptr, axis *axis_ptr);
+int axi_adxl_dev_get_axis(adxl *adxl_ptr);
 int axi_adxl_dev_set_offset(adxl *adxl_ptr, offset_param offt_prm, enum mask mask_value);
 
 void axi_adxl_debug(adxl *adxl_ptr);

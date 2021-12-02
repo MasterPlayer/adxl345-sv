@@ -76,6 +76,8 @@ int axi_adxl_dev_enable(adxl *adxl_ptr, uint8_t i2c_addr, uint32_t request_inter
 
 	adxl_set_power_ctl(adxl_ptr->dev, POWER_CTL_MEASURE_MASK);
 
+	// insert condition where checking this byte is applied new value
+
 	return ADXL_OK;
 }
 
@@ -116,7 +118,6 @@ int axi_adxl_dev_disable(adxl *adxl_ptr){
 	}
 	xil_printf("complete\r\n");
 
-
 	return 0;
 }
 
@@ -131,8 +132,24 @@ int axi_adxl_dev_get_mode(adxl *adxl_ptr){
 }
 
 
-int axi_adxl_dev_get_axis(adxl *adxl_ptr, axis *axis_ptr){
+int axi_adxl_dev_get_axis(adxl *adxl_ptr){
+	if (!axi_adxl_has_init(adxl_ptr)){
+		return ERR_UNINIT;
+	}
 
+	if (!axi_adxl_has_enable(adxl_ptr->cfg)){
+		return ERR_AXICFG_DISABLE;
+	}
+
+	if (!axi_adxl_has_link(adxl_ptr->cfg)){
+		return ERR_LINK_LOST;
+	}
+
+	adxl_ptr->axis.x = ((uint16_t)adxl_get_datax1(adxl_ptr->dev)<<8) + (uint16_t)adxl_get_datax0(adxl_ptr->dev);
+	adxl_ptr->axis.y = ((uint16_t)adxl_get_datay1(adxl_ptr->dev)<<8) + (uint16_t)adxl_get_datay0(adxl_ptr->dev);
+	adxl_ptr->axis.z = ((uint16_t)adxl_get_dataz1(adxl_ptr->dev)<<8) + (uint16_t)adxl_get_dataz0(adxl_ptr->dev);
+
+	return 0;
 }
 
 
