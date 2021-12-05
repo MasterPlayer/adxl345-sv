@@ -2,7 +2,7 @@
 #include "platform.h"
 #include "xil_printf.h"
 #include "axi_adxl.h"
-
+#include <time.h>
 
 
 
@@ -11,37 +11,52 @@ int main(){
 
 	init_platform();
 
-	adxl adxl_device;
+	axi_adxl adxl_device;
+
 	axi_adxl_init(&adxl_device, 0x40030000, 0x40040000);
 
-	int status = axi_adxl_dev_enable(&adxl_device, 0x53, 100);
-
-//	adxl_set_data_format(adxl_device.dev, 0x00);
+	int status = axi_adxl_enable(&adxl_device, 0x53, 10);
+	if (status != ADXL_OK){
+		printf("[MAIN] : enable device return code [%d]\r\n", status);
+	}
 //
-//	adxl_set_bw_rate(adxl_device.dev, 0x0f);
-//
-//	adxl_set_power_ctl(adxl_device.dev, 0x08);
-//
+	status = axi_adxl_calibration(&adxl_device);
+	if (status != ADXL_OK){
+		printf("[MAIN] : calibration device return code [%d]", status);
+	}
 
-//	uint32_t steps = 10;
+	g_coord g;
 
-    while(1){
-//    	xil_printf("%c%c%c%c\r\n", 0x1b, 0x5b, 0x32, 0x4a);
+	volatile int i = 0;
 
-//    	if (!steps){
-//    		xil_printf("STOPS\r\n");
-//    		status = axi_adxl_dev_disable(&adxl_device);
-//
-//    	}
-    	//	adxl_set_power_ctl(adxl_device.dev, 0x08);
-//    		adxl_set_power_ctl(adxl_device.dev, POWER_CTL_MEASURE_MASK);
+	while(1){
 
-    	status = axi_adxl_dev_get_axis(&adxl_device);
-    	printf("%d %d %d\r\n", (int16_t)adxl_device.axis.x, (int16_t)adxl_device.axis.y, (int16_t)adxl_device.axis.z);
-//    	xil_printf("x: 0x%04x\r\n", ((uint16_t)adxl_get_datax1(adxl_device.dev)<<8) + (uint16_t)adxl_get_datax0(adxl_device.dev));
-//    	axi_adxl_cfg_debug(adxl_device.cfg);
-//    	axi_adxl_debug(&adxl_device);
-//    	sleep(1);
+		axi_adxl_get_gravity(&adxl_device, &g);
+
+		printf("[x]:\t%3.2f \t[y]:\t%3.2f \t[z]:\t%3.2f\r\n", g.x, g.y, g.z);
+
+		switch (i){
+			case 1 :
+				status = axi_adxl_set_data_format_range(&adxl_device, DATA_FORMAT_RANGE_2G);
+				status = axi_adxl_calibration(&adxl_device);
+				break;
+			case 2 :
+				status = axi_adxl_set_data_format_range(&adxl_device, DATA_FORMAT_RANGE_4G);
+				status = axi_adxl_calibration(&adxl_device);
+				break;
+			case 3 :
+				status = axi_adxl_set_data_format_range(&adxl_device, DATA_FORMAT_RANGE_8G);
+				status = axi_adxl_calibration(&adxl_device);
+				break;
+			case 4 :
+				status = axi_adxl_set_data_format_range(&adxl_device, DATA_FORMAT_RANGE_16G);
+				status = axi_adxl_calibration(&adxl_device);
+				break;
+			default : break;
+		}
+
+    	sleep(1);
+
 
 
 
