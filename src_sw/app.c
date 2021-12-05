@@ -40,19 +40,19 @@ int main(){
 
 		switch (i){
 			case 1 :
-				status = axi_adxl_set_data_format_range(&adxl_device, DATA_FORMAT_RANGE_2G);
+				status = axi_adxl_set_range(&adxl_device, DATA_FORMAT_RANGE_2G);
 				status = axi_adxl_calibration(&adxl_device);
 				break;
 			case 2 :
-				status = axi_adxl_set_data_format_range(&adxl_device, DATA_FORMAT_RANGE_4G);
+				status = axi_adxl_set_range(&adxl_device, DATA_FORMAT_RANGE_4G);
 				status = axi_adxl_calibration(&adxl_device);
 				break;
 			case 3 :
-				status = axi_adxl_set_data_format_range(&adxl_device, DATA_FORMAT_RANGE_8G);
+				status = axi_adxl_set_range(&adxl_device, DATA_FORMAT_RANGE_8G);
 				status = axi_adxl_calibration(&adxl_device);
 				break;
 			case 4 :
-				status = axi_adxl_set_data_format_range(&adxl_device, DATA_FORMAT_RANGE_16G);
+				status = axi_adxl_set_range(&adxl_device, DATA_FORMAT_RANGE_16G);
 				status = axi_adxl_calibration(&adxl_device);
 				break;
 			default : break;

@@ -79,7 +79,7 @@ int axi_adxl_enable(axi_adxl *ptr, uint8_t i2c_addr, uint32_t request_interval){
 
 	adxl_dev_set_bw_rate(ptr->dev, BW_RATE_3200);
 
-	status = axi_adxl_set_data_format_range(ptr, DATA_FORMAT_RANGE_2G);
+	status = axi_adxl_set_range(ptr, DATA_FORMAT_RANGE_2G);
 	status = axi_adxl_set_full_resolution(ptr, !DATA_FORMAT_FULL_RES);
 
 	adxl_dev_set_power_ctl(ptr->dev, POWER_CTL_MEASURE_MASK);
@@ -130,6 +130,7 @@ int axi_adxl_disable(axi_adxl *ptr){
 	adxl_cfg_disable(ptr->cfg);
 
 	printf("[DEV_DISABLE] : perform stop hw component");
+
 	while(adxl_cfg_has_on_work(ptr->cfg)){
 		printf(".");
 	}
@@ -170,7 +171,6 @@ int axi_adxl_has_low_power(axi_adxl *ptr){
 	if (status != ADXL_OK){
 		printf("[HAS_LOW] : return with code %d", status);
 	}
-
 
 	return (adxl_dev_get_bw_rate(ptr->dev) & BW_RATE_LOW_POWER_MASK);
 
@@ -228,7 +228,7 @@ int axi_adxl_set_full_resolution(axi_adxl *ptr, uint8_t flaq){
 
 
 
-int axi_adxl_set_data_format_range(axi_adxl *ptr, uint8_t range){
+int axi_adxl_set_range(axi_adxl *ptr, uint8_t range){
 
 	int status = axi_adxl_has_runned(ptr);
 
@@ -241,6 +241,21 @@ int axi_adxl_set_data_format_range(axi_adxl *ptr, uint8_t range){
 
 	return ADXL_OK;
 }
+
+
+
+int axi_adxl_get_range(axi_adxl *ptr, uint8_t *range){
+	int status = axi_adxl_has_runned(ptr);
+
+	if (status != ADXL_OK){
+		printf("[GET_RANGE] return code %d\t\n", status);
+	}
+
+	*range = (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_RANGE_MASK);
+
+	return ADXL_OK;
+}
+
 
 int axi_adxl_set_offset(axi_adxl *ptr, offset_param offt_prm, enum mask mask_value){
 
@@ -266,6 +281,57 @@ int axi_adxl_set_offset(axi_adxl *ptr, offset_param offt_prm, enum mask mask_val
 }
 
 
+int axi_adxl_get_offset(axi_adxl *ptr, offset_param *offt_prm){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK) {
+		printf("[GET_OFFT] : return with code %d", status);
+		return status;
+	}
+
+	offt_prm->x = adxl_dev_get_ofsx(ptr->dev);
+	offt_prm->y = adxl_dev_get_ofsy(ptr->dev);
+	offt_prm->z = adxl_dev_get_ofsz(ptr->dev);
+
+	return ADXL_OK;
+}
+
+int axi_adxl_get_offset_x(axi_adxl *ptr, uint8_t *offset){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	*offset = adxl_dev_get_ofsx(ptr->dev);
+
+	return status;
+}
+
+
+
+int axi_adxl_get_offset_y(axi_adxl *ptr, uint8_t *offset){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	*offset = adxl_dev_get_ofsy(ptr->dev);
+
+	return status;
+}
+
+
+
+int axi_adxl_get_offset_z(axi_adxl *ptr, uint8_t *offset){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	*offset = adxl_dev_get_ofsz(ptr->dev);
+
+	return status;
+}
+
 
 
 int axi_adxl_get_gravity(axi_adxl *ptr, g_coord *g_ptr){
@@ -273,7 +339,7 @@ int axi_adxl_get_gravity(axi_adxl *ptr, g_coord *g_ptr){
 	int status = axi_adxl_has_runned(ptr);
 
 	if (status != ADXL_OK){
-		printf("[GET_FLOAT] : return with code %d", status);
+		printf("[GET_GRVTY] : return with code %d", status);
 	}
 
 	if (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_FULL_RES){
@@ -316,6 +382,7 @@ int axi_adxl_get_gravity(axi_adxl *ptr, g_coord *g_ptr){
 	return ADXL_OK;
 
 }
+
 
 
 int axi_adxl_calibration(axi_adxl *ptr){
@@ -463,81 +530,81 @@ int axi_adxl_get_pitch(axi_adxl *ptr, float *pitch){
 
 
 void axi_adxl_debug(axi_adxl *ptr){
-	xil_printf("***** CONFIGURATION REGISTER MAP *****\r\n");
-	xil_printf("\tCONTROL : 0x%08x\r\n", ptr->cfg->ctl_reg);
-	xil_printf("\tREQ_INT : 0x%08x\r\n", ptr->cfg->request_interval_reg);
-	xil_printf("\tDW_REGR : 0x%08x\r\n", ptr->cfg->data_width_reg);
-	xil_printf("\tRVALIDR : 0x%08x\r\n", ptr->cfg->read_valid_count_reg);
-	xil_printf("\tWVALIDR : 0x%08x\r\n", ptr->cfg->write_valid_count_reg);
-	xil_printf("\tWTRANSS : 0x%08x\r\n", ptr->cfg->write_transactions_reg);
-	xil_printf("\tRTRANSS : 0x%08x\r\n", ptr->cfg->read_transactions_reg);
-	xil_printf("\tCLKPERD : 0x%08x\r\n", ptr->cfg->clk_period_reg);
+	printf("***** CONFIGURATION REGISTER MAP *****\r\n");
+	printf("\tCONTROL : 0x%08x\r\n", ptr->cfg->ctl_reg);
+	printf("\tREQ_INT : 0x%08x\r\n", ptr->cfg->request_interval_reg);
+	printf("\tDW_REGR : 0x%08x\r\n", ptr->cfg->data_width_reg);
+	printf("\tRVALIDR : 0x%08x\r\n", ptr->cfg->read_valid_count_reg);
+	printf("\tWVALIDR : 0x%08x\r\n", ptr->cfg->write_valid_count_reg);
+	printf("\tWTRANSS : 0x%08x\r\n", ptr->cfg->write_transactions_reg);
+	printf("\tRTRANSS : 0x%08x\r\n", ptr->cfg->read_transactions_reg);
+	printf("\tCLKPERD : 0x%08x\r\n", ptr->cfg->clk_period_reg);
 
-	xil_printf("\r\n***** DEVICE REGISTER MAP *****\r\n");
-	xil_printf("\tDEVICE_ID : 0x%02x\r\n", ptr->dev->device_id_reg);
-	xil_printf("\tRESERVED1 : 0x%02x\r\n", ptr->dev->reserved1_reg);
-	xil_printf("\tRESERVED2 : 0x%02x\r\n", ptr->dev->reserved2_reg);
-	xil_printf("\tRESERVED3 : 0x%02x\r\n", ptr->dev->reserved3_reg);
-	xil_printf("\tRESERVED4 : 0x%02x\r\n", ptr->dev->reserved4_reg);
-	xil_printf("\tRESERVED5 : 0x%02x\r\n", ptr->dev->reserved5_reg);
-	xil_printf("\tRESERVED6 : 0x%02x\r\n", ptr->dev->reserved6_reg);
-	xil_printf("\tRESERVED7 : 0x%02x\r\n", ptr->dev->reserved7_reg);
-	xil_printf("\tRESERVED8 : 0x%02x\r\n", ptr->dev->reserved8_reg);
-	xil_printf("\tRESERVED9 : 0x%02x\r\n", ptr->dev->reserved9_reg);
-	xil_printf("\tRESERVED10 : 0x%02x\r\n", ptr->dev->reserved10_reg);
-	xil_printf("\tRESERVED11 : 0x%02x\r\n", ptr->dev->reserved11_reg);
-	xil_printf("\tRESERVED12 : 0x%02x\r\n", ptr->dev->reserved12_reg);
-	xil_printf("\tRESERVED13 : 0x%02x\r\n", ptr->dev->reserved13_reg);
-	xil_printf("\tRESERVED14 : 0x%02x\r\n", ptr->dev->reserved14_reg);
-	xil_printf("\tRESERVED15 : 0x%02x\r\n", ptr->dev->reserved15_reg);
-	xil_printf("\tRESERVED16 : 0x%02x\r\n", ptr->dev->reserved16_reg);
-	xil_printf("\tRESERVED17 : 0x%02x\r\n", ptr->dev->reserved17_reg);
-	xil_printf("\tRESERVED18 : 0x%02x\r\n", ptr->dev->reserved18_reg);
-	xil_printf("\tRESERVED19 : 0x%02x\r\n", ptr->dev->reserved19_reg);
-	xil_printf("\tRESERVED20 : 0x%02x\r\n", ptr->dev->reserved20_reg);
-	xil_printf("\tRESERVED21 : 0x%02x\r\n", ptr->dev->reserved21_reg);
-	xil_printf("\tRESERVED22 : 0x%02x\r\n", ptr->dev->reserved22_reg);
-	xil_printf("\tRESERVED23 : 0x%02x\r\n", ptr->dev->reserved23_reg);
-	xil_printf("\tRESERVED24 : 0x%02x\r\n", ptr->dev->reserved24_reg);
-	xil_printf("\tRESERVED25 : 0x%02x\r\n", ptr->dev->reserved25_reg);
-	xil_printf("\tRESERVED26 : 0x%02x\r\n", ptr->dev->reserved26_reg);
-	xil_printf("\tRESERVED27 : 0x%02x\r\n", ptr->dev->reserved27_reg);
-	xil_printf("\tRESERVED28 : 0x%02x\r\n", ptr->dev->reserved28_reg);
-	xil_printf("\tTHRESH_TAP : 0x%02x\r\n", ptr->dev->thresh_tap_reg);
-	xil_printf("\tOFSX : 0x%02x\r\n", ptr->dev->ofsx_reg);
-	xil_printf("\tOFSY : 0x%02x\r\n", ptr->dev->ofsy_reg);
-	xil_printf("\tOFSZ : 0x%02x\r\n", ptr->dev->ofsz_reg);
-	xil_printf("\tDUR : 0x%02x\r\n", ptr->dev->dur_reg);
-	xil_printf("\tLATENT : 0x%02x\r\n", ptr->dev->latent_reg);
-	xil_printf("\tWINDOW : 0x%02x\r\n", ptr->dev->window_reg);
-	xil_printf("\tTHRESH_ACT : 0x%02x\r\n", ptr->dev->thresh_act_reg);
-	xil_printf("\tTHRESH_INACT : 0x%02x\r\n", ptr->dev->thresh_inact_reg);
-	xil_printf("\tTIME_INACT : 0x%02x\r\n", ptr->dev->time_inact_reg);
-	xil_printf("\tACT_INACT_CTL : 0x%02x\r\n", ptr->dev->act_inact_ctl_reg);
-	xil_printf("\tTHRESH_FF : 0x%02x\r\n", ptr->dev->thresh_ff_reg);
-	xil_printf("\tTIME_FF : 0x%02x\r\n", ptr->dev->time_ff_reg);
-	xil_printf("\tTAP_AXES : 0x%02x\r\n", ptr->dev->tap_axes_reg);
-	xil_printf("\tACT_TAP_STATUS : 0x%02x\r\n", ptr->dev->act_tap_status_reg);
-	xil_printf("\tBW_RATE : 0x%02x\r\n", ptr->dev->bw_rate_reg);
-	xil_printf("\tPOWER_CTL : 0x%02x\r\n", ptr->dev->power_ctl_reg);
-	xil_printf("\tINT_ENABLE : 0x%02x\r\n", ptr->dev->int_enable_reg);
-	xil_printf("\tINT_MAP : 0x%02x\r\n", ptr->dev->int_map_reg);
-	xil_printf("\tINT_SOURCE : 0x%02x\r\n", ptr->dev->int_source_reg);
-	xil_printf("\tDATA_FORMAT : 0x%02x\r\n", ptr->dev->data_format_reg);
-	xil_printf("\tDATAX0 : 0x%02x\r\n", ptr->dev->datax0_reg);
-	xil_printf("\tDATAX1 : 0x%02x\r\n", ptr->dev->datax1_reg);
-	xil_printf("\tDATAY0 : 0x%02x\r\n", ptr->dev->datay0_reg);
-	xil_printf("\tDATAY1 : 0x%02x\r\n", ptr->dev->datay1_reg);
-	xil_printf("\tDATAZ0 : 0x%02x\r\n", ptr->dev->dataz0_reg);
-	xil_printf("\tDATAZ1 : 0x%02x\r\n", ptr->dev->dataz1_reg);
-	xil_printf("\tFIFO_CTL : 0x%02x\r\n", ptr->dev->fifo_ctl_reg);
-	xil_printf("\tFIFO_STATUS : 0x%02x\r\n", ptr->dev->fifo_status_reg);
-	xil_printf("\tRESERVED58 : 0x%02x\r\n", ptr->dev->reserved58_reg);
-	xil_printf("\tRESERVED59 : 0x%02x\r\n", ptr->dev->reserved59_reg);
-	xil_printf("\tRESERVED60 : 0x%02x\r\n", ptr->dev->reserved60_reg);
-	xil_printf("\tRESERVED61 : 0x%02x\r\n", ptr->dev->reserved61_reg);
-	xil_printf("\tRESERVED62 : 0x%02x\r\n", ptr->dev->reserved62_reg);
-	xil_printf("\tRESERVED63 : 0x%02x\r\n", ptr->dev->reserved63_reg);
-	xil_printf("\r\n");
+	printf("\r\n***** DEVICE REGISTER MAP *****\r\n");
+	printf("\tDEVICE_ID : 0x%02x\r\n", ptr->dev->device_id_reg);
+	printf("\tRESERVED1 : 0x%02x\r\n", ptr->dev->reserved1_reg);
+	printf("\tRESERVED2 : 0x%02x\r\n", ptr->dev->reserved2_reg);
+	printf("\tRESERVED3 : 0x%02x\r\n", ptr->dev->reserved3_reg);
+	printf("\tRESERVED4 : 0x%02x\r\n", ptr->dev->reserved4_reg);
+	printf("\tRESERVED5 : 0x%02x\r\n", ptr->dev->reserved5_reg);
+	printf("\tRESERVED6 : 0x%02x\r\n", ptr->dev->reserved6_reg);
+	printf("\tRESERVED7 : 0x%02x\r\n", ptr->dev->reserved7_reg);
+	printf("\tRESERVED8 : 0x%02x\r\n", ptr->dev->reserved8_reg);
+	printf("\tRESERVED9 : 0x%02x\r\n", ptr->dev->reserved9_reg);
+	printf("\tRESERVED10 : 0x%02x\r\n", ptr->dev->reserved10_reg);
+	printf("\tRESERVED11 : 0x%02x\r\n", ptr->dev->reserved11_reg);
+	printf("\tRESERVED12 : 0x%02x\r\n", ptr->dev->reserved12_reg);
+	printf("\tRESERVED13 : 0x%02x\r\n", ptr->dev->reserved13_reg);
+	printf("\tRESERVED14 : 0x%02x\r\n", ptr->dev->reserved14_reg);
+	printf("\tRESERVED15 : 0x%02x\r\n", ptr->dev->reserved15_reg);
+	printf("\tRESERVED16 : 0x%02x\r\n", ptr->dev->reserved16_reg);
+	printf("\tRESERVED17 : 0x%02x\r\n", ptr->dev->reserved17_reg);
+	printf("\tRESERVED18 : 0x%02x\r\n", ptr->dev->reserved18_reg);
+	printf("\tRESERVED19 : 0x%02x\r\n", ptr->dev->reserved19_reg);
+	printf("\tRESERVED20 : 0x%02x\r\n", ptr->dev->reserved20_reg);
+	printf("\tRESERVED21 : 0x%02x\r\n", ptr->dev->reserved21_reg);
+	printf("\tRESERVED22 : 0x%02x\r\n", ptr->dev->reserved22_reg);
+	printf("\tRESERVED23 : 0x%02x\r\n", ptr->dev->reserved23_reg);
+	printf("\tRESERVED24 : 0x%02x\r\n", ptr->dev->reserved24_reg);
+	printf("\tRESERVED25 : 0x%02x\r\n", ptr->dev->reserved25_reg);
+	printf("\tRESERVED26 : 0x%02x\r\n", ptr->dev->reserved26_reg);
+	printf("\tRESERVED27 : 0x%02x\r\n", ptr->dev->reserved27_reg);
+	printf("\tRESERVED28 : 0x%02x\r\n", ptr->dev->reserved28_reg);
+	printf("\tTHRESH_TAP : 0x%02x\r\n", ptr->dev->thresh_tap_reg);
+	printf("\tOFSX : 0x%02x\r\n", ptr->dev->ofsx_reg);
+	printf("\tOFSY : 0x%02x\r\n", ptr->dev->ofsy_reg);
+	printf("\tOFSZ : 0x%02x\r\n", ptr->dev->ofsz_reg);
+	printf("\tDUR : 0x%02x\r\n", ptr->dev->dur_reg);
+	printf("\tLATENT : 0x%02x\r\n", ptr->dev->latent_reg);
+	printf("\tWINDOW : 0x%02x\r\n", ptr->dev->window_reg);
+	printf("\tTHRESH_ACT : 0x%02x\r\n", ptr->dev->thresh_act_reg);
+	printf("\tTHRESH_INACT : 0x%02x\r\n", ptr->dev->thresh_inact_reg);
+	printf("\tTIME_INACT : 0x%02x\r\n", ptr->dev->time_inact_reg);
+	printf("\tACT_INACT_CTL : 0x%02x\r\n", ptr->dev->act_inact_ctl_reg);
+	printf("\tTHRESH_FF : 0x%02x\r\n", ptr->dev->thresh_ff_reg);
+	printf("\tTIME_FF : 0x%02x\r\n", ptr->dev->time_ff_reg);
+	printf("\tTAP_AXES : 0x%02x\r\n", ptr->dev->tap_axes_reg);
+	printf("\tACT_TAP_STATUS : 0x%02x\r\n", ptr->dev->act_tap_status_reg);
+	printf("\tBW_RATE : 0x%02x\r\n", ptr->dev->bw_rate_reg);
+	printf("\tPOWER_CTL : 0x%02x\r\n", ptr->dev->power_ctl_reg);
+	printf("\tINT_ENABLE : 0x%02x\r\n", ptr->dev->int_enable_reg);
+	printf("\tINT_MAP : 0x%02x\r\n", ptr->dev->int_map_reg);
+	printf("\tINT_SOURCE : 0x%02x\r\n", ptr->dev->int_source_reg);
+	printf("\tDATA_FORMAT : 0x%02x\r\n", ptr->dev->data_format_reg);
+	printf("\tDATAX0 : 0x%02x\r\n", ptr->dev->datax0_reg);
+	printf("\tDATAX1 : 0x%02x\r\n", ptr->dev->datax1_reg);
+	printf("\tDATAY0 : 0x%02x\r\n", ptr->dev->datay0_reg);
+	printf("\tDATAY1 : 0x%02x\r\n", ptr->dev->datay1_reg);
+	printf("\tDATAZ0 : 0x%02x\r\n", ptr->dev->dataz0_reg);
+	printf("\tDATAZ1 : 0x%02x\r\n", ptr->dev->dataz1_reg);
+	printf("\tFIFO_CTL : 0x%02x\r\n", ptr->dev->fifo_ctl_reg);
+	printf("\tFIFO_STATUS : 0x%02x\r\n", ptr->dev->fifo_status_reg);
+	printf("\tRESERVED58 : 0x%02x\r\n", ptr->dev->reserved58_reg);
+	printf("\tRESERVED59 : 0x%02x\r\n", ptr->dev->reserved59_reg);
+	printf("\tRESERVED60 : 0x%02x\r\n", ptr->dev->reserved60_reg);
+	printf("\tRESERVED61 : 0x%02x\r\n", ptr->dev->reserved61_reg);
+	printf("\tRESERVED62 : 0x%02x\r\n", ptr->dev->reserved62_reg);
+	printf("\tRESERVED63 : 0x%02x\r\n", ptr->dev->reserved63_reg);
+	printf("\r\n");
 
 }

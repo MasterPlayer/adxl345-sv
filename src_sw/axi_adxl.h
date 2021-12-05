@@ -130,14 +130,23 @@ int axi_adxl_disable(axi_adxl *ptr);
 int axi_adxl_change_bw(axi_adxl *ptr, uint8_t value);
 int axi_adxl_has_low_power(axi_adxl *ptr);
 int axi_adxl_get_axis(axi_adxl *ptr);
+
 int axi_adxl_set_offset(axi_adxl *ptr, offset_param offt_prm, enum mask mask_value);
+int axi_adxl_get_offset(axi_adxl *ptr, offset_param *offt_prm);
+int axi_adxl_get_offset_x(axi_adxl *ptr, uint8_t *offset);
+int axi_adxl_get_offset_y(axi_adxl *ptr, uint8_t *offset);
+int axi_adxl_get_offset_z(axi_adxl *ptr, uint8_t *offset);
+
+
 int axi_adxl_get_gravity(axi_adxl *ptr, g_coord *g_ptr);
 int axi_adxl_calibration(axi_adxl *ptr);
 int axi_adxl_has_runned(axi_adxl *ptr);
 
 int axi_adxl_set_full_resolution(axi_adxl *ptr, uint8_t flaq);
 
-int axi_adxl_set_data_format_range(axi_adxl *ptr, uint8_t range);
+int axi_adxl_set_range(axi_adxl *ptr, uint8_t range);
+int axi_adxl_get_range(axi_adxl *ptr, uint8_t *range);
+
 
 int axi_adxl_get_roll(axi_adxl *ptr, float *roll);
 int axi_adxl_get_pitch(axi_adxl *ptr, float *pitch);
