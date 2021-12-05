@@ -1,10 +1,12 @@
-#pragma once
+//#pragma once
 
 #include <stdint.h>
 #include <stdio.h>
 #include <math.h>
 #include "axi_adxl_cfg.h"
 #include "axi_adxl_dev.h"
+
+#define PI           3.14159265358979323846
 
 //Scale for some fields in lsb/sec and other
 #define SCALE_THRESH_TAP (62.5)
@@ -136,6 +138,9 @@ int axi_adxl_has_runned(axi_adxl *ptr);
 int axi_adxl_set_full_resolution(axi_adxl *ptr, uint8_t flaq);
 
 int axi_adxl_set_data_format_range(axi_adxl *ptr, uint8_t range);
+
+int axi_adxl_get_roll(axi_adxl *ptr, float *roll);
+int axi_adxl_get_pitch(axi_adxl *ptr, float *pitch);
 
 void axi_adxl_debug(axi_adxl *ptr);
 

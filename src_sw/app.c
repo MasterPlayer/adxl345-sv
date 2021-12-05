@@ -29,11 +29,14 @@ int main(){
 
 	volatile int i = 0;
 
-	while(1){
+	float pitch = 0;
+	float roll = 0;
+
+		while(1){
 
 		axi_adxl_get_gravity(&adxl_device, &g);
 
-		printf("[x]:\t%3.2f \t[y]:\t%3.2f \t[z]:\t%3.2f\r\n", g.x, g.y, g.z);
+//		printf("[x]:\t%3.2f \t[y]:\t%3.2f \t[z]:\t%3.2f\r\n", g.x, g.y, g.z);
 
 		switch (i){
 			case 1 :
@@ -54,6 +57,11 @@ int main(){
 				break;
 			default : break;
 		}
+
+		status = axi_adxl_get_pitch(&adxl_device, &pitch);
+		status = axi_adxl_get_roll(&adxl_device, &roll);
+
+		printf("\t%3.2f \t%3.2f\r\n", pitch, roll);
 
     	sleep(1);
 

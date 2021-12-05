@@ -431,6 +431,36 @@ int axi_adxl_calibration(axi_adxl *ptr){
 
 
 
+int axi_adxl_get_roll(axi_adxl *ptr, float *roll){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	g_coord g;
+
+	status = axi_adxl_get_gravity(ptr, &g);
+	*roll = atan(g.y/ sqrt(pow(g.x, 2) + pow(g.z, 2))) * 180 / PI;
+
+	return status;
+}
+
+
+
+int axi_adxl_get_pitch(axi_adxl *ptr, float *pitch){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	g_coord g;
+
+	status = axi_adxl_get_gravity(ptr, &g);
+	*pitch = atan(-1 * g.x / sqrt(pow(g.y, 2) + pow(g.z, 2))) * 180 / PI;
+	return ADXL_OK;
+}
+
+
 
 void axi_adxl_debug(axi_adxl *ptr){
 	xil_printf("***** CONFIGURATION REGISTER MAP *****\r\n");
