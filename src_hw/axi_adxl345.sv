@@ -14,6 +14,7 @@ module axi_adxl345 #(
 ) (
     input  logic                                     CLK                   ,
     input  logic                                     RESETN                ,
+    // configuration bank address
     input  logic [    S_AXI_LITE_CFG_ADDR_WIDTH-1:0] S_AXI_LITE_CFG_AWADDR ,
     input  logic [                              2:0] S_AXI_LITE_CFG_AWPROT ,
     input  logic                                     S_AXI_LITE_CFG_AWVALID,
@@ -53,18 +54,27 @@ module axi_adxl345 #(
     output logic [                              1:0] S_AXI_LITE_DEV_RRESP  ,
     output logic                                     S_AXI_LITE_DEV_RVALID ,
     input  logic                                     S_AXI_LITE_DEV_RREADY ,
+    // data from device
     output logic [                              7:0] M_AXIS_TDATA          ,
     output logic [                              0:0] M_AXIS_TKEEP          ,
     output logic [                              7:0] M_AXIS_TUSER          ,
     output logic                                     M_AXIS_TVALID         ,
     output logic                                     M_AXIS_TLAST          ,
     input  logic                                     M_AXIS_TREADY         ,
+    // data to device
     input  logic [                              7:0] S_AXIS_TDATA          ,
     input  logic [                              0:0] S_AXIS_TKEEP          ,
     input  logic [                              7:0] S_AXIS_TUSER          ,
     input  logic                                     S_AXIS_TVALID         ,
     input  logic                                     S_AXIS_TLAST          ,
-    output logic                                     S_AXIS_TREADY
+    output logic                                     S_AXIS_TREADY         ,
+    // interrupt signals to component/from component            
+(* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_INTERRUPT INTERRUPT" *)
+(* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
+    input logic                                      ADXL_INTERRUPT        ,
+(* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_IRQ INTERRUPT" *)
+(* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
+    output logic                                     ADXL_IRQ
 );
 
 
@@ -89,9 +99,6 @@ module axi_adxl345 #(
     logic [S_AXI_LITE_DEV_DATA_WIDTH-1:0] axi_dev_rdata  ;
     logic [                          1:0] axi_dev_rresp  ;
     logic                                 axi_dev_rvalid ;
-
-
-
 
     localparam integer    ADDR_LSB_CFG          = (S_AXI_LITE_CFG_DATA_WIDTH/32) + 1;
     localparam integer    OPT_MEM_ADDR_BITS_CFG = 2                                 ;
@@ -187,7 +194,7 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h01                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h02                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
@@ -1053,6 +1060,14 @@ module axi_adxl345 #(
                 reset <= 1'b1;
             else 
                 reset <= 1'b0;
+    end 
+
+    // version 1.2 
+    always_ff @(posedge CLK) begin : adxl_irq_proc
+        if (enable)
+            ADXL_IRQ <= ADXL_INTERRUPT & allow_irq;
+        else 
+            ADXL_IRQ <= 1'b0;
     end 
 
 

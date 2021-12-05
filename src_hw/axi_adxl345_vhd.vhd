@@ -67,8 +67,16 @@ entity axi_adxl345_vhd is
         S_AXIS_TUSER                :   in      std_logic_vector (                               7 downto 0 )                   ;
         S_AXIS_TVALID               :   in      std_logic                                                                       ;
         S_AXIS_TLAST                :   in      std_logic                                                                       ;
-        S_AXIS_TREADY               :   out     std_logic                                                                        
+        S_AXIS_TREADY               :   out     std_logic                                                                       ;
+        ADXL_INTERRUPT              :   in      std_logic                                                                       ;
+        ADXL_IRQ                    :   out     std_Logic                                                                        
     );
+    ATTRIBUTE X_INTERFACE_INFO : STRING;
+    ATTRIBUTE X_INTERFACE_PARAMETER : STRING;
+    ATTRIBUTE X_INTERFACE_INFO of ADXL_INTERRUPT: SIGNAL is "xilinx.com:signal:interrupt:1.0 ADXL_INTERRUPT INTERRUPT";
+    ATTRIBUTE X_INTERFACE_PARAMETER of ADXL_INTERRUPT: SIGNAL is "SENSITIVITY EDGE_RISING" ;
+    ATTRIBUTE X_INTERFACE_INFO of ADXL_IRQ: SIGNAL is "xilinx.com:signal:interrupt:1.0 ADXL_IRQ INTERRUPT";
+    ATTRIBUTE X_INTERFACE_PARAMETER of ADXL_IRQ: SIGNAL is "SENSITIVITY EDGE_RISING";
 end axi_adxl345_vhd;
 
 
@@ -138,7 +146,9 @@ architecture axi_adxl345_vhd_arch of axi_adxl345_vhd is
             S_AXIS_TUSER                :   in      std_logic_vector (                               7 downto 0 )                   ;
             S_AXIS_TVALID               :   in      std_logic                                                                       ;
             S_AXIS_TLAST                :   in      std_logic                                                                       ;
-            S_AXIS_TREADY               :   out     std_logic                                                                        
+            S_AXIS_TREADY               :   out     std_logic                                                                       ;
+            ADXL_INTERRUPT              :   in      std_logic                                                                       ;
+            ADXL_IRQ                    :   out     std_Logic                                                                        
         );
     end component;
 
@@ -208,7 +218,10 @@ begin
             S_AXIS_TUSER                =>  S_AXIS_TUSER                        ,
             S_AXIS_TVALID               =>  S_AXIS_TVALID                       ,
             S_AXIS_TLAST                =>  S_AXIS_TLAST                        ,
-            S_AXIS_TREADY               =>  S_AXIS_TREADY                        
+            S_AXIS_TREADY               =>  S_AXIS_TREADY                       ,
+            ADXL_INTERRUPT              =>  ADXL_INTERRUPT                      ,
+            ADXL_IRQ                    =>  ADXL_IRQ                             
+
         );
 
 
