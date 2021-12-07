@@ -40,8 +40,8 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
             RESET_DURATION              :           integer                         := 1000                         
         ); 
         port (
-            S_AXI_LITE_ACLK             :   in      std_logic                                                       ;
-            S_AXI_LITE_ARESETN          :   in      std_logic                                                       ;
+            CLK                         :   in      std_logic                                                       ;
+            RESETN                      :   in      std_logic                                                       ;
             S_AXI_LITE_CFG_AWADDR       :   in      std_logic_vector (    S_AXI_LITE_CFG_ADDR_WIDTH-1 downto 0 )    ;
             S_AXI_LITE_CFG_AWPROT       :   in      std_logic_vector (                              2 downto 0 )    ;
             S_AXI_LITE_CFG_AWVALID      :   in      std_logic                                                       ;
@@ -91,7 +91,9 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
             S_AXIS_TUSER                :   in      std_logic_vector (                              7 downto 0 )    ;
             S_AXIS_TVALID               :   in      std_logic                                                       ;
             S_AXIS_TLAST                :   in      std_logic                                                       ;
-            S_AXIS_TREADY               :   out     std_logic                                                        
+            S_AXIS_TREADY               :   out     std_logic                                                       ;
+            ADXL_INTERRUPT              :   in      std_Logic                                                       ;
+            ADXL_IRQ                    :   out     std_logic                                                       
         );
     end component;
 
@@ -114,25 +116,25 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
     signal  rresp                       :           std_logic_vector (                              1 downto 0 )                        ;
     signal  rvalid                      :           std_logic                                                                           ;
     signal  rready                      :           std_logic                                                    := '0'                 ;
-    signal  S_AXI_LITE_DEV_AWADDR       :           std_logic_vector (    S_AXI_LITE_DEV_ADDR_WIDTH-1 downto 0 ) := (others => '0')     ;
-    signal  S_AXI_LITE_DEV_AWPROT       :           std_logic_vector (                              2 downto 0 ) := (others => '0')     ;
-    signal  S_AXI_LITE_DEV_AWVALID      :           std_logic                                                    := '0'                 ;
-    signal  S_AXI_LITE_DEV_AWREADY      :           std_logic                                                                           ;
-    signal  S_AXI_LITE_DEV_WDATA        :           std_logic_vector (    S_AXI_LITE_DEV_DATA_WIDTH-1 downto 0 ) := (others => '0')     ;
-    signal  S_AXI_LITE_DEV_WSTRB        :           std_logic_vector ((S_AXI_LITE_DEV_DATA_WIDTH/8)-1 downto 0 ) := (others => '0')     ;
-    signal  S_AXI_LITE_DEV_WVALID       :           std_logic                                                    := '0'                 ;
-    signal  S_AXI_LITE_DEV_WREADY       :           std_logic                                                                           ;
-    signal  S_AXI_LITE_DEV_BRESP        :           std_logic_vector (                              1 downto 0 )                        ;
-    signal  S_AXI_LITE_DEV_BVALID       :           std_logic                                                                           ;
-    signal  S_AXI_LITE_DEV_BREADY       :           std_logic                                                    := '0'                 ;
-    signal  S_AXI_LITE_DEV_ARADDR       :           std_logic_vector (    S_AXI_LITE_DEV_ADDR_WIDTH-1 downto 0 ) := (others => '0')     ;
-    signal  S_AXI_LITE_DEV_ARPROT       :           std_logic_vector (                              2 downto 0 ) := (others => '0')     ;
-    signal  S_AXI_LITE_DEV_ARVALID      :           std_logic                                                    := '0'                 ;
-    signal  S_AXI_LITE_DEV_ARREADY      :           std_logic                                                                           ;
-    signal  S_AXI_LITE_DEV_RDATA        :           std_logic_vector (    S_AXI_LITE_DEV_DATA_WIDTH-1 downto 0 )                        ;
-    signal  S_AXI_LITE_DEV_RRESP        :           std_logic_vector (                              1 downto 0 )                        ;
-    signal  S_AXI_LITE_DEV_RVALID       :           std_logic                                                                           ;
-    signal  S_AXI_LITE_DEV_RREADY       :           std_logic                                                    := '0'                 ;
+    signal  DEV_AWADDR                  :           std_logic_vector (                              7 downto 0 ) := (others => '0')     ;
+    signal  DEV_AWPROT                  :           std_logic_vector (                              2 downto 0 ) := (others => '0')     ;
+    signal  DEV_AWVALID                 :           std_logic                                                    := '0'                 ;
+    signal  DEV_AWREADY                 :           std_logic                                                                           ;
+    signal  DEV_WDATA                   :           std_logic_vector (    S_AXI_LITE_DEV_DATA_WIDTH-1 downto 0 ) := (others => '0')     ;
+    signal  DEV_WSTRB                   :           std_logic_vector ((S_AXI_LITE_DEV_DATA_WIDTH/8)-1 downto 0 ) := (others => '0')     ;
+    signal  DEV_WVALID                  :           std_logic                                                    := '0'                 ;
+    signal  DEV_WREADY                  :           std_logic                                                                           ;
+    signal  DEV_BRESP                   :           std_logic_vector (                              1 downto 0 )                        ;
+    signal  DEV_BVALID                  :           std_logic                                                                           ;
+    signal  DEV_BREADY                  :           std_logic                                                    := '0'                 ;
+    signal  DEV_ARADDR                  :           std_logic_vector (    S_AXI_LITE_DEV_ADDR_WIDTH-1 downto 0 ) := (others => '0')     ;
+    signal  DEV_ARPROT                  :           std_logic_vector (                              2 downto 0 ) := (others => '0')     ;
+    signal  DEV_ARVALID                 :           std_logic                                                    := '0'                 ;
+    signal  DEV_ARREADY                 :           std_logic                                                                           ;
+    signal  DEV_RDATA                   :           std_logic_vector (    S_AXI_LITE_DEV_DATA_WIDTH-1 downto 0 )                        ;
+    signal  DEV_RRESP                   :           std_logic_vector (                              1 downto 0 )                        ;
+    signal  DEV_RVALID                  :           std_logic                                                                           ;
+    signal  DEV_RREADY                  :           std_logic                                                    := '0'                 ;
     signal  M_AXIS_TDATA                :           std_logic_vector (                              7 downto 0 )                        ;
     signal  M_AXIS_TKEEP                :           std_logic_vector (                              0 downto 0 )                        ;
     signal  M_AXIS_TUSER                :           std_logic_vector (                              7 downto 0 )                        ;
@@ -174,8 +176,8 @@ begin
             RESET_DURATION              =>  50                                 
         )
         port map (
-            S_AXI_LITE_ACLK             =>  CLK                                 ,
-            S_AXI_LITE_ARESETN          =>  not(RESET)                          ,
+            CLK                         =>  CLK                                 ,
+            RESETN                      =>  not(RESET)                          ,
             S_AXI_LITE_CFG_AWADDR       =>  awaddr( 5 downto 0 )                ,
             S_AXI_LITE_CFG_AWPROT       =>  awprot                              ,
             S_AXI_LITE_CFG_AWVALID      =>  awvalid                             ,
@@ -195,25 +197,25 @@ begin
             S_AXI_LITE_CFG_RRESP        =>  rresp                               ,
             S_AXI_LITE_CFG_RVALID       =>  rvalid                              ,
             S_AXI_LITE_CFG_RREADY       =>  rready                              ,
-            S_AXI_LITE_DEV_AWADDR       =>  S_AXI_LITE_DEV_AWADDR               ,
-            S_AXI_LITE_DEV_AWPROT       =>  S_AXI_LITE_DEV_AWPROT               ,
-            S_AXI_LITE_DEV_AWVALID      =>  S_AXI_LITE_DEV_AWVALID              ,
-            S_AXI_LITE_DEV_AWREADY      =>  S_AXI_LITE_DEV_AWREADY              ,
-            S_AXI_LITE_DEV_WDATA        =>  S_AXI_LITE_DEV_WDATA                ,
-            S_AXI_LITE_DEV_WSTRB        =>  S_AXI_LITE_DEV_WSTRB                ,
-            S_AXI_LITE_DEV_WVALID       =>  S_AXI_LITE_DEV_WVALID               ,
-            S_AXI_LITE_DEV_WREADY       =>  S_AXI_LITE_DEV_WREADY               ,
-            S_AXI_LITE_DEV_BRESP        =>  S_AXI_LITE_DEV_BRESP                ,
-            S_AXI_LITE_DEV_BVALID       =>  S_AXI_LITE_DEV_BVALID               ,
-            S_AXI_LITE_DEV_BREADY       =>  S_AXI_LITE_DEV_BREADY               ,
-            S_AXI_LITE_DEV_ARADDR       =>  S_AXI_LITE_DEV_ARADDR               ,
-            S_AXI_LITE_DEV_ARPROT       =>  S_AXI_LITE_DEV_ARPROT               ,
-            S_AXI_LITE_DEV_ARVALID      =>  S_AXI_LITE_DEV_ARVALID              ,
-            S_AXI_LITE_DEV_ARREADY      =>  S_AXI_LITE_DEV_ARREADY              ,
-            S_AXI_LITE_DEV_RDATA        =>  S_AXI_LITE_DEV_RDATA                ,
-            S_AXI_LITE_DEV_RRESP        =>  S_AXI_LITE_DEV_RRESP                ,
-            S_AXI_LITE_DEV_RVALID       =>  S_AXI_LITE_DEV_RVALID               ,
-            S_AXI_LITE_DEV_RREADY       =>  S_AXI_LITE_DEV_RREADY               ,
+            S_AXI_LITE_DEV_AWADDR       =>  DEV_AWADDR( 5 downto 0 )            ,
+            S_AXI_LITE_DEV_AWPROT       =>  DEV_AWPROT                          ,
+            S_AXI_LITE_DEV_AWVALID      =>  DEV_AWVALID                         ,
+            S_AXI_LITE_DEV_AWREADY      =>  DEV_AWREADY                         ,
+            S_AXI_LITE_DEV_WDATA        =>  DEV_WDATA                           ,
+            S_AXI_LITE_DEV_WSTRB        =>  DEV_WSTRB                           ,
+            S_AXI_LITE_DEV_WVALID       =>  DEV_WVALID                          ,
+            S_AXI_LITE_DEV_WREADY       =>  DEV_WREADY                          ,
+            S_AXI_LITE_DEV_BRESP        =>  DEV_BRESP                           ,
+            S_AXI_LITE_DEV_BVALID       =>  DEV_BVALID                          ,
+            S_AXI_LITE_DEV_BREADY       =>  DEV_BREADY                          ,
+            S_AXI_LITE_DEV_ARADDR       =>  DEV_ARADDR                          ,
+            S_AXI_LITE_DEV_ARPROT       =>  DEV_ARPROT                          ,
+            S_AXI_LITE_DEV_ARVALID      =>  DEV_ARVALID                         ,
+            S_AXI_LITE_DEV_ARREADY      =>  DEV_ARREADY                         ,
+            S_AXI_LITE_DEV_RDATA        =>  DEV_RDATA                           ,
+            S_AXI_LITE_DEV_RRESP        =>  DEV_RRESP                           ,
+            S_AXI_LITE_DEV_RVALID       =>  DEV_RVALID                          ,
+            S_AXI_LITE_DEV_RREADY       =>  DEV_RREADY                          ,
             M_AXIS_TDATA                =>  M_AXIS_TDATA                        ,
             M_AXIS_TKEEP                =>  M_AXIS_TKEEP                        ,
             M_AXIS_TUSER                =>  M_AXIS_TUSER                        ,
@@ -225,12 +227,16 @@ begin
             S_AXIS_TUSER                =>  S_AXIS_TUSER                        ,
             S_AXIS_TVALID               =>  S_AXIS_TVALID                       ,
             S_AXIS_TLAST                =>  S_AXIS_TLAST                        ,
-            S_AXIS_TREADY               =>  S_AXIS_TREADY                        
+            S_AXIS_TREADY               =>  S_AXIS_TREADY                       ,
+            ADXL_INTERRUPT              =>  '0'                                 ,
+            ADXL_IRQ                    =>  open                                 
         );
+    
+    M_AXIS_TREADY <= '1';
+    
 
 
-
-    write_processing : process(CLK)
+    write_cfg_processing : process(CLK)
     begin
         if CLK'event AND CLK = '1' then 
             case i is 
@@ -243,20 +249,9 @@ begin
                 --when 211   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
                 --when 212   => awaddr <= x"04"; awprot <= "000"; awvalid <= '0'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
 
-                when 200   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                when 201   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                when 202   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
-
-                when 210   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                when 211   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                when 212   => awaddr <= x"04"; awprot <= "000"; awvalid <= '0'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
-
-                when 1000   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                when 1001   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                when 1002   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
-                --when 1003   => awaddr <= "001000"; awprot <= "000"; awvalid <= '1'; wdata <= x"83828180"; wstrb <= x"8"; wvalid <= '1'; bready <= '1';
-                --when 1004   => awaddr <= "001000"; awprot <= "000"; awvalid <= '1'; wdata <= x"83828180"; wstrb <= x"8"; wvalid <= '1'; bready <= '1';
-                --when 1005   => awaddr <= "001000"; awprot <= "000"; awvalid <= '0'; wdata <= x"83828180"; wstrb <= x"8"; wvalid <= '0'; bready <= '1';
+                --when 1000   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                --when 1001   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                --when 1002   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
 
                 when others => awaddr <= awaddr; awprot <= awprot; awvalid <= '0'; wdata <= wdata; wstrb <= wstrb; wvalid <= '0'; bready <= '0';
             end case;
@@ -264,47 +259,81 @@ begin
     end process;
 
 
+    write_dev_processing : process(CLK)
+    begin
+        if CLK'event AND CLK = '1' then 
+            case i is 
+
+                when 200   => DEV_AWADDR <= x"1E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 201   => DEV_AWADDR <= x"1E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 202   => DEV_AWADDR <= x"1E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+
+                when 510   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 511   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 512   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+
+                when 810   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 811   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 812   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+
+
+                --when 200   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                --when 201   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                --when 202   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
+
+                --when 210   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                --when 211   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                --when 212   => awaddr <= x"04"; awprot <= "000"; awvalid <= '0'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
+
+                --when 1000   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                --when 1001   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                --when 1002   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00000001"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
+
+                when others => DEV_AWADDR <= DEV_AWADDR; DEV_AWPROT <= DEV_AWPROT; DEV_AWVALID <= '0'; DEV_WDATA <= DEV_WDATA; DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
+            end case;
+        end if;
+    end process;
 
 
     read_processing : process(CLK)
     begin
         if CLK'event AND CLK = '1' then 
             case i is 
-                when 300   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 301   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 302   => araddr <= x"00"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 300   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 301   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 302   => araddr <= x"00"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
-                when 310   => araddr <= x"04"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 311   => araddr <= x"04"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 312   => araddr <= x"04"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 310   => araddr <= x"04"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 311   => araddr <= x"04"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 312   => araddr <= x"04"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
-                when 320   => araddr <= x"08"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 321   => araddr <= x"08"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 322   => araddr <= x"08"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 320   => araddr <= x"08"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 321   => araddr <= x"08"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 322   => araddr <= x"08"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
-                when 330   => araddr <= x"0C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 331   => araddr <= x"0C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 332   => araddr <= x"0C"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 330   => araddr <= x"0C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 331   => araddr <= x"0C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 332   => araddr <= x"0C"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
-                when 340   => araddr <= x"10"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 341   => araddr <= x"10"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 342   => araddr <= x"10"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 340   => araddr <= x"10"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 341   => araddr <= x"10"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 342   => araddr <= x"10"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
-                when 350   => araddr <= x"14"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 351   => araddr <= x"14"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 352   => araddr <= x"14"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 350   => araddr <= x"14"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 351   => araddr <= x"14"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 352   => araddr <= x"14"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
-                when 360   => araddr <= x"18"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 361   => araddr <= x"18"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 362   => araddr <= x"18"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 360   => araddr <= x"18"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 361   => araddr <= x"18"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 362   => araddr <= x"18"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
-                when 370   => araddr <= x"1C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 371   => araddr <= x"1C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 372   => araddr <= x"1C"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 370   => araddr <= x"1C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 371   => araddr <= x"1C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 372   => araddr <= x"1C"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
-                when 1020   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 1021   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                when 1022   => araddr <= x"00"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 1020   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 1021   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 1022   => araddr <= x"00"; arprot <= "000"; arvalid <= '0'; rready <= '1';
 
 
                 when others => araddr <= araddr; arprot <= arprot; arvalid <= '0'; rready <= '0';
