@@ -9,19 +9,19 @@
 #define PI           3.14159265358979323846
 
 //Scale for some fields in lsb/sec and other
-#define SCALE_THRESH_TAP (62.5)
-#define SCALE_OFS        (15.6)
-#define SCALE_DUR        (625)
-#define SCALE_WINDOW     (1.25)
-#define SCALE_THRESH_FF  (62.5)
-#define SCALE_TIME_FF    (5)
+#define SCALE_THRESH_TAP 		(0.0625)
+#define SCALE_OFS        		(0.0156)       //15.6 us
+#define SCALE_DUR        		(0.000625)     //6.25us
+#define SCALE_WINDOW     		(0.00125) 		//1.25 ms
+#define SCALE_THRESH_FF  		(0.0625) 		//62.5 mg/lsb
+#define SCALE_TIME_FF    		(0.005) 		//5ms/lsb
 
 // Scale factor of xout yout zout
-#define SCALE_FACTOR_FULL_RES (3.9)
-#define SCALE_FACTOR_2G  (3.9)
-#define SCALE_FACTOR_4G  (7.8)
-#define SCALE_FACTOR_8G  (15.6)
-#define SCALE_FACTOR_16G (31.2)
+#define SCALE_FACTOR_FULL_RES 	(0.0039)
+#define SCALE_FACTOR_2G  		(0.0039)
+#define SCALE_FACTOR_4G  		(0.0078)
+#define SCALE_FACTOR_8G  		(0.0156)
+#define SCALE_FACTOR_16G 		(0.0312)
 
 #define SCALE_RATIO_FULL_RES (SCALE_OFS/SCALE_FACTOR_FULL_RES)
 #define SCALE_RATIO_2G (SCALE_OFS/SCALE_FACTOR_2G)
@@ -35,6 +35,9 @@
 #define SENSITIVITY_4G 128
 #define SENSITIVITY_8G 64
 #define SENSITIVITY_16G 32
+
+#define INT_MAP_INTR0 0x00
+#define INT_MAP_INTR1 0x01
 
 #define TIMEOUT_TIMER_LIMIT 100000
 #define CALIBRATION_STEPS 1000
@@ -68,13 +71,11 @@ typedef struct {
     adxl_axis axis;
 } axi_adxl;
 
-
 typedef struct {
     int8_t x;
     int8_t y;
     int8_t z;
 } offset_param;
-
 
 enum mask {
     MASK_X = 0x04,
@@ -107,6 +108,19 @@ enum bw_rate {
     BW_RATE_12_5_LP = 0x17
 };
 
+enum int_mask {
+	DATA_READY = 0x80,
+	SINGLE_TAP = 0x40,
+	DOUBLE_TAP = 0x20,
+	ACTIVITY = 0x10,
+	INACTIVITY = 0x08,
+	FREE_FALL = 0x04,
+	WATERMARK = 0x02,
+	OVERRUN = 0x01
+};
+
+
+
 #define AC_COUPLE 0x01
 #define DC_COUPLE 0x00
 
@@ -127,6 +141,7 @@ int axi_adxl_dev_init(axi_adxl *ptr, uint32_t baseaddr);
 
 int axi_adxl_enable(axi_adxl *ptr, uint8_t i2c_addr, uint32_t request_interval);
 int axi_adxl_disable(axi_adxl *ptr);
+int axi_adxl_disable_requesting(axi_adxl *ptr);
 int axi_adxl_change_bw(axi_adxl *ptr, uint8_t value);
 int axi_adxl_has_low_power(axi_adxl *ptr);
 int axi_adxl_get_axis(axi_adxl *ptr);
@@ -151,6 +166,30 @@ int axi_adxl_get_range(axi_adxl *ptr, uint8_t *range);
 int axi_adxl_get_roll(axi_adxl *ptr, float *roll);
 int axi_adxl_get_pitch(axi_adxl *ptr, float *pitch);
 
+int axi_adxl_set_thresh_tap(axi_adxl *ptr, uint8_t thresh_tap);
+int axi_adxl_get_thresh_tap(axi_adxl *ptr, uint8_t *thresh_tap);
+
+int axi_adxl_set_dur(axi_adxl *ptr, uint8_t dur);
+int axi_adxl_get_dur(axi_adxl *ptr, uint8_t *dur);
+
+int axi_adxl_set_latency(axi_adxl *ptr, uint8_t latency);
+int axi_adxl_get_latency(axi_adxl *ptr, uint8_t *latency);
+
+int axi_adxl_set_window(axi_adxl *ptr, uint8_t window);
+int axi_adxl_get_window(axi_adxl *ptr, uint8_t *window);
+
+
+int axi_adxl_set_int_map(axi_adxl *ptr, uint8_t mask, uint8_t map);
+
+int axi_adxl_int_enable(axi_adxl *ptr, uint8_t mask);
+int axi_adxl_int_disable(axi_adxl *ptr, uint8_t mask);
+
+#define axi_adxl_has_int_enabled(ptr, mask) (adxl_dev_get_int_enable(ptr->dev) & mask)
+
+
+int axi_adxl_set_tap_axes_active(axi_adxl *ptr, enum mask mask_value);
+#define axi_adxl_has_tap_axes_active(ptr, mask) (adxl_dev_get_tap_axes(ptr) & mask)
+
+int axi_adxl_int_invert(axi_adxl *ptr);
+
 void axi_adxl_debug(axi_adxl *ptr);
-
-

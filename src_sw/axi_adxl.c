@@ -80,7 +80,7 @@ int axi_adxl_enable(axi_adxl *ptr, uint8_t i2c_addr, uint32_t request_interval){
 	adxl_dev_set_bw_rate(ptr->dev, BW_RATE_3200);
 
 	status = axi_adxl_set_range(ptr, DATA_FORMAT_RANGE_2G);
-	status = axi_adxl_set_full_resolution(ptr, !DATA_FORMAT_FULL_RES);
+	status = axi_adxl_set_full_resolution(ptr, DATA_FORMAT_FULL_RES);
 
 	adxl_dev_set_power_ctl(ptr->dev, POWER_CTL_MEASURE_MASK);
 
@@ -150,6 +150,24 @@ int axi_adxl_disable(axi_adxl *ptr){
 
 
 
+/*
+ * This Function only disable requesting data from device,
+ * without stop device's work. Sending Functions ability to work.
+ * */
+int axi_adxl_disable_requesting(axi_adxl *ptr){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		printf("[DSBL_RQSTN] : return status %d", status);
+		return status;
+	}
+
+	adxl_cfg_disable(ptr->cfg);
+
+	return status;
+}
+
+
+
 int axi_adxl_change_bw(axi_adxl *ptr, uint8_t value){
 	int status = axi_adxl_has_runned(ptr);
 	if (status != ADXL_OK){
@@ -204,9 +222,9 @@ int axi_adxl_has_runned(axi_adxl *ptr){
 		return ERR_LINK_LOST;
 	}
 
-	if (!adxl_cfg_has_enable(ptr->cfg)){
-		return ERR_AXICFG_DISABLE;
-	}
+//	if (!adxl_cfg_has_enable(ptr->cfg)){
+//		return ERR_AXICFG_DISABLE;
+//	}
 
 	return ADXL_OK;
 
@@ -415,6 +433,7 @@ int axi_adxl_calibration(axi_adxl *ptr){
 		avg_x += ptr->axis.x;
 		avg_y += ptr->axis.y;
 		avg_z += ptr->axis.z;
+		for (int delay_cnt = 0; delay_cnt < 200000; delay_cnt++);
 	}
 
 	avg_x /= CALIBRATION_STEPS;
@@ -529,82 +548,279 @@ int axi_adxl_get_pitch(axi_adxl *ptr, float *pitch){
 
 
 
+int axi_adxl_set_thresh_tap(axi_adxl *ptr, uint8_t thresh_tap){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_thresh_tap(ptr->dev, thresh_tap);
+
+	return status;
+}
+
+
+
+int axi_adxl_get_thresh_tap(axi_adxl *ptr, uint8_t *thresh_tap){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	*thresh_tap = adxl_dev_get_thresh_tap(ptr->dev);
+
+	return status;
+}
+
+
+int axi_adxl_set_dur(axi_adxl *ptr, uint8_t dur){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_dur(ptr->dev, dur);
+
+	return status;
+}
+
+
+
+int axi_adxl_get_dur(axi_adxl *ptr, uint8_t *dur){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	return status;
+}
+
+
+
+int axi_adxl_set_latency(axi_adxl *ptr, uint8_t latency){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_latent(ptr->dev, latency);
+
+	return status;
+}
+
+
+int axi_adxl_get_latency(axi_adxl *ptr, uint8_t *latency){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	*latency = adxl_dev_get_latent(ptr->dev);
+
+	return status;
+
+}
+
+
+int axi_adxl_set_window(axi_adxl *ptr, uint8_t window){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_window(ptr->dev, window);
+
+	return status;
+
+}
+
+int axi_adxl_get_window(axi_adxl *ptr, uint8_t *window){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	*window = adxl_dev_get_window(ptr->dev);
+
+	return status;
+
+}
+
+
+int axi_adxl_set_int_map(axi_adxl *ptr, uint8_t mask, uint8_t map){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_int_map(ptr->dev, (adxl_dev_get_int_map(ptr->dev) & map));
+
+	return status;
+}
+
+
+
+
+
+int axi_adxl_int_enable(axi_adxl *ptr, uint8_t mask){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_int_enable(ptr->dev, (adxl_dev_get_int_enable(ptr->dev) | mask));
+
+	return status;
+}
+
+
+
+int axi_adxl_int_disable(axi_adxl *ptr, uint8_t mask){
+
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_int_enable(ptr->dev, (adxl_dev_get_int_enable(ptr->dev) & ~mask ));
+
+	return status;
+}
+
+
+
+int axi_adxl_set_tap_axes_active(axi_adxl *ptr, enum mask mask_value){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_tap_axes(ptr->dev, (adxl_dev_get_tap_axes(ptr->dev) | mask_value));
+
+	return status;
+}
+
+
+
+int axi_adxl_int_invert(axi_adxl *ptr){
+	int status = axi_adxl_has_runned(ptr);
+	if (status != ADXL_OK){
+		return status;
+	}
+
+	adxl_dev_set_data_format(ptr->dev, adxl_dev_get_data_format(ptr->dev) ^ DATA_FORMAT_INT_INVERT_MASK);
+
+	return status;
+}
+
+
+
 void axi_adxl_debug(axi_adxl *ptr){
-	printf("***** CONFIGURATION REGISTER MAP *****\r\n");
-	printf("\tCONTROL : 0x%08x\r\n", ptr->cfg->ctl_reg);
-	printf("\tREQ_INT : 0x%08x\r\n", ptr->cfg->request_interval_reg);
-	printf("\tDW_REGR : 0x%08x\r\n", ptr->cfg->data_width_reg);
-	printf("\tRVALIDR : 0x%08x\r\n", ptr->cfg->read_valid_count_reg);
-	printf("\tWVALIDR : 0x%08x\r\n", ptr->cfg->write_valid_count_reg);
-	printf("\tWTRANSS : 0x%08x\r\n", ptr->cfg->write_transactions_reg);
-	printf("\tRTRANSS : 0x%08x\r\n", ptr->cfg->read_transactions_reg);
-	printf("\tCLKPERD : 0x%08x\r\n", ptr->cfg->clk_period_reg);
-
-	printf("\r\n***** DEVICE REGISTER MAP *****\r\n");
-	printf("\tDEVICE_ID : 0x%02x\r\n", ptr->dev->device_id_reg);
-	printf("\tRESERVED1 : 0x%02x\r\n", ptr->dev->reserved1_reg);
-	printf("\tRESERVED2 : 0x%02x\r\n", ptr->dev->reserved2_reg);
-	printf("\tRESERVED3 : 0x%02x\r\n", ptr->dev->reserved3_reg);
-	printf("\tRESERVED4 : 0x%02x\r\n", ptr->dev->reserved4_reg);
-	printf("\tRESERVED5 : 0x%02x\r\n", ptr->dev->reserved5_reg);
-	printf("\tRESERVED6 : 0x%02x\r\n", ptr->dev->reserved6_reg);
-	printf("\tRESERVED7 : 0x%02x\r\n", ptr->dev->reserved7_reg);
-	printf("\tRESERVED8 : 0x%02x\r\n", ptr->dev->reserved8_reg);
-	printf("\tRESERVED9 : 0x%02x\r\n", ptr->dev->reserved9_reg);
-	printf("\tRESERVED10 : 0x%02x\r\n", ptr->dev->reserved10_reg);
-	printf("\tRESERVED11 : 0x%02x\r\n", ptr->dev->reserved11_reg);
-	printf("\tRESERVED12 : 0x%02x\r\n", ptr->dev->reserved12_reg);
-	printf("\tRESERVED13 : 0x%02x\r\n", ptr->dev->reserved13_reg);
-	printf("\tRESERVED14 : 0x%02x\r\n", ptr->dev->reserved14_reg);
-	printf("\tRESERVED15 : 0x%02x\r\n", ptr->dev->reserved15_reg);
-	printf("\tRESERVED16 : 0x%02x\r\n", ptr->dev->reserved16_reg);
-	printf("\tRESERVED17 : 0x%02x\r\n", ptr->dev->reserved17_reg);
-	printf("\tRESERVED18 : 0x%02x\r\n", ptr->dev->reserved18_reg);
-	printf("\tRESERVED19 : 0x%02x\r\n", ptr->dev->reserved19_reg);
-	printf("\tRESERVED20 : 0x%02x\r\n", ptr->dev->reserved20_reg);
-	printf("\tRESERVED21 : 0x%02x\r\n", ptr->dev->reserved21_reg);
-	printf("\tRESERVED22 : 0x%02x\r\n", ptr->dev->reserved22_reg);
-	printf("\tRESERVED23 : 0x%02x\r\n", ptr->dev->reserved23_reg);
-	printf("\tRESERVED24 : 0x%02x\r\n", ptr->dev->reserved24_reg);
-	printf("\tRESERVED25 : 0x%02x\r\n", ptr->dev->reserved25_reg);
-	printf("\tRESERVED26 : 0x%02x\r\n", ptr->dev->reserved26_reg);
-	printf("\tRESERVED27 : 0x%02x\r\n", ptr->dev->reserved27_reg);
-	printf("\tRESERVED28 : 0x%02x\r\n", ptr->dev->reserved28_reg);
-	printf("\tTHRESH_TAP : 0x%02x\r\n", ptr->dev->thresh_tap_reg);
-	printf("\tOFSX : 0x%02x\r\n", ptr->dev->ofsx_reg);
-	printf("\tOFSY : 0x%02x\r\n", ptr->dev->ofsy_reg);
-	printf("\tOFSZ : 0x%02x\r\n", ptr->dev->ofsz_reg);
-	printf("\tDUR : 0x%02x\r\n", ptr->dev->dur_reg);
-	printf("\tLATENT : 0x%02x\r\n", ptr->dev->latent_reg);
-	printf("\tWINDOW : 0x%02x\r\n", ptr->dev->window_reg);
-	printf("\tTHRESH_ACT : 0x%02x\r\n", ptr->dev->thresh_act_reg);
-	printf("\tTHRESH_INACT : 0x%02x\r\n", ptr->dev->thresh_inact_reg);
-	printf("\tTIME_INACT : 0x%02x\r\n", ptr->dev->time_inact_reg);
-	printf("\tACT_INACT_CTL : 0x%02x\r\n", ptr->dev->act_inact_ctl_reg);
-	printf("\tTHRESH_FF : 0x%02x\r\n", ptr->dev->thresh_ff_reg);
-	printf("\tTIME_FF : 0x%02x\r\n", ptr->dev->time_ff_reg);
-	printf("\tTAP_AXES : 0x%02x\r\n", ptr->dev->tap_axes_reg);
-	printf("\tACT_TAP_STATUS : 0x%02x\r\n", ptr->dev->act_tap_status_reg);
-	printf("\tBW_RATE : 0x%02x\r\n", ptr->dev->bw_rate_reg);
-	printf("\tPOWER_CTL : 0x%02x\r\n", ptr->dev->power_ctl_reg);
-	printf("\tINT_ENABLE : 0x%02x\r\n", ptr->dev->int_enable_reg);
-	printf("\tINT_MAP : 0x%02x\r\n", ptr->dev->int_map_reg);
-	printf("\tINT_SOURCE : 0x%02x\r\n", ptr->dev->int_source_reg);
-	printf("\tDATA_FORMAT : 0x%02x\r\n", ptr->dev->data_format_reg);
-	printf("\tDATAX0 : 0x%02x\r\n", ptr->dev->datax0_reg);
-	printf("\tDATAX1 : 0x%02x\r\n", ptr->dev->datax1_reg);
-	printf("\tDATAY0 : 0x%02x\r\n", ptr->dev->datay0_reg);
-	printf("\tDATAY1 : 0x%02x\r\n", ptr->dev->datay1_reg);
-	printf("\tDATAZ0 : 0x%02x\r\n", ptr->dev->dataz0_reg);
-	printf("\tDATAZ1 : 0x%02x\r\n", ptr->dev->dataz1_reg);
-	printf("\tFIFO_CTL : 0x%02x\r\n", ptr->dev->fifo_ctl_reg);
-	printf("\tFIFO_STATUS : 0x%02x\r\n", ptr->dev->fifo_status_reg);
-	printf("\tRESERVED58 : 0x%02x\r\n", ptr->dev->reserved58_reg);
-	printf("\tRESERVED59 : 0x%02x\r\n", ptr->dev->reserved59_reg);
-	printf("\tRESERVED60 : 0x%02x\r\n", ptr->dev->reserved60_reg);
-	printf("\tRESERVED61 : 0x%02x\r\n", ptr->dev->reserved61_reg);
-	printf("\tRESERVED62 : 0x%02x\r\n", ptr->dev->reserved62_reg);
-	printf("\tRESERVED63 : 0x%02x\r\n", ptr->dev->reserved63_reg);
+	printf("[CONFIGURATION SPACE]\r\n");
+	printf("\t[VERSION] : %d.%d\r\n", adxl_cfg_get_version_major(ptr->cfg), adxl_cfg_get_version_minor(ptr->cfg));
+	printf("\t[I2C ADDRESS] : 0x%02x\r\n", adxl_cfg_get_i2c_addr(ptr->cfg));
+	printf("\t[LNK] : %d\r\n", adxl_cfg_has_link(ptr->cfg));
+	printf("\t[ON WORK] : %d\r\n", adxl_cfg_has_on_work(ptr->cfg));
+	printf("\t[IRQ] : %s\r\n", adxl_cfg_has_allow_irq(ptr->cfg) ? "allow" : "unallow");
+	printf("\t[ENABLED] : %d\r\n", adxl_cfg_has_enable(ptr->cfg));
+	printf("\t[REQUEST INTERVAL] : %d periods\r\n", adxl_cfg_get_request_interval(ptr->cfg));
+	printf("\t[DATA WIDTH] : %d bytes\r\n", adxl_cfg_get_data_width(ptr->cfg));
+	printf("\t[READ VALID COUNT] : %d words\r\n", adxl_cfg_get_read_valid_count(ptr->cfg));
+	printf("\t[WRITE VALID COUNT] : %d words\r\n", adxl_cfg_get_write_valid_count(ptr->cfg));
+	printf("[WRITE TRANSACTIONS] : %d\r\n", adxl_cfg_get_write_transactions(ptr->cfg));
+	printf("[READ_TRANSACTIONS] : %d\r\n", adxl_cfg_get_read_transactions(ptr->cfg));
+	printf("[CLK_PERIOD] : %3.3f MHz\r\n", (float)(adxl_cfg_get_clk_period(ptr->cfg)/1000000));
 	printf("\r\n");
-
+	printf("[DEVICE SPACE]\r\n");
+	printf("\t[DEVICE ID] : 0x%02x\r\n", adxl_dev_get_device_id(ptr->dev));
+	printf("\t[THRESH_TAP] : 0x%02x\r\n", adxl_dev_get_thresh_tap(ptr->dev));
+	printf("\t[OFSX] : 0x%02x\r\n", adxl_dev_get_ofsx(ptr->dev));
+	printf("\t[OFSY] : 0x%02x\r\n", adxl_dev_get_ofsy(ptr->dev));
+	printf("\t[OFSZ] : 0x%02x\r\n", adxl_dev_get_ofsz(ptr->dev));
+	printf("\t[DUR] : 0x%02x\r\n", adxl_dev_get_dur(ptr->dev));
+	printf("\t[LATENT] : 0x%02x\r\n", adxl_dev_get_latent(ptr->dev));
+	printf("\t[WINDOW] : 0x%02x\r\n", adxl_dev_get_window(ptr->dev));
+	printf("\t[THRESH_ACT] : 0x%02x\r\n", adxl_dev_get_thresh_act(ptr->dev));
+	printf("\t[THRESH_INACT] : 0x%02x\r\n", adxl_dev_get_thresh_inact(ptr->dev));
+	printf("\t[TIME_INACT] : 0x%02x\r\n", adxl_dev_get_time_inact(ptr->dev));
+	printf("\t[ACT_INACT_CTL] : 0x%02x\r\n", adxl_dev_get_act_inact_ctl(ptr->dev));
+	printf("\t\t[ACT_AC/DC] : %d \r\n", (adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_ACT_ACDC_MASK) ? 1:0);
+	printf("\t\t[ACT_X EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_ACT_X_EN_MASK ? 1:0);
+	printf("\t\t[ACT_Y EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_ACT_Y_EN_MASK ? 1:0);
+	printf("\t\t[ACT_Z EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_ACT_Z_EN_MASK ? 1:0);
+	printf("\t\t[INACT AC/DC] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_INACT_ACDC_MASK ? 1:0);
+	printf("\t\t[INACT X EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_INACT_X_EN_MASK ? 1:0);
+	printf("\t\t[INACT Y EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_INACT_Y_EN_MASK ? 1:0);
+	printf("\t\t[INACT Z EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_INACT_Z_EN_MASK ? 1:0);
+	printf("\t[THRESH_FF] : 0x%02x : \r\n", adxl_dev_get_thresh_ff(ptr->dev));
+	printf("\t[TIME_FF] : 0x%02x\r\n", adxl_dev_get_time_ff(ptr->dev));
+	printf("\t[TAP_AXES] : 0x%02x\r\n", adxl_dev_get_tap_axes(ptr->dev));
+	printf("\t\t[SUPRESS] : %d\r\n", adxl_dev_get_tap_axes(ptr->dev) & TAP_AXES_SUPRESS_MASK ? 1:0);
+	printf("\t\t[TAP_X_EN] : %d\r\n", adxl_dev_get_tap_axes(ptr->dev) & TAP_AXES_TAP_X_EN_MASK ? 1:0);
+	printf("\t\t[TAP_Y_EN] : %d\r\n", adxl_dev_get_tap_axes(ptr->dev) & TAP_AXES_TAP_Y_EN_MASK ? 1:0);
+	printf("\t\t[TAP_Z_EN] : %d\r\n", adxl_dev_get_tap_axes(ptr->dev) & TAP_AXES_TAP_Z_EN_MASK ? 1:0);
+	printf("\t[ACT_TAP_STATUS] : 0x%02x\r\n", adxl_dev_get_act_tap_status(ptr->dev));
+	printf("\t\t[ACT_X_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_ACT_X_SRC_MASK ? 1:0);
+	printf("\t\t[ACT_Y_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_ACT_Y_SRC_MASK ? 1:0);
+	printf("\t\t[ACT_Z_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_ACT_Z_SRC_MASK ? 1:0);
+	printf("\t\t[ASLEEP] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_ASLEEP_MASK ? 1:0);
+	printf("\t\t[TAP_X_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_TAP_X_SRC_MASK ? 1:0);
+	printf("\t\t[TAP_Y_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_TAP_Y_SRC_MASK ? 1:0);
+	printf("\t\t[TAP_Z_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_TAP_Z_SRC_MASK ? 1:0);
+	printf("\t[BW_RATE] : 0x%02x\r\n", adxl_dev_get_bw_rate(ptr->dev));
+	printf("\t\t[LOW_POWER] : %d\r\n", adxl_dev_get_bw_rate(ptr->dev) & BW_RATE_LOW_POWER_MASK ? 1:0);
+	printf("\t\t[RATE] : %d\r\n", adxl_dev_get_bw_rate(ptr->dev) & BW_RATE_RATE_MASK ? 1:0);
+	printf("\t[POWER_CTL] : 0x%02x\r\n", adxl_dev_get_power_ctl(ptr->dev));
+	printf("\t\t[LINK] : %d\r\n", adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_LINK_MASK ? 1:0);
+	printf("\t\t[AUTOSLEEP] : %d\r\n", adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_AUTO_SLEEP_MASK ? 1:0);
+	printf("\t\t[MEASURE] : %d\r\n", adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_MEASURE_MASK ? 1:0);
+	printf("\t\t[SLEEP] : %d\r\n", adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_SLEEP_MASK ? 1:0);
+	printf("\t\t[WAKEUP] : %d\r\n", adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_WAKEUP_MASK ? 1:0);
+	printf("\t[INT_ENABLE] : 0x%02x\r\n", adxl_dev_get_int_enable(ptr->dev));
+	printf("\t\t[DATA_READY] : %d\r\n", adxl_dev_get_int_enable(ptr->dev) & INT_ENABLE_DATA_READY_MASK ? 1:0);
+	printf("\t\t[SINGLE_TAP] : %d\r\n", adxl_dev_get_int_enable(ptr->dev) & INT_ENABLE_SINGLE_TAP_MASK ? 1:0);
+	printf("\t\t[DOUBLE_TAP] : %d\r\n", adxl_dev_get_int_enable(ptr->dev) & INT_ENABLE_DOUBLE_TAP_MASK ? 1:0);
+	printf("\t\t[ACTIVITY] : %d\r\n", adxl_dev_get_int_enable(ptr->dev) & INT_ENABLE_ACTIVITY_MASK ? 1:0);
+	printf("\t\t[INACTIVITY] : %d\r\n", adxl_dev_get_int_enable(ptr->dev) & INT_ENABLE_INACTIVITY_MASK ? 1:0);
+	printf("\t\t[FREEFALL] : %d\r\n", adxl_dev_get_int_enable(ptr->dev) & INT_ENABLE_FREE_FALL_MASK ? 1:0);
+	printf("\t\t[WATERMARK] : %d\r\n", adxl_dev_get_int_enable(ptr->dev) & INT_ENABLE_WATERMARK_MASK ? 1:0);
+	printf("\t\t[OVERRUN] : %d\r\n", adxl_dev_get_int_enable(ptr->dev) & INT_ENABLE_OVERRUN_MASK ? 1:0);
+	printf("\t[INT_MAP] : 0x%02x\r\n", adxl_dev_get_int_map(ptr->dev));
+	printf("\t\t[DATA_READY] : %d\r\n", adxl_dev_get_int_map(ptr->dev) & INT_MAP_DATA_READY_MASK ? 1:0);
+	printf("\t\t[SINGLE_TAP] : %d\r\n", adxl_dev_get_int_map(ptr->dev) & INT_MAP_SINGLE_TAP_MASK ? 1:0);
+	printf("\t\t[DOUBLE_TAP] : %d\r\n", adxl_dev_get_int_map(ptr->dev) & INT_MAP_DOUBLE_TAP_MASK ? 1:0);
+	printf("\t\t[ACTIVITY] : %d\r\n", adxl_dev_get_int_map(ptr->dev) & INT_MAP_ACTIVITY_MASK ? 1:0);
+	printf("\t\t[INACTIVITY] : %d\r\n", adxl_dev_get_int_map(ptr->dev) & INT_MAP_INACTIVITY_MASK ? 1:0);
+	printf("\t\t[FREEFALL] : %d\r\n", adxl_dev_get_int_map(ptr->dev) & INT_MAP_FREE_FALL_MASK ? 1:0);
+	printf("\t\t[WATERMARK] : %d\r\n", adxl_dev_get_int_map(ptr->dev) & INT_MAP_WATERMARK_MASK ? 1:0);
+	printf("\t\t[OVERRUN] : %d\r\n", adxl_dev_get_int_map(ptr->dev) & INT_MAP_OVERRUN_MASK ? 1:0);
+	printf("\t[INT_SOURCE] : 0x%02x\r\n", adxl_dev_get_int_source(ptr->dev));
+	printf("\t\t[DATA_READY] : %d\r\n", adxl_dev_get_int_source(ptr->dev) & INT_SOURCE_DATA_READY_MASK ? 1:0);
+	printf("\t\t[SINGLE_TAP] : %d\r\n", adxl_dev_get_int_source(ptr->dev) & INT_SOURCE_SINGLE_TAP_MASK ? 1:0);
+	printf("\t\t[DOUBLE_TAP] : %d\r\n", adxl_dev_get_int_source(ptr->dev) & INT_SOURCE_DOUBLE_TAP_MASK ? 1:0);
+	printf("\t\t[ACTIVITY] : %d\r\n", adxl_dev_get_int_source(ptr->dev) & INT_SOURCE_ACTIVITY_MASK ? 1:0);
+	printf("\t\t[INACTIVITY] : %d\r\n", adxl_dev_get_int_source(ptr->dev) & INT_SOURCE_INACTIVITY_MASK ? 1:0);
+	printf("\t\t[FREEFALL] : %d\r\n", adxl_dev_get_int_source(ptr->dev) & INT_SOURCE_FREE_FALL_MASK ? 1:0);
+	printf("\t\t[WATERMARK] : %d\r\n", adxl_dev_get_int_source(ptr->dev) & INT_SOURCE_WATERMARK_MASK ? 1:0);
+	printf("\t\t[OVERRUN] : %d\r\n", adxl_dev_get_int_source(ptr->dev) & INT_SOURCE_OVERRUN_MASK ? 1:0);
+	printf("\t[DATA_FORMAT] : 0x%02x\r\n", adxl_dev_get_data_format(ptr->dev));
+	printf("\t\t[SELFTEST] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_SELFTEST_MASK ? 1:0);
+	printf("\t\t[SPI] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_SPI_MASK ? 1:0);
+	printf("\t\t[INT_INVERT] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_INT_INVERT_MASK ? 1:0);
+	printf("\t\t[0] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_0_MASK ? 1:0);
+	printf("\t\t[FULL_RES] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_FULL_RES_MASK ? 1:0);
+	printf("\t\t[JUSTIFY] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_JUSTIFY_MASK ? 1:0);
+	printf("\t\t[RANGE] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_RANGE_MASK ? 1:0);
+	printf("\t[DATAX0] : 0x%02x\r\n", adxl_dev_get_datax0(ptr->dev));
+	printf("\t[DATAX1] : 0x%02x\r\n", adxl_dev_get_datax1(ptr->dev));
+	printf("\t[DATAY0] : 0x%02x\r\n", adxl_dev_get_datay0(ptr->dev));
+	printf("\t[DATAY1] : 0x%02x\r\n", adxl_dev_get_datay1(ptr->dev));
+	printf("\t[DATAZ0] : 0x%02x\r\n", adxl_dev_get_dataz0(ptr->dev));
+	printf("\t[DATAZ1] : 0x%02x\r\n", adxl_dev_get_dataz1(ptr->dev));
+	printf("\t[FIFO_CTL] : 0x%02x\r\n", adxl_dev_get_fifo_ctl(ptr->dev));
+	printf("\t\t[FIFO_MODE] : %d\r\n", adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_FIFO_MODE);
+	printf("\t\t[TRIGGER] : %d\r\n", adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_TRIGGER);
+	printf("\t\t[SAMPLES] : %d\r\n", adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_SAMPLES);
+	printf("\t[FIFO_STATUS] : 0x%02x\r\n", adxl_dev_get_fifo_status(ptr->dev));
+	printf("\t\t[ENTRIES] : %d\r\n", adxl_dev_get_fifo_status(ptr->dev) & FIFO_STATUS_ENTRIES_MASK);
 }
