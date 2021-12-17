@@ -194,7 +194,7 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h02                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h04                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
@@ -321,11 +321,27 @@ module axi_adxl345 #(
                 if (~RESETN | reset)
                     need_update_reg[reg_index] <= 0;
                 else
-                    if (slv_reg_wren)
-                        if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index)
-                            for (byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1)
-                                if (S_AXI_LITE_DEV_WSTRB[byte_index])
+                    if (slv_reg_wren) begin
+                        if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin
+                            for (byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1) begin
+                                if (S_AXI_LITE_DEV_WSTRB[byte_index]) begin 
                                     need_update_reg[reg_index][byte_index] <= write_mask_register[reg_index][byte_index];
+                                end 
+                            end 
+                        end 
+                    end else begin 
+                        case (current_state) 
+                            SEND_WRITE_CMD_ST  : 
+                                if (~out_awfull)
+                                   if (write_cmd_word_cnt == 2'b10)
+                                        if (address[5:2] == reg_index) 
+                                            need_update_reg[reg_index][address[1:0]] <= 1'b0;
+                            default : 
+                                need_update_reg[reg_index][address[1:0]] <= need_update_reg[reg_index][address[1:0]];
+
+                        endcase // current_state
+                    end 
+
             end    
 
         end 
@@ -456,13 +472,15 @@ module axi_adxl345 #(
             case (current_state)
 
                 IDLE_ST : 
-                    if (enable) begin 
-                        if (update_request)
-                            current_state <= CHK_UPD_NEEDED_ST;
-                        else 
-                            if (request_timer == request_interval)
+                    if (update_request) begin 
+                        current_state <= CHK_UPD_NEEDED_ST;
+                    end else begin 
+                        if (enable) begin  
+                            if (request_timer == request_interval) begin 
                                 current_state <= TX_SEND_ADDR_PTR;
-                    end 
+                            end 
+                        end
+                    end  
 
                 CHK_UPD_NEEDED_ST : 
                     if (need_update_reg[address[5:2]][address[1:0]])

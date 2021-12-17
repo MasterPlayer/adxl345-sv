@@ -98,7 +98,7 @@ typedef struct {
 #define BW_RATE_RATE_MASK               0x0F //0000XXXX   RATE
 
 #define POWER_CTL_LINK_MASK             0x20 //00X00000   LINK
-#define POWER_CTL_AUTO SLEEP_MASK       0x10 //000X0000   AUTO SLEEP
+#define POWER_CTL_AUTO_SLEEP_MASK       0x10 //000X0000   AUTO SLEEP
 #define POWER_CTL_MEASURE_MASK          0x08 //0000X000   MEASURE
 #define POWER_CTL_SLEEP_MASK            0x04 //00000X00   SLEEP
 #define POWER_CTL_WAKEUP_MASK           0x03 //000000XX   WAKEUP
@@ -112,6 +112,7 @@ typedef struct {
 #define INT_ENABLE_WATERMARK_MASK       0x02 //000000x0   WATERMARK
 #define INT_ENABLE_OVERRUN_MASK         0x01 //0000000x   OVERRUN
 
+#define INT_MAP_ALL_MASK 				0xFF
 #define INT_MAP_DATA_READY_MASK         0x80 //x0000000   DATA_READY
 #define INT_MAP_SINGLE_TAP_MASK         0x40 //0x000000   SINGLE_TAP
 #define INT_MAP_DOUBLE_TAP_MASK         0x20 //00x00000   DOUBLE_TAP
@@ -142,6 +143,8 @@ typedef struct {
 #define FIFO_CTL_TRIGGER                0x40 // 00x00000
 #define FIFO_CTL_SAMPLES                0x1F // 000xxxxx
 
+#define FIFO_STATUS_ENTRIES_MASK 		0x7F
+
 #define DATA_FORMAT_FULL_RES 			0x08
 
 #define DATA_FORMAT_RANGE_2G 			0x00
@@ -153,7 +156,7 @@ typedef struct {
 #define adxl_dev_get_device_id(ptr) ((ptr)->device_id_reg)
 //0x1d
 #define adxl_dev_set_thresh_tap(ptr, value) ((ptr)->thresh_tap_reg = (uint8_t)value)
-#define adxl_dev_get_thresh_tap(ptr) ((ptr)->thresh_tap) (ptr)->thresh_tap_reg
+#define adxl_dev_get_thresh_tap(ptr) ((ptr)->thresh_tap_reg)
 //0x1e
 #define adxl_dev_set_ofsx(ptr, value) ((ptr)->ofsx_reg = (uint8_t)value)
 #define adxl_dev_get_ofsx(ptr) ((ptr)->ofsx_reg)
@@ -179,8 +182,11 @@ typedef struct {
 #define adxl_dev_set_thresh_inact(ptr, value) ((ptr)->thresh_inact_reg = value)
 #define adxl_dev_get_thresh_inact(ptr) ((ptr)->thresh_inact_reg)
 
+#define adxl_dev_set_time_inact(ptr, value) ((ptr)->time_inact_reg = value)
+#define adxl_dev_get_time_inact(ptr) ((ptr)->time_inact_reg)
+
 #define adxl_dev_set_act_inact_ctl(ptr, value) ((ptr)->act_inact_ctl_reg = value)
-#define adxl_dev_get_act_inact_ctl(ptr, value) ((ptr)->act_inact_ctl_reg)
+#define adxl_dev_get_act_inact_ctl(ptr) ((ptr)->act_inact_ctl_reg)
 
 #define adxl_dev_set_thresh_ff(ptr, value) ((ptr)->thresh_ff_reg = value)
 #define adxl_dev_get_thresh_ff(ptr) ((ptr)->thresh_ff_reg)
