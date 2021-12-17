@@ -12,7 +12,11 @@
 #define SCALE_THRESH_TAP 		(0.0625)
 #define SCALE_OFS        		(0.0156)       //15.6 us
 #define SCALE_DUR        		(0.000625)     //6.25us
+#define SCALE_LATENT 			(0.00125) 		//1.25 ms
 #define SCALE_WINDOW     		(0.00125) 		//1.25 ms
+#define SCALE_THRESH_ACT 		(0.0625) 		//62.5 mg
+#define SCALE_THRESH_INACT 		(0.0625) 		//62.5 mg
+#define SCALE_TIME_INACT 		(1) 			//1 sec
 #define SCALE_THRESH_FF  		(0.0625) 		//62.5 mg/lsb
 #define SCALE_TIME_FF    		(0.005) 		//5ms/lsb
 

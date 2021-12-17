@@ -31,11 +31,11 @@ int main(){
 
 
 //
-	status = axi_adxl_disable_requesting(&adxl_device);
-	if (status != ADXL_OK){
-		xil_printf("[MAIN] : disable requests return code : [%d]\r\n", status);
-		return 0;
-	}
+//	status = axi_adxl_disable_requesting(&adxl_device);
+//	if (status != ADXL_OK){
+//		xil_printf("[MAIN] : disable requests return code : [%d]\r\n", status);
+//		return 0;
+//	}
 
 
 
@@ -44,13 +44,13 @@ int main(){
 
 //	axi_adxl_int_invert(&adxl_device);
 
-	axi_adxl_set_int_map(&adxl_device, SINGLE_TAP, 0x00);
-	axi_adxl_set_dur(&adxl_device, 0x10);
-	axi_adxl_set_thresh_tap(&adxl_device, 4);
-	axi_adxl_set_latency(&adxl_device, 0x01);
-	axi_adxl_set_window(&adxl_device, 0x01);
-	axi_adxl_set_tap_axes_active(&adxl_device, TAP_AXES_TAP_X_EN_MASK | TAP_AXES_TAP_Y_EN_MASK);
-	axi_adxl_int_enable(&adxl_device, SINGLE_TAP);
+//	axi_adxl_set_int_map(&adxl_device, SINGLE_TAP, 0x00);
+//	axi_adxl_set_dur(&adxl_device, 0x10);
+//	axi_adxl_set_thresh_tap(&adxl_device, 4);
+//	axi_adxl_set_latency(&adxl_device, 0x01);
+//	axi_adxl_set_window(&adxl_device, 0x01);
+//	axi_adxl_set_tap_axes_active(&adxl_device, TAP_AXES_TAP_X_EN_MASK | TAP_AXES_TAP_Y_EN_MASK);
+//	axi_adxl_int_enable(&adxl_device, SINGLE_TAP);
 
 
 	//	axi_adxl_get_thresh_tap(&adxl_device, &thresh_tap);
@@ -66,7 +66,7 @@ int main(){
 //	volatile int delay = 100;
 //	float avg = 0;
 	while(1){
-		axi_adxl_debug(&adxl_device);
+//		axi_adxl_debug(&adxl_device);
 		//
 //		avg = 0;
 //
@@ -90,9 +90,9 @@ int main(){
 
 
 //		adxl_cfg_set_request_interval(adxl_device.cfg, req);
-//		status = axi_adxl_get_gravity(&adxl_device, &g);
-//
-//		printf("[x]:\t%3.3f \t[y]:\t%3.3f \t[z]:\t%3.3f\r\n", g.x, g.y, g.z);
+		status = axi_adxl_get_gravity(&adxl_device, &g);
+
+		printf("[x]:\t%3.3f \t[y]:\t%3.3f \t[z]:\t%3.3f\r\n", g.x, g.y, g.z);
 //
 //
 
@@ -121,7 +121,7 @@ int main(){
 
 //		printf("\t%3.2f \t%3.2f\r\n", pitch, roll);
 
-    	sleep(1);
+//    	sleep(1);
 
 
 

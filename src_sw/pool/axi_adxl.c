@@ -731,18 +731,40 @@ void axi_adxl_debug(axi_adxl *ptr){
 	printf("[READ_TRANSACTIONS] : %d\r\n", adxl_cfg_get_read_transactions(ptr->cfg));
 	printf("[CLK_PERIOD] : %3.3f MHz\r\n", (float)(adxl_cfg_get_clk_period(ptr->cfg)/1000000));
 	printf("\r\n");
+
 	printf("[DEVICE SPACE]\r\n");
 	printf("\t[DEVICE ID] : 0x%02x\r\n", adxl_dev_get_device_id(ptr->dev));
+
 	printf("\t[THRESH_TAP] : 0x%02x\r\n", adxl_dev_get_thresh_tap(ptr->dev));
+	printf("\t\t[THRESH_TAP_G] : %3.3f g\r\n", (float)(adxl_dev_get_thresh_tap(ptr->dev) * SCALE_THRESH_TAP));
+
 	printf("\t[OFSX] : 0x%02x\r\n", adxl_dev_get_ofsx(ptr->dev));
+	printf("\t\t[OFSX] : %3.3f g\r\n", (float)((int8_t)adxl_dev_get_ofsx(ptr->dev) * SCALE_OFS));
+
 	printf("\t[OFSY] : 0x%02x\r\n", adxl_dev_get_ofsy(ptr->dev));
+	printf("\t\t[OFSY_G] : %3.3f g\r\n", (float)((int8_t)adxl_dev_get_ofsy(ptr->dev) * SCALE_OFS));
+
 	printf("\t[OFSZ] : 0x%02x\r\n", adxl_dev_get_ofsz(ptr->dev));
+	printf("\t\t[OFSZ_G] : %3.3f g\r\n", (float)((int8_t)adxl_dev_get_ofsz(ptr->dev) * SCALE_OFS));
+
 	printf("\t[DUR] : 0x%02x\r\n", adxl_dev_get_dur(ptr->dev));
+	printf("\t\t[DUR] : %3.3f sec\r\n", (float)(adxl_dev_get_dur(ptr->dev) * SCALE_DUR));
+
 	printf("\t[LATENT] : 0x%02x\r\n", adxl_dev_get_latent(ptr->dev));
+	printf("\t\t[LATENT_S] : %3.3f sec\r\n", (float)(adxl_dev_get_latent(ptr->dev) * SCALE_LATENT));
+
 	printf("\t[WINDOW] : 0x%02x\r\n", adxl_dev_get_window(ptr->dev));
+	printf("\t\t[WINDOW_S] : %3.3f sec\r\n", (float)(adxl_dev_get_window(ptr->dev) * SCALE_WINDOW));
+
 	printf("\t[THRESH_ACT] : 0x%02x\r\n", adxl_dev_get_thresh_act(ptr->dev));
+	printf("\t\t[THRESH_ACT_G] : %3.3f g\r\n", (float)(adxl_dev_get_thresh_act(ptr->dev) * SCALE_THRESH_ACT));
+
 	printf("\t[THRESH_INACT] : 0x%02x\r\n", adxl_dev_get_thresh_inact(ptr->dev));
+	printf("\t\t[THRESH_INACT_G] : %3.3f g\r\n", (float)(adxl_dev_get_thresh_inact(ptr->dev) * SCALE_THRESH_INACT));
+
 	printf("\t[TIME_INACT] : 0x%02x\r\n", adxl_dev_get_time_inact(ptr->dev));
+	printf("\t[TIME_INACT_S] : %3.3f s\r\n", (float)(adxl_dev_get_time_inact(ptr->dev) * SCALE_TIME_INACT));
+
 	printf("\t[ACT_INACT_CTL] : 0x%02x\r\n", adxl_dev_get_act_inact_ctl(ptr->dev));
 	printf("\t\t[ACT_AC/DC] : %d \r\n", (adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_ACT_ACDC_MASK) ? 1:0);
 	printf("\t\t[ACT_X EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_ACT_X_EN_MASK ? 1:0);
@@ -752,8 +774,13 @@ void axi_adxl_debug(axi_adxl *ptr){
 	printf("\t\t[INACT X EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_INACT_X_EN_MASK ? 1:0);
 	printf("\t\t[INACT Y EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_INACT_Y_EN_MASK ? 1:0);
 	printf("\t\t[INACT Z EN] : %d\r\n", adxl_dev_get_act_inact_ctl(ptr->dev) & ACT_INACT_CTL_INACT_Z_EN_MASK ? 1:0);
+
 	printf("\t[THRESH_FF] : 0x%02x : \r\n", adxl_dev_get_thresh_ff(ptr->dev));
+	printf("\t\t[THRESH_FF] : %3.3f: \r\n", (float)(adxl_dev_get_thresh_ff(ptr->dev) * SCALE_THRESH_FF));
+
 	printf("\t[TIME_FF] : 0x%02x\r\n", adxl_dev_get_time_ff(ptr->dev));
+	printf("\t\t[TIME_FF] : %3.3f\r\n", (float)(adxl_dev_get_time_ff(ptr->dev) * SCALE_TIME_FF));
+
 	printf("\t[TAP_AXES] : 0x%02x\r\n", adxl_dev_get_tap_axes(ptr->dev));
 	printf("\t\t[SUPRESS] : %d\r\n", adxl_dev_get_tap_axes(ptr->dev) & TAP_AXES_SUPRESS_MASK ? 1:0);
 	printf("\t\t[TAP_X_EN] : %d\r\n", adxl_dev_get_tap_axes(ptr->dev) & TAP_AXES_TAP_X_EN_MASK ? 1:0);
@@ -767,9 +794,106 @@ void axi_adxl_debug(axi_adxl *ptr){
 	printf("\t\t[TAP_X_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_TAP_X_SRC_MASK ? 1:0);
 	printf("\t\t[TAP_Y_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_TAP_Y_SRC_MASK ? 1:0);
 	printf("\t\t[TAP_Z_SRC] : %d\r\n", adxl_dev_get_act_tap_status(ptr->dev) & ACT_TAP_STATUS_TAP_Z_SRC_MASK ? 1:0);
+
 	printf("\t[BW_RATE] : 0x%02x\r\n", adxl_dev_get_bw_rate(ptr->dev));
 	printf("\t\t[LOW_POWER] : %d\r\n", adxl_dev_get_bw_rate(ptr->dev) & BW_RATE_LOW_POWER_MASK ? 1:0);
-	printf("\t\t[RATE] : %d\r\n", adxl_dev_get_bw_rate(ptr->dev) & BW_RATE_RATE_MASK ? 1:0);
+	printf("\t\t[RATE] : %d\r\n", adxl_dev_get_bw_rate(ptr->dev) & BW_RATE_RATE_MASK);
+	printf("\t\t\t[RATE_HZ] : ");
+	uint8_t bw_rate = adxl_dev_get_bw_rate(ptr->dev) & (BW_RATE_RATE_MASK | BW_RATE_LOW_POWER_MASK);
+	switch(bw_rate){
+		case BW_RATE_3200 :
+			printf("3200");
+		break;
+
+		case BW_RATE_1600 :
+			printf("1600");
+		break;
+
+		case BW_RATE_800 :
+			printf("800");
+		break;
+
+		case BW_RATE_400:
+			printf("400");
+		break;
+
+		case BW_RATE_200:
+			printf("200");
+		break;
+
+		case BW_RATE_100:
+			printf("100");
+		break;
+
+		case BW_RATE_50:
+			printf("50");
+		break;
+
+		case BW_RATE_25:
+			printf("25");
+		break;
+
+		case BW_RATE_12_5:
+			printf("12.5");
+		break;
+
+		case BW_RATE_6_25:
+			printf("6.25");
+		break;
+
+		case BW_RATE_3_13:
+			printf("3.125");
+		break;
+
+		case BW_RATE_1_56:
+			printf("1.56125");
+		break;
+
+		case BW_RATE_0_78:
+			printf("0.78");
+		break;
+
+		case BW_RATE_0_39:
+			printf("0.39");
+		break;
+
+		case BW_RATE_0_20:
+			printf("0.2");
+		break;
+
+		case BW_RATE_0_10:
+			printf("0.1");
+		break;
+
+		case BW_RATE_400_LP:
+			printf("low_power 400");
+		break;
+
+		case BW_RATE_200_LP:
+			printf("low_power 200");
+		break;
+
+		case BW_RATE_100_LP:
+			printf("low_power 100");
+		break;
+
+		case BW_RATE_50_LP:
+			printf("low_power 50");
+		break;
+
+		case BW_RATE_25_LP:
+			printf("low_power 25");
+		break;
+
+		case BW_RATE_12_5_LP:
+			printf("low_power 12.5");
+		break;
+
+		default :
+			printf("<undefined>");
+
+	}
+	printf(" Hz\r\n");
 	printf("\t[POWER_CTL] : 0x%02x\r\n", adxl_dev_get_power_ctl(ptr->dev));
 	printf("\t\t[LINK] : %d\r\n", adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_LINK_MASK ? 1:0);
 	printf("\t\t[AUTOSLEEP] : %d\r\n", adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_AUTO_SLEEP_MASK ? 1:0);
@@ -810,7 +934,30 @@ void axi_adxl_debug(axi_adxl *ptr){
 	printf("\t\t[0] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_0_MASK ? 1:0);
 	printf("\t\t[FULL_RES] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_FULL_RES_MASK ? 1:0);
 	printf("\t\t[JUSTIFY] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_JUSTIFY_MASK ? 1:0);
-	printf("\t\t[RANGE] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_RANGE_MASK ? 1:0);
+	printf("\t\t[RANGE] : %d\r\n", adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_RANGE_MASK);
+	printf("\t\t\t[RANGE] : ");
+	switch( adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_RANGE_MASK ){
+		case DATA_FORMAT_RANGE_2G:
+			printf("-2g..+2g");
+		break;
+
+		case DATA_FORMAT_RANGE_4G:
+			printf("-4g..+4g");
+		break;
+
+		case DATA_FORMAT_RANGE_8G:
+			printf("-8g..+8g");
+		break;
+
+		case DATA_FORMAT_RANGE_16G:
+			printf("-16g..+16g");
+		break;
+
+		default:
+			printf("<undefined>\r\n");
+	}
+	printf("\r\n");
+
 	printf("\t[DATAX0] : 0x%02x\r\n", adxl_dev_get_datax0(ptr->dev));
 	printf("\t[DATAX1] : 0x%02x\r\n", adxl_dev_get_datax1(ptr->dev));
 	printf("\t[DATAY0] : 0x%02x\r\n", adxl_dev_get_datay0(ptr->dev));

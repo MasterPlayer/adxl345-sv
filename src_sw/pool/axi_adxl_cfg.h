@@ -19,7 +19,7 @@ typedef struct {
 #define CTL_RESET_MASK          0x00000001
 #define CTL_ENABLE_MASK         0x00000002
 #define CTL_ALLOW_IRQ_MASK      0x00000004
-#define CTL_ON_WORK_MASK        0x00000008
+#define CTL_ON_WORK_MASK        0x00000080
 #define CTL_IIC_ADDR_MASK       0x00007F00
 #define CTL_LINK_ON_MASK        0x00008000
 #define CTL_VERS_MINOR_MASK     0x00FF0000
