@@ -194,10 +194,12 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h04                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h05                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
+    logic                                perform_request_flaq = 1'b0                    ; // reg[0][3]
+    logic                                request_performed    = 1'b0                    ; // reg[0][6]
     logic                                allow_irq            = 1'b0                    ; // reg[0][2]
     logic                                enable               = 1'b0                    ; // reg[0][1]
     logic [($clog2(RESET_DURATION)-1):0] reset_logic_timer    = 1'b0                    ; // reg[0][0]
@@ -475,11 +477,15 @@ module axi_adxl345 #(
                     if (update_request) begin 
                         current_state <= CHK_UPD_NEEDED_ST;
                     end else begin 
-                        if (enable) begin  
-                            if (request_timer == request_interval) begin 
-                                current_state <= TX_SEND_ADDR_PTR;
-                            end 
-                        end
+                        if (perform_request_flaq) begin 
+                            current_state <= TX_SEND_ADDR_PTR;
+                        end else begin 
+                            if (enable) begin
+                                if (request_timer == request_interval) begin 
+                                    current_state <= TX_SEND_ADDR_PTR;
+                                end 
+                            end
+                        end 
                     end  
 
                 CHK_UPD_NEEDED_ST : 
@@ -867,7 +873,8 @@ module axi_adxl345 #(
                 link_on,
                 i2c_address, // register_cfg[ 0][14:8],
                 on_work,
-                4'b0,
+                request_performed,
+                3'b0,
                 allow_irq,
                 enable,
                 reset 
@@ -937,6 +944,35 @@ module axi_adxl345 #(
 
     end
 
+    always_ff @(posedge CLK) begin 
+        if (~RESETN | reset) begin 
+            request_performed <= 1'b0;
+        end else begin 
+
+            if (slv_reg_wren_cfg)
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+                    if ( S_AXI_LITE_CFG_WSTRB[1] == 1 )
+                        if (S_AXI_LITE_CFG_WDATA[6])
+                            request_performed <= 1'b0;
+                        else 
+                            request_performed <= request_performed;
+                    else 
+                        request_performed <= request_performed;
+                else 
+                    request_performed <= request_performed;
+            else
+                case (current_state) 
+                    AWAIT_RECEIVE_DATA_ST : 
+                        if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
+                            request_performed <= 1'b1;
+                        end else begin 
+                            request_performed <= request_performed;
+                        end 
+
+                    default : request_performed <= request_performed;
+                endcase // write_cmd_word_cnt
+        end 
+    end 
 
     always_ff @(posedge CLK) begin 
         if (~RESETN | reset)
@@ -944,9 +980,41 @@ module axi_adxl345 #(
         else 
             if (slv_reg_wren_cfg)
                 if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                        if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
-                            allow_irq <= S_AXI_LITE_CFG_WDATA[2];
+                    if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
+                        allow_irq <= S_AXI_LITE_CFG_WDATA[2];
     end 
+
+    always_ff @(posedge CLK) begin 
+        if (~RESETN | reset) 
+            perform_request_flaq <= 1'b0;
+        else 
+            if (slv_reg_wren_cfg)
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+                    if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
+                        perform_request_flaq <= S_AXI_LITE_CFG_WDATA[3];
+                    else
+                        perform_request_flaq <= perform_request_flaq;
+                else 
+                    perform_request_flaq <= perform_request_flaq;
+            else 
+                case (current_state)
+                    AWAIT_RECEIVE_DATA_ST : 
+                        if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
+                            if (perform_request_flaq) begin 
+                                perform_request_flaq <= 1'b0;
+                            end else begin 
+                                perform_request_flaq <= perform_request_flaq;
+                            end 
+                        end else begin  
+                            perform_request_flaq <= perform_request_flaq;
+                        end 
+                
+                    default : 
+                        perform_request_flaq <= perform_request_flaq;
+
+                endcase // current_state
+    end 
+
 
     always_ff @(posedge CLK) begin 
         if (~RESETN | reset)
@@ -1082,10 +1150,10 @@ module axi_adxl345 #(
 
     // version 1.2 
     always_ff @(posedge CLK) begin : adxl_irq_proc
-        if (enable)
-            ADXL_IRQ <= ADXL_INTERRUPT & allow_irq;
-        else 
-            ADXL_IRQ <= 1'b0;
+        // if (enable)
+        ADXL_IRQ <= ADXL_INTERRUPT & allow_irq;
+        // else 
+            // ADXL_IRQ <= 1'b0;
     end 
 
 
