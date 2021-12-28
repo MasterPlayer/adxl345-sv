@@ -20,6 +20,7 @@ typedef struct {
 #define CTL_ENABLE_MASK         	0x00000002
 #define CTL_ALLOW_IRQ_MASK      	0x00000004
 #define CTL_PERFORM_REQUEST_MASK 	0x00000008
+#define CTL_ACK 					0x00000010
 #define CTL_REQUEST_PERFORMED_MASK  0x00000040
 #define CTL_ON_WORK_MASK        	0x00000080
 #define CTL_IIC_ADDR_MASK       	0x00007F00
@@ -50,6 +51,8 @@ typedef struct {
 
 #define adxl_cfg_has_link(ptr) ((ptr)->ctl_reg & CTL_LINK_ON_MASK) ? TRUE : FALSE
 
+#define adxl_cfg_ack(ptr) ((ptr)->ctl_reg |= CTL_ACK)
+
 #define adxl_cfg_get_version_minor(ptr) (((ptr)->ctl_reg & CTL_VERS_MINOR_MASK) >> 16)
 #define adxl_cfg_get_version_major(ptr) (((ptr)->ctl_reg & CTL_VERS_MAJOR_MASK) >> 24)
 
@@ -62,5 +65,6 @@ typedef struct {
 #define adxl_cfg_get_write_transactions(ptr) ((ptr)->write_transactions_reg)
 #define adxl_cfg_get_read_transactions(ptr) ((ptr)->read_transactions_reg)
 #define adxl_cfg_get_clk_period(ptr) ((ptr)->clk_period_reg)
+
 
 void adxl_cfg_debug(adxl_cfg *cfg_ptr);
