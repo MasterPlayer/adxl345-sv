@@ -148,6 +148,7 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
     signal  S_AXIS_TLAST                :           std_logic                                                    := '0'                 ;
     signal  S_AXIS_TREADY               :           std_logic                                                                           ;
 
+    signal  ADXL_INTERRUPT              :           std_Logic                                                    := '0'                 ;
 
     constant clock_period_time : time := 10 ns;
 
@@ -228,12 +229,32 @@ begin
             S_AXIS_TVALID               =>  S_AXIS_TVALID                       ,
             S_AXIS_TLAST                =>  S_AXIS_TLAST                        ,
             S_AXIS_TREADY               =>  S_AXIS_TREADY                       ,
-            ADXL_INTERRUPT              =>  '0'                                 ,
+            ADXL_INTERRUPT              =>  ADXL_INTERRUPT                      ,
             ADXL_IRQ                    =>  open                                 
         );
     
     M_AXIS_TREADY <= '1';
     
+
+    s_axis_processing : process(CLK)
+    begin
+        if CLK'event aND CLK = '1' then 
+            case i is 
+
+                when 1100   => S_AXIS_TDATA <= x"40"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+
+                when 2000   => S_AXIS_TDATA <= x"12"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2100   => S_AXIS_TDATA <= x"23"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2200   => S_AXIS_TDATA <= x"34"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2300   => S_AXIS_TDATA <= x"45"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2400   => S_AXIS_TDATA <= x"56"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2500   => S_AXIS_TDATA <= x"67"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+
+                when others => S_AXIS_TDATA <= S_AXIS_TDATA; S_AXIS_TKEEP <= S_AXIS_TKEEP; S_AXIS_TUSER <= S_AXIS_TUSER; S_AXIS_TVALID <= '0'; S_AXIS_TLAST <= S_AXIS_TLAST;
+
+            end case;
+        end if;
+    end process;
 
 
     write_cfg_processing : process(CLK)
@@ -241,9 +262,14 @@ begin
         if CLK'event AND CLK = '1' then 
             case i is 
 
-                --when 200   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                --when 201   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                --when 202   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
+                when 200   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                when 201   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                when 202   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
+
+                when 4000  => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                when 4001  => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                when 4002  => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
+
 
                 --when 210   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
                 --when 211   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
@@ -264,18 +290,17 @@ begin
         if CLK'event AND CLK = '1' then 
             case i is 
 
-                when 200   => DEV_AWADDR <= x"1E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when 201   => DEV_AWADDR <= x"1E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when 202   => DEV_AWADDR <= x"1E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+                when 200   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF40FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 201   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF40FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 202   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF40FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
-                when 510   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when 511   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when 512   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+                --when 510   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                --when 511   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                --when 512   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
-                when 810   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when 811   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when 812   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
-
+                --when 810   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                --when 811   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                --when 812   => DEV_AWADDR <= x"00"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FFFFFFFE"; DEV_WSTRB <= x"1"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
                 --when 200   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
                 --when 201   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005306"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
@@ -341,7 +366,17 @@ begin
         end if;
     end process;
 
+    ADXL_INTERRUPT_processing : process(CLK)
+    begin
+        if CLK'event aND CLK = '1' then 
+            case i is
+                when 1000   => ADXL_INTERRUPT <= '1'; 
+                when 2500   => ADXL_INTERRUPT <= '0';
+                when others => ADXL_INTERRUPT <= ADXL_INTERRUPT;
 
+            end case;
+        end if;
+    end process;        
 
 
 

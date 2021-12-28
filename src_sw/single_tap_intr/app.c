@@ -91,16 +91,14 @@ int scugic_initialize(XScuGic *ptr, axi_adxl* adxl_ptr){
 
 void adxl_intr_handler(void *callback){
 	axi_adxl *ptr = (axi_adxl*)callback;
+	adxl_cfg_ack(ptr->cfg);
 
-	adxl_cfg_perform_request(ptr->cfg);
-
-	while(!adxl_cfg_has_request_performed(ptr->cfg)){
-
-	}
-	adxl_cfg_clear_request_performed(ptr->cfg);
+//	axi_adxl_debug(ptr);
 
 	g_coord g;
+
 	axi_adxl_get_gravity(ptr, &g);
+
 	printf("[x] : %3.3f \t[y] : %3.3f \t [z] %3.3f\r\n", g.x, g.y, g.z);
 	return;
 }
