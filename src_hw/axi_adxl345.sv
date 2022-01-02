@@ -188,12 +188,16 @@ module axi_adxl345 #(
         RX_INT_SOURCE_AWAIT_DATA_ST     ,
         INT_PROCESSING_ST               ,
 
-        TX_WRITE_ACT_TAP_STATUS_PTR_ST  , 
-        TX_READ_ACT_TAP_STATUS_ST       , 
-        RX_ACT_TAP_STATUS_ST            , 
-        TX_WRITE_ACT_TAP_DATA_PTR_ST    ,
-        TX_READ_ACT_TAP_DATA_ST         ,
-        RX_ACT_TAP_DATA_ST              ,
+        SEND_TAP_DATA_PTR_ST             ,
+        SEND_TAP_READ_DATA_ST            , // Send SingleTap Read DATA registers from device
+        AWAIT_TAP_DATA_ST                ,
+
+        SEND_ACT_STS_PTR_ST         , 
+        SEND_ACT_STS_REQ_ST         , 
+        AWAIT_ACT_STS_ST            , 
+        SEND_ACT_DATA_PTR_ST        ,
+        SEND_ACT_READ_DATA_ST       ,
+        AWAIT_ACT_DATA_ST           ,
 
         CHECK_INTR_DEASSERT               // 
         
@@ -275,7 +279,6 @@ module axi_adxl345 #(
     end 
 
     always_comb begin 
-
         int_enable_reg = register[11][2];
     end 
 
@@ -349,7 +352,6 @@ module axi_adxl345 #(
     end       
 
     always_comb begin 
-
         slv_reg_wren = axi_dev_wready && S_AXI_LITE_DEV_WVALID && axi_dev_awready && S_AXI_LITE_DEV_AWVALID;
     end
 
@@ -387,7 +389,7 @@ module axi_adxl345 #(
                                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
                                         end 
 
-                            RX_ACT_TAP_STATUS_ST: 
+                            AWAIT_TAP_DATA_ST: 
                                 if (S_AXIS_TVALID)
                                     if (address[5:2] == reg_index)
                                         for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
@@ -395,7 +397,15 @@ module axi_adxl345 #(
                                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
                                         end 
 
-                            RX_ACT_TAP_DATA_ST: 
+                            AWAIT_ACT_STS_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
+
+                            AWAIT_ACT_DATA_ST: 
                                 if (S_AXIS_TVALID)
                                     if (address[5:2] == reg_index)
                                         for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
@@ -503,7 +513,6 @@ module axi_adxl345 #(
 
 
     always_comb begin 
-
         slv_reg_rden = axi_dev_arready & S_AXI_LITE_DEV_ARVALID & ~axi_dev_rvalid;
     end 
 
@@ -559,19 +568,31 @@ module axi_adxl345 #(
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+                SEND_TAP_DATA_PTR_ST: 
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_READ_ACT_TAP_STATUS_ST: 
+                SEND_TAP_READ_DATA_ST: 
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_ACT_TAP_DATA_PTR_ST: 
+                SEND_ACT_STS_PTR_ST: 
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_READ_ACT_TAP_DATA_ST: 
+                SEND_ACT_STS_REQ_ST: 
+                    if (~out_awfull)
+                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+
+                SEND_ACT_DATA_PTR_ST: 
+                    if (~out_awfull)
+                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+
+                SEND_ACT_READ_DATA_ST: 
+                    if (~out_awfull)
+                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+
+                AWAIT_ACT_DATA_ST: 
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
@@ -656,38 +677,55 @@ module axi_adxl345 #(
                         current_state <= INT_PROCESSING_ST;
 
                 INT_PROCESSING_ST : 
-                    if (has_st_intr | has_dt_intr | has_act_intr | has_inact_intr)
-                        current_state <= TX_WRITE_ACT_TAP_STATUS_PTR_ST;
+                    if (has_st_intr | has_dt_intr)
+                        current_state <= SEND_TAP_DATA_PTR_ST;
                     else 
-                        current_state <= IDLE_ST;
+                        if (has_act_intr)
+                            current_state <= SEND_ACT_STS_PTR_ST;
+                        else 
+                            current_state <= IDLE_ST;
 
                 // SINGLE/DOUBLE TAP interrupt processsing states
 
-                TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+                SEND_TAP_DATA_PTR_ST : 
                     if (~out_awfull) begin
                         if (write_cmd_word_cnt == 2'b01) 
-                            current_state <= TX_READ_ACT_TAP_STATUS_ST;
+                            current_state <= SEND_TAP_READ_DATA_ST;
                     end  
 
-                TX_READ_ACT_TAP_STATUS_ST: 
+                SEND_TAP_READ_DATA_ST: 
                     if (~out_awfull)
-                        current_state <= RX_ACT_TAP_STATUS_ST;
+                        current_state <= AWAIT_TAP_DATA_ST;
 
-                RX_ACT_TAP_STATUS_ST: 
+                AWAIT_TAP_DATA_ST: 
+                    if (S_AXIS_TVALID & S_AXIS_TLAST) 
+                        current_state <= CHECK_INTR_DEASSERT;
+
+                SEND_ACT_STS_PTR_ST: 
+                    if (~out_awfull) begin
+                        if (write_cmd_word_cnt == 2'b01) 
+                            current_state <= SEND_ACT_STS_REQ_ST;
+                    end  
+
+                SEND_ACT_STS_REQ_ST: 
+                    if (~out_awfull)
+                        current_state <= AWAIT_ACT_STS_ST;
+
+                AWAIT_ACT_STS_ST: 
                     if (S_AXIS_TVALID & S_AXIS_TLAST)
-                        current_state <= TX_WRITE_ACT_TAP_DATA_PTR_ST;
+                        current_state <= SEND_ACT_DATA_PTR_ST;
 
-                TX_WRITE_ACT_TAP_DATA_PTR_ST: 
+                SEND_ACT_DATA_PTR_ST: 
                     if (~out_awfull) begin
                         if (write_cmd_word_cnt == 2'b01) 
-                            current_state <= TX_READ_ACT_TAP_DATA_ST;
+                            current_state <= SEND_ACT_READ_DATA_ST;
                     end  
 
-                TX_READ_ACT_TAP_DATA_ST: 
+                SEND_ACT_READ_DATA_ST: 
                     if (~out_awfull)
-                        current_state <= RX_ACT_TAP_DATA_ST;
+                        current_state <= AWAIT_ACT_DATA_ST;
 
-                RX_ACT_TAP_DATA_ST: 
+                AWAIT_ACT_DATA_ST: 
                     if (S_AXIS_TVALID & S_AXIS_TLAST)
                         current_state <= CHECK_INTR_DEASSERT;
 
@@ -723,14 +761,21 @@ module axi_adxl345 #(
 
                 TX_SEND_INT_SOURCE_REQ_ST : 
                     address <= 8'h30;
+                // Single/Double Tap processing 
+                AWAIT_TAP_DATA_ST: 
+                    if (S_AXIS_TVALID)
+                        address <= address + 1;
 
-                TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                    address <= 8'h2B;   
-
-                TX_WRITE_ACT_TAP_DATA_PTR_ST: 
+                SEND_TAP_READ_DATA_ST: 
                     address <= 8'h32;
 
-                RX_ACT_TAP_DATA_ST: 
+                SEND_ACT_STS_PTR_ST: 
+                    address <= 8'h2B;   
+
+                SEND_ACT_DATA_PTR_ST: 
+                    address <= 8'h32;
+
+                AWAIT_ACT_DATA_ST: 
                     if (S_AXIS_TVALID)
                         address <= address + 1;
                     
@@ -739,7 +784,6 @@ module axi_adxl345 #(
 
             endcase // current_state
     end 
-
 
     // generate 
 
@@ -839,27 +883,35 @@ module axi_adxl345 #(
             TX_SEND_INT_SOURCE_REQ_ST: 
                 out_din_data <= 8'h01;
 
+            SEND_TAP_DATA_PTR_ST: 
+                case (write_cmd_word_cnt)
+                    2'b00 : out_din_data <= 8'h01;
+                    2'b01 : out_din_data <= 8'h32;
+                    default : out_din_data <= out_din_data;
+                endcase // write_cmd_word_cnt
+
+            SEND_TAP_READ_DATA_ST: 
+                out_din_data <= 8'h06;
 
 
-
-            TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+            SEND_ACT_STS_PTR_ST: 
                 case (write_cmd_word_cnt)
                     2'b00 : out_din_data <= 8'h01;
                     2'b01 : out_din_data <= 8'h2B;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
-            TX_READ_ACT_TAP_STATUS_ST: 
+            SEND_ACT_STS_REQ_ST: 
                 out_din_data <= 8'h01;
 
-            TX_WRITE_ACT_TAP_DATA_PTR_ST: 
+            SEND_ACT_DATA_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b00 : out_din_data <= 8'h06;
+                    2'b00 : out_din_data <= 8'h01;
                     2'b01 : out_din_data <= 8'h32;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
-            TX_READ_ACT_TAP_DATA_ST: 
+            SEND_ACT_READ_DATA_ST: 
                 out_din_data <= 8'h01;
 
             default : 
@@ -900,25 +952,49 @@ module axi_adxl345 #(
                 else 
                     out_wren <= 1'b0;
 
-            TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+            SEND_TAP_DATA_PTR_ST: 
                 if (~out_awfull)
                     out_wren <= 1'b1;
                 else 
                     out_wren <= 1'b0;
 
-            TX_READ_ACT_TAP_STATUS_ST: 
+            SEND_TAP_READ_DATA_ST: 
                 if (~out_awfull)
                     out_wren <= 1'b1;
                 else 
                     out_wren <= 1'b0;
 
-            TX_WRITE_ACT_TAP_DATA_PTR_ST: 
+            SEND_TAP_DATA_PTR_ST: 
                 if (~out_awfull)
                     out_wren <= 1'b1;
                 else 
                     out_wren <= 1'b0;
 
-            TX_READ_ACT_TAP_DATA_ST: 
+            SEND_TAP_READ_DATA_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+            SEND_ACT_STS_PTR_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+            SEND_ACT_STS_REQ_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+            SEND_ACT_DATA_PTR_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+            SEND_ACT_READ_DATA_ST: 
                 if (~out_awfull)
                     out_wren <= 1'b1;
                 else 
@@ -947,17 +1023,24 @@ module axi_adxl345 #(
             TX_SEND_INT_SOURCE_REQ_ST : 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
-            TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+            SEND_TAP_DATA_PTR_ST: 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_READ_ACT_TAP_STATUS_ST: 
+            SEND_TAP_READ_DATA_ST: 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
-            TX_WRITE_ACT_TAP_DATA_PTR_ST: 
+            SEND_ACT_STS_PTR_ST: 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_READ_ACT_TAP_DATA_ST: 
+            SEND_ACT_STS_REQ_ST: 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+            SEND_ACT_DATA_PTR_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+            SEND_ACT_READ_DATA_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
 
             default : 
                 out_din_user <= '{default:0};
@@ -998,7 +1081,7 @@ module axi_adxl345 #(
             TX_SEND_INT_SOURCE_REQ_ST : 
                 out_din_last <= 1'b1;
 
-            TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+            SEND_TAP_DATA_PTR_ST: 
                 case (write_cmd_word_cnt)
                     2'b01 : 
                         out_din_last <= 1'b1;
@@ -1006,10 +1089,10 @@ module axi_adxl345 #(
                         out_din_last <= 1'b0;
                 endcase // write_cmd_word_cnt
 
-            TX_READ_ACT_TAP_STATUS_ST: 
+            SEND_TAP_READ_DATA_ST: 
                 out_din_last <= 1'b1;
 
-            TX_WRITE_ACT_TAP_DATA_PTR_ST: 
+            SEND_ACT_STS_PTR_ST: 
                 case (write_cmd_word_cnt)
                     2'b01 : 
                         out_din_last <= 1'b1;
@@ -1017,7 +1100,18 @@ module axi_adxl345 #(
                         out_din_last <= 1'b0;
                 endcase // write_cmd_word_cnt
 
-            TX_READ_ACT_TAP_DATA_ST: 
+            SEND_ACT_STS_REQ_ST: 
+                out_din_last <= 1'b1;
+
+            SEND_ACT_DATA_PTR_ST: 
+                case (write_cmd_word_cnt)
+                    2'b01 : 
+                        out_din_last <= 1'b1;
+                    default : 
+                        out_din_last <= 1'b0;
+                endcase // write_cmd_word_cnt
+
+            SEND_ACT_READ_DATA_ST: 
                 out_din_last <= 1'b1;
 
 
@@ -1107,10 +1201,10 @@ module axi_adxl345 #(
 
     
 
-    always_comb begin : slv_reg_wren_cfg_processing  
-
+    always_comb begin 
         slv_reg_wren_cfg = axi_wready_cfg && S_AXI_LITE_CFG_WVALID && axi_awready_cfg && S_AXI_LITE_CFG_AWVALID;
     end
+
 
 
 
@@ -1184,8 +1278,7 @@ module axi_adxl345 #(
     end    
 
 
-    always_comb begin : slv_reg_rden_cfg_proc
-
+    always_comb begin 
         slv_reg_rden_cfg = axi_arready_cfg & S_AXI_LITE_CFG_ARVALID & ~axi_rvalid_cfg;
     end 
 
@@ -1491,6 +1584,14 @@ module axi_adxl345 #(
             else 
                 reset <= 1'b0;
     end 
+
+    // version 1.2 
+    // always_ff @(posedge CLK) begin : adxl_irq_proc
+    //     // if (enable)
+    //     ADXL_IRQ <= ADXL_INTERRUPT & allow_irq;
+    //     // else 
+    //         // ADXL_IRQ <= 1'b0;
+    // end 
 
 
     always_ff @(posedge CLK) begin 
