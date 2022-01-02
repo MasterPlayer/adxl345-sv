@@ -212,7 +212,7 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h07                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h08                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
