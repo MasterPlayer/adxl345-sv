@@ -723,7 +723,7 @@ module axi_adxl345 #(
 
                 SEND_ACT_READ_DATA_ST: 
                     if (~out_awfull)
-                        current_state <= AWAIT_ACT_STS_ST;
+                        current_state <= AWAIT_ACT_DATA_ST;
 
                 AWAIT_ACT_DATA_ST: 
                     if (S_AXIS_TVALID & S_AXIS_TLAST)
@@ -995,10 +995,10 @@ module axi_adxl345 #(
                     out_wren <= 1'b0;
 
             SEND_ACT_READ_DATA_ST: 
-                out_din_data <= 8'h01;
-
-
-
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
 
             default : 
                 out_wren <= 1'b0;
