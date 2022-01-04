@@ -216,7 +216,7 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h0A                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h0B                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
@@ -247,6 +247,7 @@ module axi_adxl345 #(
     logic has_dt_intr;
     logic has_act_intr;
     logic has_inact_intr;
+    logic has_ff_intr;
 
     always_comb begin : has_dataready_intr_proc
         if ((int_source_reg[7] & int_enable_reg[7]))
@@ -283,6 +284,14 @@ module axi_adxl345 #(
         else 
             has_inact_intr = 1'b0;
     end 
+
+    always_comb begin : has_ff_intr_proc
+        if (int_source_reg[2] & int_enable_reg[2])
+            has_ff_intr = 1'b1;
+        else 
+            has_ff_intr = 1'b0;
+    end 
+
 
     always_comb begin 
 
@@ -669,7 +678,7 @@ module axi_adxl345 #(
                     if (has_st_intr | has_dt_intr | has_act_intr | has_inact_intr)
                         current_state <= TX_WRITE_ACT_TAP_STATUS_PTR_ST;
                     else 
-                        if (has_dataready_intr)
+                        if (has_dataready_intr | has_ff_intr)
                             current_state <= TX_WRITE_INTR_DATA_PTR_ST;
                         else
                             current_state <= IDLE_ST;
