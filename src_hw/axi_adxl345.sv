@@ -225,7 +225,7 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h0C                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h0D                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
@@ -258,6 +258,7 @@ module axi_adxl345 #(
     logic has_inact_intr;
     logic has_ff_intr;
     logic has_wm_intr;
+    logic has_ovrrn_intr;
 
     logic [5:0] entries = '{default:0};
 
@@ -309,6 +310,13 @@ module axi_adxl345 #(
             has_wm_intr = 1'b1;
         else 
             has_wm_intr = 1'b0;
+    end 
+
+    always_comb begin : has_ovrrn_intr_proc
+        if (int_source_reg[0] & int_enable_reg[0])
+            has_ovrrn_intr = 1'b1;
+        else 
+            has_ovrrn_intr = 1'b0;
     end 
 
 
@@ -718,7 +726,7 @@ module axi_adxl345 #(
                         if (has_dataready_intr | has_ff_intr)
                             current_state <= TX_WRITE_INTR_DATA_PTR_ST;
                         else
-                            if (has_wm_intr)
+                            if (has_wm_intr | has_ovrrn_intr)
                                 current_state <= TX_WRITE_WM_FIFO_STS_PTR_ST;
                             else     
                                 current_state <= IDLE_ST;
@@ -787,8 +795,6 @@ module axi_adxl345 #(
                             current_state <= TX_WRITE_WM_DATA_PTR_ST;
                         end 
                     end  
-
-
 
                 CHECK_INTR_DEASSERT: 
                     if (ADXL_INTERRUPT) 
@@ -1424,7 +1430,7 @@ module axi_adxl345 #(
             8'h05    : reg_data_out_cfg <= write_transactions;
             8'h06    : reg_data_out_cfg <= read_transactions;
             8'h07    : reg_data_out_cfg <= CLK_PERIOD;
-            8'h08    : reg_data_out_cfg <= {24'h0, sample_address};
+            8'h08    : reg_data_out_cfg <= {23'h0, has_ovrrn_intr, sample_address};
             8'h09    : reg_data_out_cfg <= '{default:0}; // reserved
             8'h0a    : reg_data_out_cfg <= '{default:0}; // reserved
             8'h0b    : reg_data_out_cfg <= '{default:0}; // reserved
