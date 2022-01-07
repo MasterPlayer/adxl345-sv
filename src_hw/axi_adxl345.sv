@@ -1795,7 +1795,7 @@ module axi_adxl345 #(
         end else begin  
             case (current_state) 
                 RX_WM_DATA_ST: 
-                    if (S_AXIS_TVALID & has_wm_intr) begin 
+                    if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
                         sample_address <= sample_address + 1;
                     end 
 
@@ -1806,7 +1806,7 @@ module axi_adxl345 #(
     end 
 
     always_ff @(posedge CLK) begin 
-        if (S_AXIS_TVALID & has_wm_intr) begin 
+        if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
             register_samples[sample_address][7:0] <= S_AXIS_TDATA;
         end 
     end 
