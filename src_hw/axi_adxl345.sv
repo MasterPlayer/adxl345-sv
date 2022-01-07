@@ -78,8 +78,8 @@ module axi_adxl345 #(
 );
 
 
-    localparam INT_SOURCE_SINGLE_TAP = 8'h40;
-
+    localparam integer OPT_REQ_INTERVAL = (CLK_PERIOD/3200);
+    logic [31:0] opt_request_interval = '{default:0};
 
     logic [S_AXI_LITE_CFG_ADDR_WIDTH-1:0] axi_awaddr_cfg ;
     logic                                 axi_awready_cfg;
@@ -184,9 +184,9 @@ module axi_adxl345 #(
         TX_READ_REQUEST_ST              ,
         AWAIT_RECEIVE_DATA_ST           ,
 
-        TX_WRITE_INT_SOURCE_PTR_ST            ,
-        TX_READ_INT_SOURCE_ST       ,
-        RX_INT_SOURCE_ST     ,
+        TX_WRITE_INT_SOURCE_PTR_ST      ,
+        TX_READ_INT_SOURCE_ST           ,
+        RX_INT_SOURCE_ST                ,
         INT_PROCESSING_ST               ,
 
         TX_WRITE_ACT_TAP_STATUS_PTR_ST  , 
@@ -200,10 +200,10 @@ module axi_adxl345 #(
         // Watermark interrupt processing states 
         TX_WRITE_WM_FIFO_STS_PTR_ST     , 
         TX_READ_WM_FIFO_STS_ST          ,
-        RX_WM_FIFO_STS_ST                  ,
+        RX_WM_FIFO_STS_ST               ,
         TX_WRITE_WM_DATA_PTR_ST         , 
         TX_READ_WM_DATA_ST              ,
-        RX_WM_DATA_ST              ,
+        RX_WM_DATA_ST                   ,
 
         CHECK_INTR_DEASSERT               // 
         
@@ -225,7 +225,7 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h0D                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h0E                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
@@ -321,9 +321,48 @@ module axi_adxl345 #(
 
 
     always_comb begin 
-
         int_enable_reg = register[11][2];
     end 
+
+    always_ff @(posedge CLK) begin : opt_request_interval_proc 
+        case (register[11][0][7:0]) 
+            8'h0F : 
+                opt_request_interval <= OPT_REQ_INTERVAL;
+            8'h0E :
+                opt_request_interval <= (OPT_REQ_INTERVAL<<1); 
+            8'h0D :
+                opt_request_interval <= (OPT_REQ_INTERVAL<<2); 
+            8'h0C : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<3);
+            8'h0B : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<4);
+            8'h0A : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<5);
+            8'h09 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<6);
+            8'h08 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<7);
+            8'h07 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<8);
+            8'h06 :
+                opt_request_interval <= (OPT_REQ_INTERVAL<<9);
+            8'h05 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<10);
+            8'h04 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<11);
+            8'h03 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<12);
+            8'h02 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<13);
+            8'h01 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<14);
+            8'h00 : 
+                opt_request_interval <= (OPT_REQ_INTERVAL<<15);
+            default :
+                opt_request_interval <= (OPT_REQ_INTERVAL);
+        endcase // register[11][0][7:0]
+    end 
+
 
     always_comb begin
         S_AXI_LITE_DEV_AWREADY = axi_dev_awready;
@@ -1431,7 +1470,7 @@ module axi_adxl345 #(
             8'h06    : reg_data_out_cfg <= read_transactions;
             8'h07    : reg_data_out_cfg <= CLK_PERIOD;
             8'h08    : reg_data_out_cfg <= {23'h0, has_ovrrn_intr, sample_address};
-            8'h09    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h09    : reg_data_out_cfg <= opt_request_interval;
             8'h0a    : reg_data_out_cfg <= '{default:0}; // reserved
             8'h0b    : reg_data_out_cfg <= '{default:0}; // reserved
             8'h0c    : reg_data_out_cfg <= '{default:0}; // reserved
