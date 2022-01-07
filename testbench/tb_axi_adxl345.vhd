@@ -22,9 +22,9 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
     constant  S_AXI_LITE_DEV_DATA_WIDTH   :           integer                         := 32                           ;
     constant  S_AXI_LITE_DEV_ADDR_WIDTH   :           integer                         := 6                            ;
     constant  DEFAULT_DEVICE_ADDRESS      :           std_Logic_vector ( 6 downto 0 ) := "1010011"                    ;
-    constant  DEFAULT_REQUEST_INTERVAL    :           integer                         :=  1000                        ;
-    constant  S_AXI_LITE_CFG_DATA_WIDTH   :           integer                         :=  32                          ;
-    constant  S_AXI_LITE_CFG_ADDR_WIDTH   :           integer                         := 6                            ;
+    constant  DEFAULT_REQUEST_INTERVAL    :           integer                         := 1000                         ;
+    constant  S_AXI_LITE_CFG_DATA_WIDTH   :           integer                         := 32                           ;
+    constant  S_AXI_LITE_CFG_ADDR_WIDTH   :           integer                         := 8                            ;
     constant  CLK_PERIOD                  :           integer                         := 100000000                    ;
 
    
@@ -172,14 +172,14 @@ begin
             DEFAULT_DEVICE_ADDRESS      =>  "1010011"                           ,
             DEFAULT_REQUEST_INTERVAL    =>  1000                                ,
             S_AXI_LITE_CFG_DATA_WIDTH   =>  32                                  ,
-            S_AXI_LITE_CFG_ADDR_WIDTH   =>  6                                   ,
+            S_AXI_LITE_CFG_ADDR_WIDTH   =>  8                                   ,
             CLK_PERIOD                  =>  100000000                           ,
             RESET_DURATION              =>  50                                 
         )
         port map (
             CLK                         =>  CLK                                 ,
             RESETN                      =>  not(RESET)                          ,
-            S_AXI_LITE_CFG_AWADDR       =>  awaddr( 5 downto 0 )                ,
+            S_AXI_LITE_CFG_AWADDR       =>  awaddr                              ,
             S_AXI_LITE_CFG_AWPROT       =>  awprot                              ,
             S_AXI_LITE_CFG_AWVALID      =>  awvalid                             ,
             S_AXI_LITE_CFG_AWREADY      =>  awready                             ,
@@ -190,7 +190,7 @@ begin
             S_AXI_LITE_CFG_BRESP        =>  bresp                               ,
             S_AXI_LITE_CFG_BVALID       =>  bvalid                              ,
             S_AXI_LITE_CFG_BREADY       =>  bready                              ,
-            S_AXI_LITE_CFG_ARADDR       =>  araddr( 5 downto 0 )                ,
+            S_AXI_LITE_CFG_ARADDR       =>  araddr                              ,
             S_AXI_LITE_CFG_ARPROT       =>  arprot                              ,
             S_AXI_LITE_CFG_ARVALID      =>  arvalid                             ,
             S_AXI_LITE_CFG_ARREADY      =>  arready                             ,
@@ -241,17 +241,41 @@ begin
         if CLK'event aND CLK = '1' then 
             case i is 
 
-                when 1100   => S_AXIS_TDATA <= x"80"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+                when 1100   => S_AXIS_TDATA <= x"02"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+
+                when 1400   => S_AXIS_TDATA <= x"04"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
 
                 --when 1500   => S_AXIS_TDATA <= x"10"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
 
 
-                when 2000   => S_AXIS_TDATA <= x"12"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
-                when 2100   => S_AXIS_TDATA <= x"23"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
-                when 2200   => S_AXIS_TDATA <= x"34"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
-                when 2300   => S_AXIS_TDATA <= x"45"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
-                when 2400   => S_AXIS_TDATA <= x"56"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
-                when 2500   => S_AXIS_TDATA <= x"67"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+                when 2000   => S_AXIS_TDATA <= x"FF"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2100   => S_AXIS_TDATA <= x"FE"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2200   => S_AXIS_TDATA <= x"FC"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2300   => S_AXIS_TDATA <= x"FB"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2400   => S_AXIS_TDATA <= x"FA"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 2500   => S_AXIS_TDATA <= x"F9"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+
+                when 3000   => S_AXIS_TDATA <= x"F9"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 3100   => S_AXIS_TDATA <= x"F8"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 3200   => S_AXIS_TDATA <= x"F7"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 3300   => S_AXIS_TDATA <= x"F6"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 3400   => S_AXIS_TDATA <= x"F5"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 3500   => S_AXIS_TDATA <= x"F4"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+
+                when 4000   => S_AXIS_TDATA <= x"F3"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 4100   => S_AXIS_TDATA <= x"F2"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 4200   => S_AXIS_TDATA <= x"F1"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 4300   => S_AXIS_TDATA <= x"F0"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 4400   => S_AXIS_TDATA <= x"EF"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 4500   => S_AXIS_TDATA <= x"Ee"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+                
+                when 5000   => S_AXIS_TDATA <= x"Ed"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 5100   => S_AXIS_TDATA <= x"Ec"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 5200   => S_AXIS_TDATA <= x"Eb"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 5300   => S_AXIS_TDATA <= x"Ea"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 5400   => S_AXIS_TDATA <= x"E9"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '0';
+                when 5500   => S_AXIS_TDATA <= x"E8"; S_AXIS_TKEEP <= "1"; S_AXIS_TUSER <= x"A7"; S_AXIS_TVALID <= '1'; S_AXIS_TLAST <= '1';
+
 
                 when others => S_AXIS_TDATA <= S_AXIS_TDATA; S_AXIS_TKEEP <= S_AXIS_TKEEP; S_AXIS_TUSER <= S_AXIS_TUSER; S_AXIS_TVALID <= '0'; S_AXIS_TLAST <= S_AXIS_TLAST;
 
@@ -269,10 +293,9 @@ begin
                 when 201   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
                 when 202   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
 
-                when 4000  => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                when 4001  => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
-                when 4002  => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00005304"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
-
+                when 6800   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005314"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                when 6801   => awaddr <= x"00"; awprot <= "000"; awvalid <= '1'; wdata <= x"00005314"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
+                when 6802   => awaddr <= x"00"; awprot <= "000"; awvalid <= '0'; wdata <= x"00005314"; wstrb <= x"F"; wvalid <= '0'; bready <= '1';
 
                 --when 210   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
                 --when 211   => awaddr <= x"04"; awprot <= "000"; awvalid <= '1'; wdata <= x"00000010"; wstrb <= x"F"; wvalid <= '1'; bready <= '1';
@@ -293,9 +316,9 @@ begin
         if CLK'event AND CLK = '1' then 
             case i is 
 
-                when 200   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when 201   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when 202   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+                when 200   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF02FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 201   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF02FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when 202   => DEV_AWADDR <= x"2E"; DEV_AWPROT <= "000"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF02FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
                 --when 510   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
                 --when 511   => DEV_AWADDR <= x"1F"; DEV_AWPROT <= "000"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"8"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
@@ -327,9 +350,26 @@ begin
     begin
         if CLK'event AND CLK = '1' then 
             case i is 
-                --when 300   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                --when 301   => araddr <= x"00"; arprot <= "000"; arvalid <= '1'; rready <= '1';
-                --when 302   => araddr <= x"00"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+                --when 6000   => araddr <= x"20"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 6001   => araddr <= x"20"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 6002   => araddr <= x"20"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+
+                --when 7000   => araddr <= x"40"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 7001   => araddr <= x"40"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 7002   => araddr <= x"40"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+
+                --when 7010   => araddr <= x"44"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 7011   => araddr <= x"44"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 7012   => araddr <= x"44"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+
+                --when 7020   => araddr <= x"48"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 7021   => araddr <= x"48"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 7022   => araddr <= x"48"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+
+                --when 7030   => araddr <= x"4C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 7031   => araddr <= x"4C"; arprot <= "000"; arvalid <= '1'; rready <= '1';
+                --when 7032   => araddr <= x"4C"; arprot <= "000"; arvalid <= '0'; rready <= '1';
+
 
                 --when 310   => araddr <= x"04"; arprot <= "000"; arvalid <= '1'; rready <= '1';
                 --when 311   => araddr <= x"04"; arprot <= "000"; arvalid <= '1'; rready <= '1';
@@ -374,6 +414,7 @@ begin
         if CLK'event aND CLK = '1' then 
             case i is
                 when 1000   => ADXL_INTERRUPT <= '1'; 
+                when 5300   => ADXL_INTERRUPT <= '0';
                 --when 2500   => ADXL_INTERRUPT <= '0';
                 when others => ADXL_INTERRUPT <= ADXL_INTERRUPT;
 
