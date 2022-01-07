@@ -8,7 +8,7 @@ module axi_adxl345 #(
     parameter         [6:0] DEFAULT_DEVICE_ADDRESS    = 7'h53    ,
     parameter integer       DEFAULT_REQUEST_INTERVAL  = 1000     ,
     parameter integer       S_AXI_LITE_CFG_DATA_WIDTH = 32       ,
-    parameter integer       S_AXI_LITE_CFG_ADDR_WIDTH = 6        ,
+    parameter integer       S_AXI_LITE_CFG_ADDR_WIDTH = 8        ,
     parameter integer       CLK_PERIOD                = 100000000,
     parameter integer       RESET_DURATION            = 1000
 ) (
@@ -104,12 +104,12 @@ module axi_adxl345 #(
     logic                                 axi_dev_rvalid ;
 
     localparam integer    ADDR_LSB_CFG          = (S_AXI_LITE_CFG_DATA_WIDTH/32) + 1;
-    localparam integer    OPT_MEM_ADDR_BITS_CFG = 2                                 ;
+    localparam integer    OPT_MEM_ADDR_BITS_CFG = 5                                 ;
     localparam integer    ADDR_LSB_DEV          = (S_AXI_LITE_DEV_DATA_WIDTH/32) + 1;
     localparam integer    OPT_MEM_ADDR_BITS_DEV = 3                                 ;
     localparam integer    DATA_WIDTH            = 8                                 ;
     localparam integer    USER_WIDTH            = 8                                 ;
-    localparam ADDRESS_LIMIT         = 'h39                              ;
+    localparam ADDRESS_LIMIT                    = 'h3A                              ;
 
     // logic [0:15][S_AXI_LITE_DEV_DATA_WIDTH-1:0] register = '{default:'{default:0}}   ;
     logic [0:15][(S_AXI_LITE_DEV_DATA_WIDTH/8)-1:0][7:0] register = '{default:'{default:'{default:0}}}   ;
@@ -162,12 +162,13 @@ module axi_adxl345 #(
     logic update_request = 1'b0;
 
 
-    logic [7:0][S_AXI_LITE_CFG_DATA_WIDTH-1:0] register_cfg = '{default:'{default:0}}   ;
-
-    logic                                 slv_reg_rden_cfg;
-    logic                                 slv_reg_wren_cfg;
-    logic [S_AXI_LITE_CFG_DATA_WIDTH-1:0] reg_data_out_cfg;
-    logic                                 aw_en_cfg       ;
+    logic [                         15:0][S_AXI_LITE_CFG_DATA_WIDTH-1:0] register_cfg     = '{default:'{default:0}};
+    logic [                        191:0][                          7:0] register_samples = '{default:'{default:0}};
+    logic [                          7:0]                                sample_address   = '{default:0}           ;
+    logic                                                                slv_reg_rden_cfg                          ;
+    logic                                                                slv_reg_wren_cfg                          ;
+    logic [S_AXI_LITE_CFG_DATA_WIDTH-1:0]                                reg_data_out_cfg                          ;
+    logic                                                                aw_en_cfg                                 ;
 
     integer byte_index_cfg;
 
@@ -183,9 +184,9 @@ module axi_adxl345 #(
         TX_READ_REQUEST_ST              ,
         AWAIT_RECEIVE_DATA_ST           ,
 
-        TX_INT_SOURCE_PTR_ST            ,
-        TX_SEND_INT_SOURCE_REQ_ST       ,
-        RX_INT_SOURCE_AWAIT_DATA_ST     ,
+        TX_WRITE_INT_SOURCE_PTR_ST            ,
+        TX_READ_INT_SOURCE_ST       ,
+        RX_INT_SOURCE_ST     ,
         INT_PROCESSING_ST               ,
 
         TX_WRITE_ACT_TAP_STATUS_PTR_ST  , 
@@ -195,6 +196,14 @@ module axi_adxl345 #(
         TX_WRITE_INTR_DATA_PTR_ST       ,
         TX_READ_INTR_DATA_ST            ,
         RX_INTR_DATA_ST                 ,
+
+        // Watermark interrupt processing states 
+        TX_WRITE_WM_FIFO_STS_PTR_ST     , 
+        TX_READ_WM_FIFO_STS_ST          ,
+        RX_WM_FIFO_STS_ST                  ,
+        TX_WRITE_WM_DATA_PTR_ST         , 
+        TX_READ_WM_DATA_ST              ,
+        RX_WM_DATA_ST              ,
 
         CHECK_INTR_DEASSERT               // 
         
@@ -216,7 +225,7 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h0B                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h0C                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
@@ -248,6 +257,9 @@ module axi_adxl345 #(
     logic has_act_intr;
     logic has_inact_intr;
     logic has_ff_intr;
+    logic has_wm_intr;
+
+    logic [5:0] entries = '{default:0};
 
     always_comb begin : has_dataready_intr_proc
         if ((int_source_reg[7] & int_enable_reg[7]))
@@ -290,6 +302,13 @@ module axi_adxl345 #(
             has_ff_intr = 1'b1;
         else 
             has_ff_intr = 1'b0;
+    end 
+
+    always_comb begin : has_wm_intr_proc
+        if (int_source_reg[1] & int_enable_reg[1])
+            has_wm_intr = 1'b1;
+        else 
+            has_wm_intr = 1'b0;
     end 
 
 
@@ -398,7 +417,7 @@ module axi_adxl345 #(
                                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
                                         end 
                             
-                            RX_INT_SOURCE_AWAIT_DATA_ST : 
+                            RX_INT_SOURCE_ST : 
                                 if (S_AXIS_TVALID) 
                                     if (address[5:2] == reg_index)
                                         for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
@@ -421,6 +440,23 @@ module axi_adxl345 #(
                                             if (byte_index == address[1:0])
                                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
                                         end 
+
+                            RX_WM_FIFO_STS_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
+
+                            RX_WM_DATA_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
+
 
                             default: 
                                 register <= register;
@@ -574,7 +610,7 @@ module axi_adxl345 #(
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
                 
-                TX_INT_SOURCE_PTR_ST: 
+                TX_WRITE_INT_SOURCE_PTR_ST: 
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
@@ -582,17 +618,18 @@ module axi_adxl345 #(
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_READ_ACT_TAP_STATUS_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
-
                 TX_WRITE_INTR_DATA_PTR_ST: 
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_READ_INTR_DATA_ST: 
+                TX_WRITE_WM_FIFO_STS_PTR_ST: 
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+
+                TX_WRITE_WM_DATA_PTR_ST: 
+                    if (~out_awfull)
+                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+
 
                 default : 
                     write_cmd_word_cnt <= 1'b0;
@@ -609,7 +646,7 @@ module axi_adxl345 #(
                 IDLE_ST : 
                     if (ADXL_INTERRUPT & allow_irq) begin 
                     // if (ADXL_INTERRUPT) begin 
-                        current_state <= TX_INT_SOURCE_PTR_ST;
+                        current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
                     end else begin 
                         if (update_request) begin 
                             current_state <= CHK_UPD_NEEDED_ST;
@@ -659,18 +696,18 @@ module axi_adxl345 #(
                     else 
                         current_state <= current_state;
 
-                TX_INT_SOURCE_PTR_ST : 
+                TX_WRITE_INT_SOURCE_PTR_ST : 
                     if (~out_awfull) begin 
                         if (write_cmd_word_cnt == 2'b01) 
-                            current_state <= TX_SEND_INT_SOURCE_REQ_ST;
+                            current_state <= TX_READ_INT_SOURCE_ST;
                     end 
 
-                TX_SEND_INT_SOURCE_REQ_ST : 
+                TX_READ_INT_SOURCE_ST : 
                     if (~out_awfull) 
-                        current_state <= RX_INT_SOURCE_AWAIT_DATA_ST;
+                        current_state <= RX_INT_SOURCE_ST;
 
 
-                RX_INT_SOURCE_AWAIT_DATA_ST : 
+                RX_INT_SOURCE_ST : 
                     if (S_AXIS_TVALID & S_AXIS_TLAST)
                         current_state <= INT_PROCESSING_ST;
 
@@ -681,7 +718,10 @@ module axi_adxl345 #(
                         if (has_dataready_intr | has_ff_intr)
                             current_state <= TX_WRITE_INTR_DATA_PTR_ST;
                         else
-                            current_state <= IDLE_ST;
+                            if (has_wm_intr)
+                                current_state <= TX_WRITE_WM_FIFO_STS_PTR_ST;
+                            else     
+                                current_state <= IDLE_ST;
 
                 // SINGLE/DOUBLE TAP interrupt processsing states
 
@@ -714,8 +754,44 @@ module axi_adxl345 #(
                         current_state <= CHECK_INTR_DEASSERT;
 
 
+
+                TX_WRITE_WM_FIFO_STS_PTR_ST : 
+                    if (~out_awfull) begin
+                        if (write_cmd_word_cnt == 2'b01) 
+                            current_state <= TX_READ_WM_FIFO_STS_ST;
+                    end  
+
+                TX_READ_WM_FIFO_STS_ST : 
+                    if (~out_awfull) 
+                        current_state <= RX_WM_FIFO_STS_ST;
+
+                RX_WM_FIFO_STS_ST : 
+                    if (S_AXIS_TVALID & S_AXIS_TLAST)
+                        current_state <= TX_WRITE_WM_DATA_PTR_ST;
+
+                TX_WRITE_WM_DATA_PTR_ST : 
+                    if (~out_awfull) begin
+                        if (write_cmd_word_cnt == 2'b01) 
+                            current_state <= TX_READ_WM_DATA_ST;
+                    end
+
+                TX_READ_WM_DATA_ST : 
+                    if (~out_awfull) 
+                        current_state <= RX_WM_DATA_ST;
+
+                RX_WM_DATA_ST : 
+                    if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
+                        if (!entries) begin 
+                            current_state <= CHECK_INTR_DEASSERT;
+                        end else begin 
+                            current_state <= TX_WRITE_WM_DATA_PTR_ST;
+                        end 
+                    end  
+
+
+
                 CHECK_INTR_DEASSERT: 
-                    if (ADXL_INTERRUPT)  
+                    if (ADXL_INTERRUPT) 
                         current_state <= INT_PROCESSING_ST;
                     else 
                         current_state <= IDLE_ST;
@@ -743,7 +819,7 @@ module axi_adxl345 #(
                     if (S_AXIS_TVALID)
                         address <= address + 1;
 
-                TX_SEND_INT_SOURCE_REQ_ST : 
+                TX_READ_INT_SOURCE_ST : 
                     address <= 8'h30;
 
                 TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
@@ -752,10 +828,20 @@ module axi_adxl345 #(
                 TX_WRITE_INTR_DATA_PTR_ST: 
                     address <= 8'h32;
 
+                TX_WRITE_WM_FIFO_STS_PTR_ST:
+                    address <= 8'h39;
+
                 RX_INTR_DATA_ST: 
                     if (S_AXIS_TVALID)
                         address <= address + 1;
-                    
+
+                TX_WRITE_WM_DATA_PTR_ST: 
+                    address <= 8'h32;
+
+                RX_WM_DATA_ST: 
+                    if (S_AXIS_TVALID)
+                        address <= address + 1;
+
                 default : 
                     address <= address;
 
@@ -851,14 +937,14 @@ module axi_adxl345 #(
             TX_READ_REQUEST_ST : 
                 out_din_data <= ADDRESS_LIMIT;
 
-            TX_INT_SOURCE_PTR_ST:
+            TX_WRITE_INT_SOURCE_PTR_ST:
                 case (write_cmd_word_cnt)
                     2'b00 : out_din_data <= 8'h01;
                     2'b01 : out_din_data <= 8'h30;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
-            TX_SEND_INT_SOURCE_REQ_ST: 
+            TX_READ_INT_SOURCE_ST: 
                 out_din_data <= 8'h01;
 
 
@@ -883,6 +969,30 @@ module axi_adxl345 #(
 
             TX_READ_INTR_DATA_ST: 
                 out_din_data <= 8'h06;
+
+
+            TX_WRITE_WM_FIFO_STS_PTR_ST: 
+                case (write_cmd_word_cnt)
+                    2'b00 : out_din_data <= 8'h01;
+                    2'b01 : out_din_data <= 8'h39;
+                    default : out_din_data <= out_din_data;
+                endcase // write_cmd_word_cnt
+
+            TX_READ_WM_FIFO_STS_ST: 
+                out_din_data <= 8'h01;
+
+
+            TX_WRITE_WM_DATA_PTR_ST: 
+                case (write_cmd_word_cnt)
+                    2'b00 : out_din_data <= 8'h01;
+                    2'b01 : out_din_data <= 8'h32;
+                    default : out_din_data <= out_din_data;
+                endcase // write_cmd_word_cnt
+
+            TX_READ_WM_DATA_ST: 
+                out_din_data <= 8'h06;
+
+
 
             default : 
                 out_din_data <= out_din_data;
@@ -910,13 +1020,13 @@ module axi_adxl345 #(
                 else 
                     out_wren <= 1'b0;
 
-            TX_INT_SOURCE_PTR_ST: 
+            TX_WRITE_INT_SOURCE_PTR_ST: 
                 if (~out_awfull)
                     out_wren <= 1'b1;
                 else 
                     out_wren <= 1'b0;
 
-            TX_SEND_INT_SOURCE_REQ_ST:
+            TX_READ_INT_SOURCE_ST:
                 if (~out_awfull)
                     out_wren <= 1'b1;
                 else 
@@ -945,6 +1055,35 @@ module axi_adxl345 #(
                     out_wren <= 1'b1;
                 else 
                     out_wren <= 1'b0;
+
+
+
+            TX_WRITE_WM_FIFO_STS_PTR_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+            TX_READ_WM_FIFO_STS_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+
+            TX_WRITE_WM_DATA_PTR_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+            TX_READ_WM_DATA_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+
 
             default : 
                 out_wren <= 1'b0;
@@ -963,10 +1102,10 @@ module axi_adxl345 #(
             TX_SEND_ADDR_PTR : 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_INT_SOURCE_PTR_ST: 
+            TX_WRITE_INT_SOURCE_PTR_ST: 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_SEND_INT_SOURCE_REQ_ST : 
+            TX_READ_INT_SOURCE_ST : 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
             TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
@@ -980,6 +1119,22 @@ module axi_adxl345 #(
 
             TX_READ_INTR_DATA_ST: 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+
+
+            TX_WRITE_WM_FIFO_STS_PTR_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+            TX_READ_WM_FIFO_STS_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+            TX_WRITE_WM_DATA_PTR_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+            TX_READ_WM_DATA_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+
 
             default : 
                 out_din_user <= '{default:0};
@@ -1009,7 +1164,7 @@ module axi_adxl345 #(
                         out_din_last <= 1'b0;
                 endcase // write_cmd_word_cnt
 
-            TX_INT_SOURCE_PTR_ST : 
+            TX_WRITE_INT_SOURCE_PTR_ST : 
                 case (write_cmd_word_cnt)
                     2'b01 : 
                         out_din_last <= 1'b1;
@@ -1017,7 +1172,7 @@ module axi_adxl345 #(
                         out_din_last <= 1'b0;
                 endcase // write_cmd_word_cnt
 
-            TX_SEND_INT_SOURCE_REQ_ST : 
+            TX_READ_INT_SOURCE_ST : 
                 out_din_last <= 1'b1;
 
             TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
@@ -1043,6 +1198,29 @@ module axi_adxl345 #(
                 out_din_last <= 1'b1;
 
 
+
+            TX_WRITE_WM_FIFO_STS_PTR_ST: 
+                case (write_cmd_word_cnt)
+                    2'b01 : 
+                        out_din_last <= 1'b1;
+                    default : 
+                        out_din_last <= 1'b0;
+                endcase // write_cmd_word_cnt
+
+            TX_READ_WM_FIFO_STS_ST: 
+                out_din_last <= 1'b1;
+
+            TX_WRITE_WM_DATA_PTR_ST: 
+                case (write_cmd_word_cnt)
+                    2'b01 : 
+                        out_din_last <= 1'b1;
+                    default : 
+                        out_din_last <= 1'b0;
+                endcase // write_cmd_word_cnt
+
+            TX_READ_WM_DATA_ST: 
+                out_din_last <= 1'b1;
+
             default : 
                 out_din_last <= 1'b0;
 
@@ -1067,7 +1245,7 @@ module axi_adxl345 #(
     always_ff @(posedge CLK) begin : int_source_reg_proc
         case (current_state)
 
-            RX_INT_SOURCE_AWAIT_DATA_ST : 
+            RX_INT_SOURCE_ST : 
                 if (S_AXIS_TVALID)
                     int_source_reg <= S_AXIS_TDATA;
 
@@ -1211,9 +1389,20 @@ module axi_adxl345 #(
         slv_reg_rden_cfg = axi_arready_cfg & S_AXI_LITE_CFG_ARVALID & ~axi_rvalid_cfg;
     end 
 
+    logic [47:0][31:0] register_file;
+
+    generate 
+        for (genvar rf_idx = 0; rf_idx < 48; rf_idx++) begin 
+            always_comb begin 
+                register_file[rf_idx][31:0] = {register_samples[(rf_idx*4)+3], register_samples[(rf_idx*4)+2], register_samples[(rf_idx*4)+1], register_samples[rf_idx*4]};
+            end 
+        end   
+    endgenerate
+
+
     always @(*) begin
         case ( axi_araddr_cfg[ADDR_LSB_CFG+OPT_MEM_ADDR_BITS_CFG:ADDR_LSB_CFG] )
-            4'h0 : reg_data_out_cfg <= {
+            8'h00 : reg_data_out_cfg <= {
                 version_major,
                 version_minor,
                 link_on,
@@ -1228,13 +1417,71 @@ module axi_adxl345 #(
                 reset 
             };
 
-            4'h1    : reg_data_out_cfg <= request_interval;
-            4'h2    : reg_data_out_cfg <= DATA_WIDTH;
-            4'h3    : reg_data_out_cfg <= read_valid_reg;
-            4'h4    : reg_data_out_cfg <= write_valid_reg;
-            4'h5    : reg_data_out_cfg <= write_transactions;
-            4'h6    : reg_data_out_cfg <= read_transactions;
-            4'h7    : reg_data_out_cfg <= CLK_PERIOD;
+            8'h01    : reg_data_out_cfg <= request_interval;
+            8'h02    : reg_data_out_cfg <= DATA_WIDTH;
+            8'h03    : reg_data_out_cfg <= read_valid_reg;
+            8'h04    : reg_data_out_cfg <= write_valid_reg;
+            8'h05    : reg_data_out_cfg <= write_transactions;
+            8'h06    : reg_data_out_cfg <= read_transactions;
+            8'h07    : reg_data_out_cfg <= CLK_PERIOD;
+            8'h08    : reg_data_out_cfg <= {24'h0, sample_address};
+            8'h09    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0a    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0b    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0c    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0d    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0e    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0f    : reg_data_out_cfg <= '{default:0}; // reserved
+
+            8'h10    : reg_data_out_cfg <= register_file[0][31:0];
+            8'h11    : reg_data_out_cfg <= register_file[1][31:0];
+            8'h12    : reg_data_out_cfg <= register_file[2][31:0];
+            8'h13    : reg_data_out_cfg <= register_file[3][31:0];
+            8'h14    : reg_data_out_cfg <= register_file[4][31:0];
+            8'h15    : reg_data_out_cfg <= register_file[5][31:0];
+            8'h16    : reg_data_out_cfg <= register_file[6][31:0];
+            8'h17    : reg_data_out_cfg <= register_file[7][31:0];
+            8'h18    : reg_data_out_cfg <= register_file[8][31:0];
+            8'h19    : reg_data_out_cfg <= register_file[9][31:0];
+            8'h1a    : reg_data_out_cfg <= register_file[10][31:0];
+            8'h1b    : reg_data_out_cfg <= register_file[11][31:0];
+            8'h1c    : reg_data_out_cfg <= register_file[12][31:0];
+            8'h1d    : reg_data_out_cfg <= register_file[13][31:0];
+            8'h1e    : reg_data_out_cfg <= register_file[14][31:0];
+            8'h1f    : reg_data_out_cfg <= register_file[15][31:0];
+            8'h20    : reg_data_out_cfg <= register_file[16][31:0];
+            8'h21    : reg_data_out_cfg <= register_file[17][31:0];
+            8'h22    : reg_data_out_cfg <= register_file[18][31:0];
+            8'h23    : reg_data_out_cfg <= register_file[19][31:0];
+            8'h24    : reg_data_out_cfg <= register_file[20][31:0];
+            8'h25    : reg_data_out_cfg <= register_file[21][31:0];
+            8'h26    : reg_data_out_cfg <= register_file[22][31:0];
+            8'h27    : reg_data_out_cfg <= register_file[23][31:0];
+            8'h28    : reg_data_out_cfg <= register_file[24][31:0];
+            8'h29    : reg_data_out_cfg <= register_file[25][31:0];
+            8'h2a    : reg_data_out_cfg <= register_file[26][31:0];
+            8'h2b    : reg_data_out_cfg <= register_file[27][31:0];
+            8'h2c    : reg_data_out_cfg <= register_file[28][31:0];
+            8'h2d    : reg_data_out_cfg <= register_file[29][31:0];
+            8'h2e    : reg_data_out_cfg <= register_file[30][31:0];
+            8'h2f    : reg_data_out_cfg <= register_file[31][31:0];
+            8'h30    : reg_data_out_cfg <= register_file[32][31:0];
+            8'h31    : reg_data_out_cfg <= register_file[33][31:0];
+            8'h32    : reg_data_out_cfg <= register_file[34][31:0];
+            8'h33    : reg_data_out_cfg <= register_file[35][31:0];
+            8'h34    : reg_data_out_cfg <= register_file[36][31:0];
+            8'h35    : reg_data_out_cfg <= register_file[37][31:0];
+            8'h36    : reg_data_out_cfg <= register_file[38][31:0];
+            8'h37    : reg_data_out_cfg <= register_file[39][31:0];
+            8'h38    : reg_data_out_cfg <= register_file[40][31:0];
+            8'h39    : reg_data_out_cfg <= register_file[41][31:0];
+            8'h3a    : reg_data_out_cfg <= register_file[42][31:0];
+            8'h3b    : reg_data_out_cfg <= register_file[43][31:0];
+            8'h3c    : reg_data_out_cfg <= register_file[44][31:0];
+            8'h3d    : reg_data_out_cfg <= register_file[45][31:0];
+            8'h3e    : reg_data_out_cfg <= register_file[46][31:0];
+            8'h3f    : reg_data_out_cfg <= register_file[47][31:0];
+
             default : reg_data_out_cfg <= 0;
         endcase
     end
@@ -1523,11 +1770,10 @@ module axi_adxl345 #(
                 case (current_state) 
 
                     CHECK_INTR_DEASSERT: 
-                        if (ADXL_INTERRUPT) begin 
+                        if (ADXL_INTERRUPT) 
                             ADXL_IRQ <= 1'b0;
-                        end else begin 
+                        else 
                             ADXL_IRQ <= 1'b1;
-                        end 
 
                 default : 
                     ADXL_IRQ <= ADXL_IRQ;
@@ -1536,5 +1782,44 @@ module axi_adxl345 #(
         end 
     end 
 
+
+    always_ff @(posedge CLK) begin 
+        if (~RESETN | reset | intr_ack) begin 
+            sample_address <= '{default:0};
+        end else begin  
+            case (current_state) 
+                RX_WM_DATA_ST: 
+                    if (S_AXIS_TVALID & has_wm_intr) begin 
+                        sample_address <= sample_address + 1;
+                    end 
+
+                default: 
+                    sample_address <= sample_address;
+            endcase // current_state;
+        end 
+    end 
+
+    always_ff @(posedge CLK) begin 
+        if (S_AXIS_TVALID & has_wm_intr) begin 
+            register_samples[sample_address][7:0] <= S_AXIS_TDATA;
+        end 
+    end 
+
+
+    always_ff @(posedge CLK) begin : entries_proc
+        case (current_state)
+            RX_WM_FIFO_STS_ST : 
+                if (S_AXIS_TVALID) 
+                    entries <= S_AXIS_TDATA[5:0];
+
+            TX_READ_WM_DATA_ST : 
+                if (~out_awfull)
+                    entries <= entries - 1;
+
+            default: 
+                entries <= entries;
+
+        endcase // current_state
+    end 
 
 endmodule
