@@ -7,6 +7,7 @@ module axi_adxl345 #(
     parameter integer       S_AXI_LITE_DEV_ADDR_WIDTH = 6        ,
     parameter         [6:0] DEFAULT_DEVICE_ADDRESS    = 7'h53    ,
     parameter integer       DEFAULT_REQUEST_INTERVAL  = 1000     ,
+    parameter integer       DEFAULT_CALIBRATION_LIMIT = 8        ,
     parameter integer       S_AXI_LITE_CFG_DATA_WIDTH = 32       ,
     parameter integer       S_AXI_LITE_CFG_ADDR_WIDTH = 8        ,
     parameter integer       CLK_PERIOD                = 100000000,
@@ -205,14 +206,24 @@ module axi_adxl345 #(
         TX_READ_WM_DATA_ST              ,
         RX_WM_DATA_ST                   ,
 
-        CHECK_INTR_DEASSERT               // 
-        
+        CHECK_INTR_DEASSERT             ,  // 
+
+        AWAIT_CALIB_TIMER_ST            ,
+        TX_WRITE_CALIB_DATA_PTR_ST      , 
+        TX_READ_CALIB_DATA_ST           , 
+        RX_CALIB_DATA_ST                , 
+        ADD_CALIB_CALC_ST               ,
+        AVG_CALIB_CALC_ST               , 
+        OFFSET_CALIB_CALC_ST            ,
+        OFFSET_LSB_CALIB_CALC_ST        ,
+        TX_WRITE_CALIB_OFS_ST           ,
+        STUB_ST 
 
     } fsm;
 
     fsm         current_state      = IDLE_ST     ;
     logic [5:0] address            = '{default:0};
-    logic [1:0] write_cmd_word_cnt = '{default:0};
+    logic [3:0] write_cmd_word_cnt = '{default:0};
 
     logic [31:0] request_timer = '{default:0};
 
@@ -224,10 +235,11 @@ module axi_adxl345 #(
     logic                      out_full                   ;
     logic                      out_awfull                 ;
 
-    logic [                         7:0] version_major        = 8'h01                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h0E                   ; // read only,
+    logic [                         7:0] version_major        = 8'h02                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h00                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
+    logic                                calibration_flaq     = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
     logic                                perform_request_flaq = 1'b0                    ; // reg[0][3]
     logic                                request_performed    = 1'b0                    ; // reg[0][6]
@@ -244,8 +256,27 @@ module axi_adxl345 #(
     logic [                        31:0] read_transactions    = '{default:0}            ;
     logic [                        31:0] transactions_timer   = '{default:0}            ;
 
+    // Calibration data 
+    logic [31:0] calibration_timer           = '{default:0};
+    logic [31:0] calibration_count_limit_reg = '{default:0};
+    logic [31:0] calibration_count           = '{default:0};
+    logic [31:0] sum_x                       = '{default:0};
+    logic [31:0] sum_y                       = '{default:0};
+    logic [31:0] sum_z                       = '{default:0};
+    logic [15:0] avg_x                       = '{default:0};
+    logic [15:0] avg_y                       = '{default:0};
+    logic [15:0] avg_z                       = '{default:0};
+
+    logic [15:0] offset_x                    = '{default:0};
+    logic [15:0] offset_y                    = '{default:0};
+    logic [15:0] offset_z                    = '{default:0};
+
+    logic [7:0] offset_lsb_x = '{default:0};
+    logic [7:0] offset_lsb_y = '{default:0};
+    logic [7:0] offset_lsb_z = '{default:0};
 
 
+    // Interrupt data
     logic [7:0] int_source_reg = '{default:0};
     logic [7:0] int_enable_reg = '{default:0};
 
@@ -261,6 +292,7 @@ module axi_adxl345 #(
     logic has_ovrrn_intr;
 
     logic [5:0] entries = '{default:0};
+
 
     always_comb begin : has_dataready_intr_proc
         if ((int_source_reg[7] & int_enable_reg[7]))
@@ -325,38 +357,38 @@ module axi_adxl345 #(
     end 
 
     always_ff @(posedge CLK) begin : opt_request_interval_proc 
-        case (register[11][0][7:0]) 
-            8'h0F : 
+        case (register[11][0][3:0]) 
+            8'hF : 
                 opt_request_interval <= OPT_REQ_INTERVAL;
-            8'h0E :
+            8'hE :
                 opt_request_interval <= (OPT_REQ_INTERVAL<<1); 
-            8'h0D :
+            8'hD :
                 opt_request_interval <= (OPT_REQ_INTERVAL<<2); 
-            8'h0C : 
+            8'hC : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<3);
-            8'h0B : 
+            8'hB : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<4);
-            8'h0A : 
+            8'hA : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<5);
-            8'h09 : 
+            8'h9 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<6);
-            8'h08 : 
+            8'h8 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<7);
-            8'h07 : 
+            8'h7 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<8);
-            8'h06 :
+            8'h6 :
                 opt_request_interval <= (OPT_REQ_INTERVAL<<9);
-            8'h05 : 
+            8'h5 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<10);
-            8'h04 : 
+            8'h4 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<11);
-            8'h03 : 
+            8'h3 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<12);
-            8'h02 : 
+            8'h2 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<13);
-            8'h01 : 
+            8'h1 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<14);
-            8'h00 : 
+            8'h0 : 
                 opt_request_interval <= (OPT_REQ_INTERVAL<<15);
             default :
                 opt_request_interval <= (OPT_REQ_INTERVAL);
@@ -504,6 +536,14 @@ module axi_adxl345 #(
                                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
                                         end 
 
+                            RX_CALIB_DATA_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
+
 
                             default: 
                                 register <= register;
@@ -528,7 +568,7 @@ module axi_adxl345 #(
                         case (current_state) 
                             SEND_WRITE_CMD_ST  : 
                                 if (~out_awfull)
-                                   if (write_cmd_word_cnt == 2'b10)
+                                   if (write_cmd_word_cnt == 4'h2)
                                         if (address[5:2] == reg_index) 
                                             need_update_reg[reg_index][address[1:0]] <= 1'b0;
                             default : 
@@ -646,7 +686,7 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin : write_cmd_word_cnt_proc
         if (~RESETN)
-            write_cmd_word_cnt <= 1'b0;
+            write_cmd_word_cnt <= 'b0;
         else 
             case (current_state)
                 SEND_WRITE_CMD_ST : 
@@ -677,6 +717,13 @@ module axi_adxl345 #(
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
+                TX_WRITE_CALIB_DATA_PTR_ST: 
+                    if (~out_awfull)
+                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+
+                TX_WRITE_CALIB_OFS_ST: 
+                    if (~out_awfull)
+                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
                 default : 
                     write_cmd_word_cnt <= 1'b0;
@@ -691,23 +738,27 @@ module axi_adxl345 #(
             case (current_state)
 
                 IDLE_ST : 
-                    if (ADXL_INTERRUPT & allow_irq) begin 
-                    // if (ADXL_INTERRUPT) begin 
-                        current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
+                    if (calibration_flaq) begin 
+                        current_state <= AWAIT_CALIB_TIMER_ST;
                     end else begin 
-                        if (update_request) begin 
-                            current_state <= CHK_UPD_NEEDED_ST;
+                        if (ADXL_INTERRUPT & allow_irq) begin 
+                        // if (ADXL_INTERRUPT) begin 
+                            current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
                         end else begin 
-                            if (perform_request_flaq) begin 
-                                current_state <= TX_SEND_ADDR_PTR;
+                            if (update_request) begin 
+                                current_state <= CHK_UPD_NEEDED_ST;
                             end else begin 
-                                if (enable) begin
-                                    if (request_timer == request_interval) begin 
-                                        current_state <= TX_SEND_ADDR_PTR;
-                                    end 
-                                end
-                            end 
-                        end  
+                                if (perform_request_flaq) begin 
+                                    current_state <= TX_SEND_ADDR_PTR;
+                                end else begin 
+                                    if (enable) begin
+                                        if (request_timer == request_interval) begin 
+                                            current_state <= TX_SEND_ADDR_PTR;
+                                        end 
+                                    end
+                                end 
+                            end  
+                        end 
                     end 
 
                 CHK_UPD_NEEDED_ST : 
@@ -719,7 +770,7 @@ module axi_adxl345 #(
 
                 SEND_WRITE_CMD_ST  : 
                     if (~out_awfull)
-                       if (write_cmd_word_cnt == 2'b10)
+                       if (write_cmd_word_cnt == 4'h2)
                             current_state <= INC_ADDR_ST;
 
                 INC_ADDR_ST  : 
@@ -730,7 +781,7 @@ module axi_adxl345 #(
 
                 TX_SEND_ADDR_PTR: 
                     if (~out_awfull)
-                        if (write_cmd_word_cnt == 2'b01)
+                        if (write_cmd_word_cnt == 4'h1)
                             current_state <= TX_READ_REQUEST_ST;
 
                 TX_READ_REQUEST_ST : 
@@ -745,7 +796,7 @@ module axi_adxl345 #(
 
                 TX_WRITE_INT_SOURCE_PTR_ST : 
                     if (~out_awfull) begin 
-                        if (write_cmd_word_cnt == 2'b01) 
+                        if (write_cmd_word_cnt == 4'h1) 
                             current_state <= TX_READ_INT_SOURCE_ST;
                     end 
 
@@ -774,7 +825,7 @@ module axi_adxl345 #(
 
                 TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
                     if (~out_awfull) begin
-                        if (write_cmd_word_cnt == 2'b01) 
+                        if (write_cmd_word_cnt == 4'h1) 
                             current_state <= TX_READ_ACT_TAP_STATUS_ST;
                     end  
 
@@ -788,7 +839,7 @@ module axi_adxl345 #(
 
                 TX_WRITE_INTR_DATA_PTR_ST: 
                     if (~out_awfull) begin
-                        if (write_cmd_word_cnt == 2'b01) 
+                        if (write_cmd_word_cnt == 4'h1) 
                             current_state <= TX_READ_INTR_DATA_ST;
                     end  
 
@@ -804,7 +855,7 @@ module axi_adxl345 #(
 
                 TX_WRITE_WM_FIFO_STS_PTR_ST : 
                     if (~out_awfull) begin
-                        if (write_cmd_word_cnt == 2'b01) 
+                        if (write_cmd_word_cnt == 4'h1) 
                             current_state <= TX_READ_WM_FIFO_STS_ST;
                     end  
 
@@ -818,7 +869,7 @@ module axi_adxl345 #(
 
                 TX_WRITE_WM_DATA_PTR_ST : 
                     if (~out_awfull) begin
-                        if (write_cmd_word_cnt == 2'b01) 
+                        if (write_cmd_word_cnt == 4'h1) 
                             current_state <= TX_READ_WM_DATA_ST;
                     end
 
@@ -840,6 +891,48 @@ module axi_adxl345 #(
                         current_state <= INT_PROCESSING_ST;
                     else 
                         current_state <= IDLE_ST;
+
+
+                AWAIT_CALIB_TIMER_ST : 
+                    if (calibration_timer < opt_request_interval) 
+                        current_state <= current_state;
+                    else 
+                        current_state <= TX_WRITE_CALIB_DATA_PTR_ST;
+
+                TX_WRITE_CALIB_DATA_PTR_ST : 
+                    if (~out_awfull) begin
+                        if (write_cmd_word_cnt == 4'h1) 
+                            current_state <= TX_READ_CALIB_DATA_ST;
+                    end
+
+                TX_READ_CALIB_DATA_ST: 
+                    if (~out_awfull) 
+                        current_state <= RX_CALIB_DATA_ST;
+
+                RX_CALIB_DATA_ST : 
+                    if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
+                        current_state <= ADD_CALIB_CALC_ST;
+                    end  
+
+                ADD_CALIB_CALC_ST : 
+                    if (calibration_count == calibration_count_limit_reg)
+                        current_state <= AVG_CALIB_CALC_ST;
+                    else 
+                        current_state <= TX_WRITE_CALIB_DATA_PTR_ST;
+
+                AVG_CALIB_CALC_ST : 
+                    current_state <= OFFSET_CALIB_CALC_ST;
+
+                OFFSET_CALIB_CALC_ST : 
+                    current_state <= OFFSET_LSB_CALIB_CALC_ST;
+
+                OFFSET_LSB_CALIB_CALC_ST : 
+                    current_state <= TX_WRITE_CALIB_OFS_ST;
+
+                TX_WRITE_CALIB_OFS_ST : 
+                    if (~out_awfull) 
+                        if (write_cmd_word_cnt == 4'h4)
+                            current_state <= IDLE_ST;
 
                 default : 
                     current_state <= current_state;
@@ -884,6 +977,13 @@ module axi_adxl345 #(
                     address <= 8'h32;
 
                 RX_WM_DATA_ST: 
+                    if (S_AXIS_TVALID)
+                        address <= address + 1;
+                
+                TX_WRITE_CALIB_DATA_PTR_ST : 
+                    address <= 8'h32;
+
+                RX_CALIB_DATA_ST : 
                     if (S_AXIS_TVALID)
                         address <= address + 1;
 
@@ -958,13 +1058,13 @@ module axi_adxl345 #(
         case (current_state)
             SEND_WRITE_CMD_ST : 
                 case(write_cmd_word_cnt)
-                    2'b00 : 
+                    4'h0 : 
                         out_din_data <= 8'h02;
 
-                    2'b01 : 
+                    4'h1 : 
                         out_din_data <= {2'b00, address};
 
-                    2'b10 : 
+                    4'h2 : 
                         out_din_data <= register[address[5:2]][address[1:0]];
 
                     default : 
@@ -974,8 +1074,8 @@ module axi_adxl345 #(
 
             TX_SEND_ADDR_PTR : 
                 case (write_cmd_word_cnt)
-                    2'b00   : out_din_data <= 8'h01;
-                    2'b01   : out_din_data <= 8'h00;
+                    4'h0   : out_din_data <= 8'h01;
+                    4'h1   : out_din_data <= 8'h00;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
@@ -984,8 +1084,8 @@ module axi_adxl345 #(
 
             TX_WRITE_INT_SOURCE_PTR_ST:
                 case (write_cmd_word_cnt)
-                    2'b00 : out_din_data <= 8'h01;
-                    2'b01 : out_din_data <= 8'h30;
+                    4'h0 : out_din_data <= 8'h01;
+                    4'h1 : out_din_data <= 8'h30;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
@@ -997,8 +1097,8 @@ module axi_adxl345 #(
 
             TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b00 : out_din_data <= 8'h01;
-                    2'b01 : out_din_data <= 8'h2B;
+                    4'h0 : out_din_data <= 8'h01;
+                    4'h1 : out_din_data <= 8'h2B;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
@@ -1007,8 +1107,8 @@ module axi_adxl345 #(
 
             TX_WRITE_INTR_DATA_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b00 : out_din_data <= 8'h01;
-                    2'b01 : out_din_data <= 8'h32;
+                    4'h0 : out_din_data <= 8'h01;
+                    4'h1 : out_din_data <= 8'h32;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
@@ -1018,8 +1118,8 @@ module axi_adxl345 #(
 
             TX_WRITE_WM_FIFO_STS_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b00 : out_din_data <= 8'h01;
-                    2'b01 : out_din_data <= 8'h39;
+                    4'h0 : out_din_data <= 8'h01;
+                    4'h1 : out_din_data <= 8'h39;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
@@ -1029,13 +1129,36 @@ module axi_adxl345 #(
 
             TX_WRITE_WM_DATA_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b00 : out_din_data <= 8'h01;
-                    2'b01 : out_din_data <= 8'h32;
+                    4'h0 : out_din_data <= 8'h01;
+                    4'h1 : out_din_data <= 8'h32;
                     default : out_din_data <= out_din_data;
                 endcase // write_cmd_word_cnt
 
             TX_READ_WM_DATA_ST: 
                 out_din_data <= 8'h06;
+
+
+
+            TX_WRITE_CALIB_DATA_PTR_ST: 
+                case (write_cmd_word_cnt)
+                    4'h0 : out_din_data <= 8'h01;
+                    4'h1 : out_din_data <= 8'h32;
+                    default : out_din_data <= out_din_data;
+                endcase // write_cmd_word_cnt
+
+            TX_READ_CALIB_DATA_ST: 
+                out_din_data <= 8'h06;
+
+
+            TX_WRITE_CALIB_OFS_ST: 
+                case (write_cmd_word_cnt)
+                    4'h0 : out_din_data <= 8'h03;
+                    4'h1 : out_din_data <= 8'h1E;
+                    4'h2 : out_din_data <= offset_lsb_x;
+                    4'h3 : out_din_data <= offset_lsb_y;
+                    4'h4 : out_din_data <= offset_lsb_z;
+                    default : out_din_data <= out_din_data;
+                endcase // write_cmd_word_cnt
 
 
 
@@ -1130,6 +1253,25 @@ module axi_adxl345 #(
 
 
 
+
+            TX_WRITE_CALIB_DATA_PTR_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+            TX_READ_CALIB_DATA_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+            TX_WRITE_CALIB_OFS_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
             default : 
                 out_wren <= 1'b0;
 
@@ -1180,6 +1322,15 @@ module axi_adxl345 #(
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
 
+            TX_WRITE_CALIB_DATA_PTR_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+            TX_READ_CALIB_DATA_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+            TX_WRITE_CALIB_OFS_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
 
             default : 
                 out_din_user <= '{default:0};
@@ -1190,7 +1341,7 @@ module axi_adxl345 #(
         case (current_state)
             SEND_WRITE_CMD_ST : 
                 case (write_cmd_word_cnt) 
-                    2'b10 :
+                    4'h2 :
                         out_din_last <= 1'b1;
 
                     default: 
@@ -1203,7 +1354,7 @@ module axi_adxl345 #(
 
             TX_SEND_ADDR_PTR : 
                 case (write_cmd_word_cnt)
-                    2'b01 : 
+                    4'h1 : 
                         out_din_last <= 1'b1;
                     default : 
                         out_din_last <= 1'b0;
@@ -1211,7 +1362,7 @@ module axi_adxl345 #(
 
             TX_WRITE_INT_SOURCE_PTR_ST : 
                 case (write_cmd_word_cnt)
-                    2'b01 : 
+                    4'h1 : 
                         out_din_last <= 1'b1;
                     default : 
                         out_din_last <= 1'b0;
@@ -1222,7 +1373,7 @@ module axi_adxl345 #(
 
             TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b01 : 
+                    4'h1 : 
                         out_din_last <= 1'b1;
                     default : 
                         out_din_last <= 1'b0;
@@ -1233,7 +1384,7 @@ module axi_adxl345 #(
 
             TX_WRITE_INTR_DATA_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b01 : 
+                    4'h1 : 
                         out_din_last <= 1'b1;
                     default : 
                         out_din_last <= 1'b0;
@@ -1246,7 +1397,7 @@ module axi_adxl345 #(
 
             TX_WRITE_WM_FIFO_STS_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b01 : 
+                    4'h1 : 
                         out_din_last <= 1'b1;
                     default : 
                         out_din_last <= 1'b0;
@@ -1257,7 +1408,7 @@ module axi_adxl345 #(
 
             TX_WRITE_WM_DATA_PTR_ST: 
                 case (write_cmd_word_cnt)
-                    2'b01 : 
+                    4'h1 : 
                         out_din_last <= 1'b1;
                     default : 
                         out_din_last <= 1'b0;
@@ -1265,6 +1416,30 @@ module axi_adxl345 #(
 
             TX_READ_WM_DATA_ST: 
                 out_din_last <= 1'b1;
+
+
+
+
+            TX_WRITE_CALIB_DATA_PTR_ST: 
+                case (write_cmd_word_cnt)
+                    4'h1 : 
+                        out_din_last <= 1'b1;
+                    default : 
+                        out_din_last <= 1'b0;
+                endcase // write_cmd_word_cnt
+
+            TX_READ_CALIB_DATA_ST: 
+                out_din_last <= 1'b1;
+
+
+            TX_WRITE_CALIB_OFS_ST: 
+                case (write_cmd_word_cnt)
+                    4'h4 : 
+                        out_din_last <= 1'b1;
+                    default : 
+                        out_din_last <= 1'b0;
+                endcase // write_cmd_word_cnt
+
 
             default : 
                 out_din_last <= 1'b0;
@@ -1454,7 +1629,7 @@ module axi_adxl345 #(
                 i2c_address, // register_cfg[ 0][14:8],
                 on_work,
                 request_performed,
-                1'b0,
+                calibration_flaq,
                 ADXL_IRQ,
                 1'b0,
                 allow_irq,
@@ -1471,12 +1646,12 @@ module axi_adxl345 #(
             8'h07    : reg_data_out_cfg <= CLK_PERIOD;
             8'h08    : reg_data_out_cfg <= {23'h0, has_ovrrn_intr, sample_address};
             8'h09    : reg_data_out_cfg <= opt_request_interval;
-            8'h0a    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0b    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0c    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0d    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0e    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0f    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0a    : reg_data_out_cfg <= calibration_count_limit_reg; // reserved
+            8'h0b : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0c : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0d : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0e : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0f : reg_data_out_cfg <= '{default:0}; // reserved
 
             8'h10    : reg_data_out_cfg <= register_file[0][31:0];
             8'h11    : reg_data_out_cfg <= register_file[1][31:0];
@@ -1544,7 +1719,7 @@ module axi_adxl345 #(
 
 
     
-    always @(posedge CLK) begin : slv_reg_cfg 
+    always_ff @(posedge CLK) begin : slv_reg_cfg 
         if (~RESETN | reset)
             link_on <= 1'b0;
         else
@@ -1558,6 +1733,27 @@ module axi_adxl345 #(
                 end 
 
     end    
+
+    always_ff @(posedge CLK) begin : calibration_flaq_processing 
+        if (~RESETN | reset | (current_state == TX_WRITE_CALIB_OFS_ST)) begin 
+            calibration_flaq <= 1'b0;
+        end else begin 
+            if (slv_reg_wren_cfg)
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+                    if ( S_AXI_LITE_CFG_WSTRB[1] == 1 )
+                        calibration_flaq <= S_AXI_LITE_CFG_WDATA[5];
+        end 
+    end 
+
+    always_ff @(posedge CLK) begin : calibration_count_limit_reg_proc 
+        if (~RESETN | reset) begin 
+            calibration_count_limit_reg <= DEFAULT_CALIBRATION_LIMIT;
+        end else begin  
+            if (slv_reg_wren_cfg)
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 10)
+                    calibration_count_limit_reg <= S_AXI_LITE_CFG_WDATA;            
+        end 
+    end 
 
     always_ff @(posedge CLK) begin 
         if (~RESETN | reset)
@@ -1580,7 +1776,7 @@ module axi_adxl345 #(
             default : 
                 on_work <= 1'b1;
 
-        endcase // write_cmd_word_cnt
+        endcase
 
     end
 
@@ -1610,7 +1806,7 @@ module axi_adxl345 #(
                         end 
 
                     default : request_performed <= request_performed;
-                endcase // write_cmd_word_cnt
+                endcase
         end 
     end 
 
@@ -1648,7 +1844,13 @@ module axi_adxl345 #(
                         end else begin  
                             perform_request_flaq <= perform_request_flaq;
                         end 
-                
+                    
+                    TX_WRITE_CALIB_OFS_ST : 
+                        if (~out_awfull)
+                            if (write_cmd_word_cnt == 4'h4)
+                                perform_request_flaq <= 1'b1;
+
+
                     default : 
                         perform_request_flaq <= perform_request_flaq;
 
@@ -1865,6 +2067,195 @@ module axi_adxl345 #(
                 entries <= entries;
 
         endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin : calibration_timer_proc 
+        case (current_state)
+            AWAIT_CALIB_TIMER_ST : 
+                calibration_timer <= calibration_timer + 1;
+
+            default : 
+                calibration_timer <= '{default:0};
+
+        endcase // current_state
+    end  
+
+    always_ff @(posedge CLK) begin : calibration_count_proc 
+        case (current_state)
+
+            IDLE_ST : 
+                calibration_count <= '{default:0};
+
+            RX_CALIB_DATA_ST : 
+                if (S_AXIS_TVALID & S_AXIS_TLAST)
+                    calibration_count <= calibration_count + 1;
+
+            default : 
+                calibration_count <= calibration_count;
+
+        endcase // current_state
+    end 
+
+
+    always_ff @(posedge CLK) begin : sum_x_proc
+        case (current_state)
+            ADD_CALIB_CALC_ST : 
+                sum_x <= sum_x + {register[12][3], register[12][2]};
+
+            default : 
+                sum_x <= sum_x;
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin : sum_y_proc
+        case (current_state)
+            ADD_CALIB_CALC_ST : 
+                sum_y <= sum_y + {register[13][1], register[13][0]};
+
+            default : 
+                sum_y <= sum_y;
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin : sum_z_proc
+        case (current_state)
+            ADD_CALIB_CALC_ST : 
+                sum_z <= sum_z + {register[13][3], register[13][2]};
+
+            default : 
+                sum_z <= sum_z;
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin : avg_x_proc  
+        case (calibration_count_limit_reg)
+            32'h00000001: avg_x <= sum_x[15:0];
+            32'h00000002: avg_x <= (sum_x >> 1 );
+            32'h00000004: avg_x <= (sum_x >> 2 );
+            32'h00000008: avg_x <= (sum_x >> 3 );
+            32'h00000010: avg_x <= (sum_x >> 4 );
+            32'h00000020: avg_x <= (sum_x >> 5 );
+            32'h00000040: avg_x <= (sum_x >> 6 );
+            32'h00000080: avg_x <= (sum_x >> 7 );
+            32'h00000100: avg_x <= (sum_x >> 8 );
+            32'h00000200: avg_x <= (sum_x >> 9 );
+            32'h00000400: avg_x <= (sum_x >> 10);
+            32'h00000800: avg_x <= (sum_x >> 11);
+            32'h00001000: avg_x <= (sum_x >> 12);
+            32'h00002000: avg_x <= (sum_x >> 13);
+            32'h00004000: avg_x <= (sum_x >> 14);
+            32'h00008000: avg_x <= (sum_x >> 15);
+            32'h00010000: avg_x <= (sum_x >> 16);
+
+
+
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin : avg_y_proc  
+        case (calibration_count_limit_reg)
+            32'h00000001: avg_y <= sum_y[15:0];
+            32'h00000002: avg_y <= (sum_y >> 1 );
+            32'h00000004: avg_y <= (sum_y >> 2 );
+            32'h00000008: avg_y <= (sum_y >> 3 );
+            32'h00000010: avg_y <= (sum_y >> 4 );
+            32'h00000020: avg_y <= (sum_y >> 5 );
+            32'h00000040: avg_y <= (sum_y >> 6 );
+            32'h00000080: avg_y <= (sum_y >> 7 );
+            32'h00000100: avg_y <= (sum_y >> 8 );
+            32'h00000200: avg_y <= (sum_y >> 9 );
+            32'h00000400: avg_y <= (sum_y >> 10);
+            32'h00000800: avg_y <= (sum_y >> 11);
+            32'h00001000: avg_y <= (sum_y >> 12);
+            32'h00002000: avg_y <= (sum_y >> 13);
+            32'h00004000: avg_y <= (sum_y >> 14);
+            32'h00008000: avg_y <= (sum_y >> 15);
+            32'h00010000: avg_y <= (sum_y >> 16);
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin : avg_z_proc  
+        case (calibration_count_limit_reg)
+            32'h00000001: avg_z <= sum_z[15:0];
+            32'h00000002: avg_z <= (sum_z >> 1 );
+            32'h00000004: avg_z <= (sum_z >> 2 );
+            32'h00000008: avg_z <= (sum_z >> 3 );
+            32'h00000010: avg_z <= (sum_z >> 4 );
+            32'h00000020: avg_z <= (sum_z >> 5 );
+            32'h00000040: avg_z <= (sum_z >> 6 );
+            32'h00000080: avg_z <= (sum_z >> 7 );
+            32'h00000100: avg_z <= (sum_z >> 8 );
+            32'h00000200: avg_z <= (sum_z >> 9 );
+            32'h00000400: avg_z <= (sum_z >> 10);
+            32'h00000800: avg_z <= (sum_z >> 11);
+            32'h00001000: avg_z <= (sum_z >> 12);
+            32'h00002000: avg_z <= (sum_z >> 13);
+            32'h00004000: avg_z <= (sum_z >> 14);
+            32'h00008000: avg_z <= (sum_z >> 15);
+            32'h00010000: avg_z <= (sum_z >> 16);
+        endcase // current_state
+    end 
+
+
+    always_ff @(posedge CLK) begin : offset_x_proc
+        offset_x <= avg_x;
+    end 
+
+
+    always_ff @(posedge CLK) begin : offset_y_proc
+        offset_y <= avg_y;
+    end 
+
+
+    always_ff @(posedge CLK) begin : offset_z_proc
+        if (register[12][1][3]) begin 
+            offset_z <= avg_z - 256;
+        end else begin 
+            case (register[12][1][1:0]) 
+                2'b00 : offset_z <= avg_z - 256; 
+                2'b01 : offset_z <= avg_z - 128;
+                2'b10 : offset_z <= avg_z - 64;
+                2'b11 : offset_z <= avg_z - 32;
+            endcase // register[12][1][1:0] 
+        end 
+    end 
+
+
+    always_ff @(posedge CLK) begin : offset_lsb_x_proc
+        if (register[12][1][3]) begin 
+            offset_lsb_x <= -(offset_x >> 2);
+        end else begin 
+            case (register[12][1][1:0]) 
+                2'b00 : offset_lsb_x <= -(offset_x >> 2);
+                2'b01 : offset_lsb_x <= -(offset_x >> 1);
+                2'b10 : offset_lsb_x <= -(offset_x);
+                2'b11 : offset_lsb_x <= -(offset_x << 1);
+            endcase // current_state
+        end 
+    end 
+    always_ff @(posedge CLK) begin : offset_lsb_y_proc
+        if (register[12][1][3]) begin 
+            offset_lsb_y <= -(offset_y >> 2);
+        end else begin 
+            case (register[12][1][1:0]) 
+                2'b00 : offset_lsb_y <= -(offset_y >> 2);
+                2'b01 : offset_lsb_y <= -(offset_y >> 1);
+                2'b10 : offset_lsb_y <= -(offset_y);
+                2'b11 : offset_lsb_y <= -(offset_y << 1);
+            endcase // current_state
+        end 
+    end 
+    always_ff @(posedge CLK) begin : offset_lsb_z_proc
+        if (register[12][1][3]) begin 
+            offset_lsb_z <= -(offset_z >> 2);
+        end else begin 
+            case (register[12][1][1:0]) 
+                2'b00 : offset_lsb_z <= -(offset_z >> 2);
+                2'b01 : offset_lsb_z <= -(offset_z >> 1);
+                2'b10 : offset_lsb_z <= -(offset_z);
+                2'b11 : offset_lsb_z <= -(offset_z << 1);
+            endcase // current_state
+        end 
     end 
 
 endmodule
