@@ -294,6 +294,23 @@ module axi_adxl345 #(
     logic [5:0] entries = '{default:0};
 
 
+    vio_calib vio_calib_inst (
+        .clk       (CLK         ), // input wire clk
+        .probe_in0 (sum_x       ), // input wire [31 : 0] probe_in0
+        .probe_in1 (sum_y       ), // input wire [31 : 0] probe_in1
+        .probe_in2 (sum_z       ), // input wire [31 : 0] probe_in2
+        .probe_in3 (avg_x       ), // input wire [15 : 0] probe_in3
+        .probe_in4 (avg_y       ), // input wire [15 : 0] probe_in4
+        .probe_in5 (avg_z       ), // input wire [15 : 0] probe_in5
+        .probe_in6 (offset_x    ), // input wire [15 : 0] probe_in6
+        .probe_in7 (offset_y    ), // input wire [15 : 0] probe_in7
+        .probe_in8 (offset_z    ), // input wire [15 : 0] probe_in8
+        .probe_in9 (offset_lsb_x), // input wire [7 : 0] probe_in9
+        .probe_in10(offset_lsb_y), // input wire [7 : 0] probe_in10
+        .probe_in11(offset_lsb_z)  // input wire [7 : 0] probe_in11
+    );
+
+
     always_comb begin : has_dataready_intr_proc
         if ((int_source_reg[7] & int_enable_reg[7]))
             has_dataready_intr = 1'b1;
@@ -918,7 +935,7 @@ module axi_adxl345 #(
                     if (calibration_count == calibration_count_limit_reg)
                         current_state <= AVG_CALIB_CALC_ST;
                     else 
-                        current_state <= TX_WRITE_CALIB_DATA_PTR_ST;
+                        current_state <= AWAIT_CALIB_TIMER_ST;
 
                 AVG_CALIB_CALC_ST : 
                     current_state <= OFFSET_CALIB_CALC_ST;
@@ -1152,7 +1169,7 @@ module axi_adxl345 #(
 
             TX_WRITE_CALIB_OFS_ST: 
                 case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h03;
+                    4'h0 : out_din_data <= 8'h04;
                     4'h1 : out_din_data <= 8'h1E;
                     4'h2 : out_din_data <= offset_lsb_x;
                     4'h3 : out_din_data <= offset_lsb_y;
@@ -2099,8 +2116,13 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin : sum_x_proc
         case (current_state)
-            ADD_CALIB_CALC_ST : 
-                sum_x <= sum_x + {register[12][3], register[12][2]};
+            IDLE_ST : 
+                if (calibration_flaq)
+                    sum_x <= '{default:0};
+
+            ADD_CALIB_CALC_ST :
+                sum_x <= sum_x + {{16{register[12][3][7]}}, {register[12][3], register[12][2]}}; 
+                // sum_x <= sum_x + {register[12][3], register[12][2]};
 
             default : 
                 sum_x <= sum_x;
@@ -2109,8 +2131,15 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin : sum_y_proc
         case (current_state)
+
+            IDLE_ST :
+                if (calibration_flaq) 
+                    sum_y <= '{default:0};
+
+            
             ADD_CALIB_CALC_ST : 
-                sum_y <= sum_y + {register[13][1], register[13][0]};
+                sum_y <= sum_y + {{16{register[13][1][7]}}, {register[13][1], register[13][0]}}; 
+                // sum_y <= sum_y + {register[13][1], register[13][0]};
 
             default : 
                 sum_y <= sum_y;
@@ -2119,8 +2148,14 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin : sum_z_proc
         case (current_state)
+            IDLE_ST : 
+                if (calibration_flaq)
+                    sum_z <= '{default:0};
+
             ADD_CALIB_CALC_ST : 
-                sum_z <= sum_z + {register[13][3], register[13][2]};
+                sum_z <= sum_z + {{16{register[13][3][7]}}, {register[13][3], register[13][2]}}; 
+
+                // sum_z <= sum_z + {register[13][3], register[13][2]};
 
             default : 
                 sum_z <= sum_z;
