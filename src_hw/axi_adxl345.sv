@@ -208,6 +208,7 @@ module axi_adxl345 #(
 
         CHECK_INTR_DEASSERT             ,  // 
 
+        TX_WRITE_CALIB_OFS_CLEAR_ST     ,
         AWAIT_CALIB_TIMER_ST            ,
         TX_WRITE_CALIB_DATA_PTR_ST      , 
         TX_READ_CALIB_DATA_ST           , 
@@ -275,7 +276,7 @@ module axi_adxl345 #(
     logic [7:0] offset_lsb_y = '{default:0};
     logic [7:0] offset_lsb_z = '{default:0};
 
-
+    logic refresh_after_calib_flaq = 1'b0;
     // Interrupt data
     logic [7:0] int_source_reg = '{default:0};
     logic [7:0] int_enable_reg = '{default:0};
@@ -293,23 +294,7 @@ module axi_adxl345 #(
 
     logic [5:0] entries = '{default:0};
 
-
-    vio_calib vio_calib_inst (
-        .clk       (CLK         ), // input wire clk
-        .probe_in0 (sum_x       ), // input wire [31 : 0] probe_in0
-        .probe_in1 (sum_y       ), // input wire [31 : 0] probe_in1
-        .probe_in2 (sum_z       ), // input wire [31 : 0] probe_in2
-        .probe_in3 (avg_x       ), // input wire [15 : 0] probe_in3
-        .probe_in4 (avg_y       ), // input wire [15 : 0] probe_in4
-        .probe_in5 (avg_z       ), // input wire [15 : 0] probe_in5
-        .probe_in6 (offset_x    ), // input wire [15 : 0] probe_in6
-        .probe_in7 (offset_y    ), // input wire [15 : 0] probe_in7
-        .probe_in8 (offset_z    ), // input wire [15 : 0] probe_in8
-        .probe_in9 (offset_lsb_x), // input wire [7 : 0] probe_in9
-        .probe_in10(offset_lsb_y), // input wire [7 : 0] probe_in10
-        .probe_in11(offset_lsb_z)  // input wire [7 : 0] probe_in11
-    );
-
+    logic [31:0] calibration_elapsed_time = '{default:0};
 
     always_comb begin : has_dataready_intr_proc
         if ((int_source_reg[7] & int_enable_reg[7]))
@@ -742,6 +727,10 @@ module axi_adxl345 #(
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
+                TX_WRITE_CALIB_OFS_CLEAR_ST: 
+                    if (~out_awfull)
+                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+
                 default : 
                     write_cmd_word_cnt <= 1'b0;
 
@@ -756,7 +745,7 @@ module axi_adxl345 #(
 
                 IDLE_ST : 
                     if (calibration_flaq) begin 
-                        current_state <= AWAIT_CALIB_TIMER_ST;
+                        current_state <= TX_WRITE_CALIB_OFS_CLEAR_ST;
                     end else begin 
                         if (ADXL_INTERRUPT & allow_irq) begin 
                         // if (ADXL_INTERRUPT) begin 
@@ -765,7 +754,7 @@ module axi_adxl345 #(
                             if (update_request) begin 
                                 current_state <= CHK_UPD_NEEDED_ST;
                             end else begin 
-                                if (perform_request_flaq) begin 
+                                if (perform_request_flaq | refresh_after_calib_flaq) begin 
                                     current_state <= TX_SEND_ADDR_PTR;
                                 end else begin 
                                     if (enable) begin
@@ -783,7 +772,6 @@ module axi_adxl345 #(
                         current_state <= SEND_WRITE_CMD_ST;
                     else 
                         current_state <= INC_ADDR_ST;
-
 
                 SEND_WRITE_CMD_ST  : 
                     if (~out_awfull)
@@ -909,6 +897,11 @@ module axi_adxl345 #(
                     else 
                         current_state <= IDLE_ST;
 
+
+                TX_WRITE_CALIB_OFS_CLEAR_ST: 
+                    if (~out_awfull) 
+                        if (write_cmd_word_cnt == 4'h4)
+                            current_state <= AWAIT_CALIB_TIMER_ST;
 
                 AWAIT_CALIB_TIMER_ST : 
                     if (calibration_timer < opt_request_interval) 
@@ -1178,6 +1171,18 @@ module axi_adxl345 #(
                 endcase // write_cmd_word_cnt
 
 
+            TX_WRITE_CALIB_OFS_CLEAR_ST: 
+                case (write_cmd_word_cnt)
+                    4'h0 : out_din_data <= 8'h04;
+                    4'h1 : out_din_data <= 8'h1E;
+                    4'h2 : out_din_data <= 8'h00;
+                    4'h3 : out_din_data <= 8'h00;
+                    4'h4 : out_din_data <= 8'h00;
+                    default : out_din_data <= out_din_data;
+                endcase // write_cmd_word_cnt
+
+
+
 
             default : 
                 out_din_data <= out_din_data;
@@ -1289,6 +1294,13 @@ module axi_adxl345 #(
                 else 
                     out_wren <= 1'b0;
 
+            TX_WRITE_CALIB_OFS_CLEAR_ST: 
+                if (~out_awfull)
+                    out_wren <= 1'b1;
+                else 
+                    out_wren <= 1'b0;
+
+
             default : 
                 out_wren <= 1'b0;
 
@@ -1346,6 +1358,9 @@ module axi_adxl345 #(
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
             TX_WRITE_CALIB_OFS_ST: 
+                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+            TX_WRITE_CALIB_OFS_CLEAR_ST: 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
 
@@ -1450,6 +1465,14 @@ module axi_adxl345 #(
 
 
             TX_WRITE_CALIB_OFS_ST: 
+                case (write_cmd_word_cnt)
+                    4'h4 : 
+                        out_din_last <= 1'b1;
+                    default : 
+                        out_din_last <= 1'b0;
+                endcase // write_cmd_word_cnt
+
+            TX_WRITE_CALIB_OFS_CLEAR_ST: 
                 case (write_cmd_word_cnt)
                     4'h4 : 
                         out_din_last <= 1'b1;
@@ -1663,12 +1686,12 @@ module axi_adxl345 #(
             8'h07    : reg_data_out_cfg <= CLK_PERIOD;
             8'h08    : reg_data_out_cfg <= {23'h0, has_ovrrn_intr, sample_address};
             8'h09    : reg_data_out_cfg <= opt_request_interval;
-            8'h0a    : reg_data_out_cfg <= calibration_count_limit_reg; // reserved
-            8'h0b : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0c : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0d : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0e : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0f : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0a    : reg_data_out_cfg <= calibration_count_limit_reg;
+            8'h0b    : reg_data_out_cfg <= calibration_elapsed_time;
+            8'h0c    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0d    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0e    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0f    : reg_data_out_cfg <= '{default:0}; // reserved
 
             8'h10    : reg_data_out_cfg <= register_file[0][31:0];
             8'h11    : reg_data_out_cfg <= register_file[1][31:0];
@@ -1862,10 +1885,10 @@ module axi_adxl345 #(
                             perform_request_flaq <= perform_request_flaq;
                         end 
                     
-                    TX_WRITE_CALIB_OFS_ST : 
-                        if (~out_awfull)
-                            if (write_cmd_word_cnt == 4'h4)
-                                perform_request_flaq <= 1'b1;
+                    // TX_WRITE_CALIB_OFS_ST : 
+                    //     if (~out_awfull)
+                    //         if (write_cmd_word_cnt == 4'h4)
+                    //             perform_request_flaq <= 1'b1;
 
 
                     default : 
@@ -2181,9 +2204,13 @@ module axi_adxl345 #(
             32'h00004000: avg_x <= (sum_x >> 14);
             32'h00008000: avg_x <= (sum_x >> 15);
             32'h00010000: avg_x <= (sum_x >> 16);
-
-
-
+            32'h00020000: avg_x <= (sum_x >> 17);
+            32'h00040000: avg_x <= (sum_x >> 18);
+            32'h00080000: avg_x <= (sum_x >> 19);
+            32'h00100000: avg_x <= (sum_x >> 20);
+            32'h00200000: avg_x <= (sum_x >> 21);
+            32'h00400000: avg_x <= (sum_x >> 22);
+            32'h00800000: avg_x <= (sum_x >> 23);
         endcase // current_state
     end 
 
@@ -2206,6 +2233,13 @@ module axi_adxl345 #(
             32'h00004000: avg_y <= (sum_y >> 14);
             32'h00008000: avg_y <= (sum_y >> 15);
             32'h00010000: avg_y <= (sum_y >> 16);
+            32'h00020000: avg_y <= (sum_y >> 17);
+            32'h00040000: avg_y <= (sum_y >> 18);
+            32'h00080000: avg_y <= (sum_y >> 19);
+            32'h00100000: avg_y <= (sum_y >> 20);
+            32'h00200000: avg_y <= (sum_y >> 21);
+            32'h00400000: avg_y <= (sum_y >> 22);
+            32'h00800000: avg_y <= (sum_y >> 23);
         endcase // current_state
     end 
 
@@ -2228,6 +2262,13 @@ module axi_adxl345 #(
             32'h00004000: avg_z <= (sum_z >> 14);
             32'h00008000: avg_z <= (sum_z >> 15);
             32'h00010000: avg_z <= (sum_z >> 16);
+            32'h00020000: avg_z <= (sum_z >> 17);
+            32'h00040000: avg_z <= (sum_z >> 18);
+            32'h00080000: avg_z <= (sum_z >> 19);
+            32'h00100000: avg_z <= (sum_z >> 20);
+            32'h00200000: avg_z <= (sum_z >> 21);
+            32'h00400000: avg_z <= (sum_z >> 22);
+            32'h00800000: avg_z <= (sum_z >> 23);
         endcase // current_state
     end 
 
@@ -2291,6 +2332,67 @@ module axi_adxl345 #(
                 2'b11 : offset_lsb_z <= -(offset_z << 1);
             endcase // current_state
         end 
+    end 
+
+    always_ff @(posedge CLK) begin : calibration_elapsed_time_proc 
+        
+        case (current_state) 
+            IDLE_ST :
+                if (calibration_flaq) 
+                    calibration_elapsed_time <= '{default:0};
+
+            TX_WRITE_CALIB_OFS_CLEAR_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            AWAIT_CALIB_TIMER_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            TX_WRITE_CALIB_DATA_PTR_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            TX_READ_CALIB_DATA_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            RX_CALIB_DATA_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            ADD_CALIB_CALC_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            AVG_CALIB_CALC_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            OFFSET_CALIB_CALC_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            OFFSET_LSB_CALIB_CALC_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            TX_WRITE_CALIB_OFS_ST : 
+                calibration_elapsed_time <= calibration_elapsed_time + 1;
+
+            default: 
+                calibration_elapsed_time <= calibration_elapsed_time;
+        endcase // current_state
+    end 
+
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state)
+
+            TX_SEND_ADDR_PTR : 
+                refresh_after_calib_flaq <= 1'b0;
+
+            TX_WRITE_CALIB_OFS_ST : 
+                if (~out_awfull)
+                    if (write_cmd_word_cnt == 4'h4)
+                        refresh_after_calib_flaq <= 1'b1;
+
+            default: 
+                refresh_after_calib_flaq <= refresh_after_calib_flaq;
+
+        endcase
     end 
 
 endmodule
