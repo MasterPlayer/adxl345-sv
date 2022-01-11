@@ -198,7 +198,6 @@ module axi_adxl345 #(
         TX_READ_INTR_DATA_ST            ,
         RX_INTR_DATA_ST                 ,
 
-        // Watermark interrupt processing states 
         TX_WRITE_WM_FIFO_STS_PTR_ST     , 
         TX_READ_WM_FIFO_STS_ST          ,
         RX_WM_FIFO_STS_ST               ,
@@ -217,10 +216,11 @@ module axi_adxl345 #(
         AVG_CALIB_CALC_ST               , 
         OFFSET_CALIB_CALC_ST            ,
         OFFSET_LSB_CALIB_CALC_ST        ,
-        TX_WRITE_CALIB_OFS_ST           ,
-        STUB_ST 
+        TX_WRITE_CALIB_OFS_ST            
 
     } fsm;
+
+    logic [5:0] fsm_logic;
 
     fsm         current_state      = IDLE_ST     ;
     logic [5:0] address            = '{default:0};
@@ -295,6 +295,64 @@ module axi_adxl345 #(
     logic [5:0] entries = '{default:0};
 
     logic [31:0] calibration_elapsed_time = '{default:0};
+
+    always_comb begin 
+        case (current_state)
+            IDLE_ST :                        fsm_logic = 'b000000; // 0
+            CHK_UPD_NEEDED_ST :              fsm_logic = 'b000001; // 1
+            SEND_WRITE_CMD_ST :              fsm_logic = 'b000010; // 2
+            INC_ADDR_ST :                    fsm_logic = 'b000011; // 3
+            TX_SEND_ADDR_PTR :               fsm_logic = 'b000100; // 4
+            TX_READ_REQUEST_ST :             fsm_logic = 'b000101; // 5
+            AWAIT_RECEIVE_DATA_ST :          fsm_logic = 'b000110; // 6
+            TX_WRITE_INT_SOURCE_PTR_ST :     fsm_logic = 'b000111; // 7
+            TX_READ_INT_SOURCE_ST :          fsm_logic = 'b001000; // 8
+            RX_INT_SOURCE_ST :               fsm_logic = 'b001001; // 9
+            INT_PROCESSING_ST :              fsm_logic = 'b001010; // 10
+            TX_WRITE_ACT_TAP_STATUS_PTR_ST : fsm_logic = 'b001011; // 11
+            TX_READ_ACT_TAP_STATUS_ST :      fsm_logic = 'b001100; // 12
+            RX_ACT_TAP_STATUS_ST :           fsm_logic = 'b001101; // 13
+            TX_WRITE_INTR_DATA_PTR_ST :      fsm_logic = 'b001110; // 14
+            TX_READ_INTR_DATA_ST :           fsm_logic = 'b001111; // 15
+            RX_INTR_DATA_ST :                fsm_logic = 'b010000; // 16
+            TX_WRITE_WM_FIFO_STS_PTR_ST :    fsm_logic = 'b010001; // 17
+            TX_READ_WM_FIFO_STS_ST :         fsm_logic = 'b010010; // 18
+            RX_WM_FIFO_STS_ST :              fsm_logic = 'b010011; // 19
+            TX_WRITE_WM_DATA_PTR_ST :        fsm_logic = 'b010100; // 20
+            TX_READ_WM_DATA_ST :             fsm_logic = 'b010101; // 21
+            RX_WM_DATA_ST :                  fsm_logic = 'b010110; // 22
+            CHECK_INTR_DEASSERT :            fsm_logic = 'b010111; // 23
+            TX_WRITE_CALIB_OFS_CLEAR_ST :    fsm_logic = 'b011000; // 24
+            AWAIT_CALIB_TIMER_ST :           fsm_logic = 'b011001; // 25
+            TX_WRITE_CALIB_DATA_PTR_ST :     fsm_logic = 'b011010; // 26
+            TX_READ_CALIB_DATA_ST :          fsm_logic = 'b011011; // 27
+            RX_CALIB_DATA_ST :               fsm_logic = 'b011100; // 28
+            ADD_CALIB_CALC_ST :              fsm_logic = 'b011101; // 29
+            AVG_CALIB_CALC_ST :              fsm_logic = 'b011110; // 30
+            OFFSET_CALIB_CALC_ST :           fsm_logic = 'b011111; // 31
+            OFFSET_LSB_CALIB_CALC_ST :       fsm_logic = 'b100000; // 32
+            TX_WRITE_CALIB_OFS_ST :          fsm_logic = 'b100001; // 33
+            default :                       fsm_logic = 'b111111; // 33
+
+        endcase // current_state
+    end 
+
+
+    ila_adxl ila_adxl_inst (
+        .clk   (CLK                     ), // input wire clk
+        .probe0(fsm_logic               ), // input wire [5:0]  probe0
+        .probe1(ADXL_INTERRUPT          ), // input wire [0:0]  probe1
+        .probe2(ADXL_IRQ                ), // input wire [0:0]  probe2
+        .probe3(calibration_flaq        ),
+        .probe4(allow_irq               ),
+        .probe5(perform_request_flaq    ),
+        .probe6(refresh_after_calib_flaq),
+        .probe7(enable                  ),
+        .probe8(update_request          ),
+        .probe9(request_timer           ),
+        .probe10(request_interval       )
+    );
+
 
     always_comb begin : has_dataready_intr_proc
         if ((int_source_reg[7] & int_enable_reg[7]))
@@ -744,37 +802,40 @@ module axi_adxl345 #(
             case (current_state)
 
                 IDLE_ST : 
-                    if (calibration_flaq) begin 
+                    if (calibration_flaq == 1'b1) begin 
                         current_state <= TX_WRITE_CALIB_OFS_CLEAR_ST;
                     end else begin 
-                        if (ADXL_INTERRUPT & allow_irq) begin 
-                        // if (ADXL_INTERRUPT) begin 
+                        if ((ADXL_INTERRUPT == 1'b1) & (allow_irq == 1'b1)) begin 
                             current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
                         end else begin 
-                            if (update_request) begin 
+                            if (update_request == 1'b1) begin 
                                 current_state <= CHK_UPD_NEEDED_ST;
                             end else begin 
-                                if (perform_request_flaq | refresh_after_calib_flaq) begin 
+                                if ((perform_request_flaq == 1'b1) | (refresh_after_calib_flaq == 1'b1)) begin 
                                     current_state <= TX_SEND_ADDR_PTR;
                                 end else begin 
-                                    if (enable) begin
+                                    if (enable == 1'b1) begin
                                         if (request_timer == request_interval) begin 
                                             current_state <= TX_SEND_ADDR_PTR;
-                                        end 
-                                    end
+                                        end else begin 
+                                            current_state <= IDLE_ST;
+                                        end  
+                                    end else begin 
+                                        current_state <= IDLE_ST;
+                                    end 
                                 end 
                             end  
                         end 
                     end 
 
                 CHK_UPD_NEEDED_ST : 
-                    if (need_update_reg[address[5:2]][address[1:0]])
+                    if (need_update_reg[address[5:2]][address[1:0]] == 1'b1)
                         current_state <= SEND_WRITE_CMD_ST;
                     else 
                         current_state <= INC_ADDR_ST;
 
                 SEND_WRITE_CMD_ST  : 
-                    if (~out_awfull)
+                    if (out_awfull == 1'b0)
                        if (write_cmd_word_cnt == 4'h2)
                             current_state <= INC_ADDR_ST;
 
@@ -785,33 +846,33 @@ module axi_adxl345 #(
                         current_state <= CHK_UPD_NEEDED_ST;
 
                 TX_SEND_ADDR_PTR: 
-                    if (~out_awfull)
+                    if (out_awfull  == 1'b0)
                         if (write_cmd_word_cnt == 4'h1)
                             current_state <= TX_READ_REQUEST_ST;
 
                 TX_READ_REQUEST_ST : 
-                    if (~out_awfull) 
+                    if (out_awfull == 1'b0) 
                         current_state <= AWAIT_RECEIVE_DATA_ST;
 
                 AWAIT_RECEIVE_DATA_ST : 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)
+                    if ((S_AXIS_TVALID == 1'b1) & (S_AXIS_TLAST == 1'b1))
                         current_state <= IDLE_ST;
                     else 
                         current_state <= current_state;
 
                 TX_WRITE_INT_SOURCE_PTR_ST : 
-                    if (~out_awfull) begin 
+                    if (out_awfull == 1'b0) begin 
                         if (write_cmd_word_cnt == 4'h1) 
                             current_state <= TX_READ_INT_SOURCE_ST;
                     end 
 
                 TX_READ_INT_SOURCE_ST : 
-                    if (~out_awfull) 
+                    if (out_awfull == 1'b0) 
                         current_state <= RX_INT_SOURCE_ST;
 
 
                 RX_INT_SOURCE_ST : 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)
+                    if ((S_AXIS_TVALID == 1'b1) & (S_AXIS_TLAST == 1'b1))
                         current_state <= INT_PROCESSING_ST;
 
                 INT_PROCESSING_ST : 
@@ -1490,12 +1551,17 @@ module axi_adxl345 #(
     always_ff @(posedge CLK) begin : request_timer_proc
         case (current_state)
             IDLE_ST : 
-                if (request_timer < request_interval)
-                    request_timer <= request_timer + 1;
-                else
+                if (enable == 1'b1) begin
+                    if (request_timer < request_interval) begin 
+                        request_timer <= request_timer + 1;
+                    end else begin 
+                        request_timer <= '{default:0};
+                    end 
+                end else begin 
                     request_timer <= '{default:0};
+                end 
 
-            AWAIT_RECEIVE_DATA_ST : 
+            default : 
                 request_timer <= '{default:0};
 
         endcase
