@@ -795,6 +795,51 @@ module axi_adxl345 #(
             endcase // current_state
     end 
 
+    logic [31:0] sended_ptr = '{default:0};
+    logic [31:0] sended_req = '{default:0};
+    logic [31:0] received_req = '{default:0};
+
+    vio_calib vio_calib_inst_0 (
+        .clk      (CLK         ), // input wire clk
+        .probe_in0(sended_ptr  ), // input wire [31 : 0] probe_in0
+        .probe_in1(sended_req  ), // input wire [31 : 0] probe_in1
+        .probe_in2(received_req)  // input wire [31 : 0] probe_in2
+    );
+
+    always_ff @(posedge CLK) begin : sended_ptr_proc 
+        case (current_state)
+        
+            TX_WRITE_INT_SOURCE_PTR_ST : 
+                if (out_awfull == 1'b0) begin 
+                    if (write_cmd_word_cnt == 4'h1) 
+                        sended_ptr <= sended_ptr + 1;
+                end 
+
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin : sended_req_proc 
+        case (current_state)
+        
+            TX_READ_INT_SOURCE_ST : 
+                if (out_awfull == 1'b0) 
+                    sended_req <= sended_req + 1;
+
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin : received_req_proc 
+        case (current_state)
+
+            RX_INT_SOURCE_ST : 
+                if ((S_AXIS_TVALID == 1'b1) & (S_AXIS_TLAST == 1'b1))
+                    received_req <= received_req + 1;
+
+
+        endcase // current_state
+    end 
+
+
     always_ff @(posedge CLK) begin : current_state_proc 
         if (~RESETN | reset) 
             current_state <= IDLE_ST;
@@ -802,9 +847,9 @@ module axi_adxl345 #(
             case (current_state)
 
                 IDLE_ST : 
-                    if (calibration_flaq == 1'b1) begin 
-                        current_state <= TX_WRITE_CALIB_OFS_CLEAR_ST;
-                    end else begin 
+                    // if (calibration_flaq == 1'b1) begin 
+                    //     current_state <= TX_WRITE_CALIB_OFS_CLEAR_ST;
+                    // end else begin 
                         if ((ADXL_INTERRUPT == 1'b1) & (allow_irq == 1'b1)) begin 
                             current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
                         end else begin 
@@ -826,7 +871,7 @@ module axi_adxl345 #(
                                 end 
                             end  
                         end 
-                    end 
+                    // end 
 
                 CHK_UPD_NEEDED_ST : 
                     if (need_update_reg[address[5:2]][address[1:0]] == 1'b1)
@@ -872,8 +917,15 @@ module axi_adxl345 #(
 
 
                 RX_INT_SOURCE_ST : 
-                    if ((S_AXIS_TVALID == 1'b1) & (S_AXIS_TLAST == 1'b1))
-                        current_state <= INT_PROCESSING_ST;
+                    if (S_AXIS_TVALID == 1'b1) begin 
+                        if (S_AXIS_TLAST == 1'b1) begin 
+                            current_state <= INT_PROCESSING_ST;
+                        end else begin 
+                            current_state <= current_state;
+                        end 
+                    end else begin 
+                        current_state <= current_state;
+                    end 
 
                 INT_PROCESSING_ST : 
                     if (has_st_intr | has_dt_intr | has_act_intr | has_inact_intr)
@@ -914,7 +966,7 @@ module axi_adxl345 #(
                         current_state <= RX_INTR_DATA_ST;
 
                 RX_INTR_DATA_ST: 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)
+                    if ((S_AXIS_TVALID == 1'b1) & (S_AXIS_TLAST == 1'b1))
                         current_state <= CHECK_INTR_DEASSERT;
 
 
