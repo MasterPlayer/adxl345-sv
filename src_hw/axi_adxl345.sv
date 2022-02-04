@@ -979,7 +979,8 @@ module axi_adxl345 #(
 
                 CHECK_INTR_DEASSERT: 
                     if (ADXL_INTERRUPT) 
-                        current_state <= INT_PROCESSING_ST;
+                        current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
+                        // current_state <= INT_PROCESSING_ST;
                     else 
                         current_state <= IDLE_ST;
 

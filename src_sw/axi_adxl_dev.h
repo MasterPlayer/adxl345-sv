@@ -194,35 +194,24 @@ typedef struct {
 #define adxl_dev_set_time_ff(ptr, value) ((ptr)->time_ff_reg = value)
 #define adxl_dev_get_time_ff(ptr) ((ptr)->time_ff_reg)
 
-
 #define adxl_dev_set_tap_axes(ptr, value) ((ptr)->tap_axes_reg = value)
 #define adxl_dev_get_tap_axes(ptr) ((ptr)->tap_axes_reg)
 
-
 #define adxl_dev_get_act_tap_status(ptr) ((ptr)->act_tap_status_reg)
-
-
-
 
 #define adxl_dev_set_bw_rate(ptr, value) ((ptr)->bw_rate_reg = (uint8_t)value)
 #define adxl_dev_get_bw_rate(ptr) ((ptr)->bw_rate_reg)
 
-
-
 #define adxl_dev_set_power_ctl(ptr, value) ((ptr)->power_ctl_reg = (uint8_t)value)
 #define adxl_dev_get_power_ctl(ptr) ((ptr)->power_ctl_reg)
-
 
 #define adxl_dev_set_int_enable(ptr, value) ((ptr)->int_enable_reg = value)
 #define adxl_dev_get_int_enable(ptr) ((ptr)->int_enable_reg)
 
-
 #define adxl_dev_set_int_map(ptr, value) ((ptr)->int_map_reg = value)
 #define adxl_dev_get_int_map(ptr) ((ptr)->int_map_reg)
 
-
 #define adxl_dev_get_int_source(ptr) ((ptr)->int_source_reg)
-
 
 #define adxl_dev_set_data_format(ptr, value) ((ptr)->data_format_reg = (uint8_t)value)
 #define adxl_dev_get_data_format(ptr) ((ptr)->data_format_reg)
