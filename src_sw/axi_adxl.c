@@ -1075,11 +1075,11 @@ int axi_adxl_set_offset_z(axi_adxl *ptr, uint8_t value){
 }
 
 
-int axi_adxl_convert_raw_to_g(axi_adxl *ptr, adxl_axis raw, g_coord* g_ptr){
+int axi_adxl_convert_raw_to_g(axi_adxl *ptr, adxl_axis *raw, g_coord* g_ptr){
 
-	int16_t data_x = (int16_t)raw.x;
-	int16_t data_y = (int16_t)raw.y;
-	int16_t data_z = (int16_t)raw.z;
+	int16_t data_x = (int16_t)raw->x;
+	int16_t data_y = (int16_t)raw->y;
+	int16_t data_z = (int16_t)raw->z;
 
 	if (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_FULL_RES){
 		g_ptr->x = (float)data_x/SENSITIVITY_FULL_RES;

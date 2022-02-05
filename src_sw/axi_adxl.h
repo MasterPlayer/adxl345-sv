@@ -223,7 +223,7 @@ int axi_adxl_set_offset_x(axi_adxl *ptr, uint8_t value);
 int axi_adxl_set_offset_y(axi_adxl *ptr, uint8_t value);
 int axi_adxl_set_offset_z(axi_adxl *ptr, uint8_t value);
 
-int axi_adxl_convert_raw_to_g(axi_adxl *ptr, adxl_axis raw, g_coord* g_ptr);
+int axi_adxl_convert_raw_to_g(axi_adxl *ptr, adxl_axis *raw, g_coord* g_ptr);
 
 
 void axi_adxl_debug(axi_adxl *ptr);

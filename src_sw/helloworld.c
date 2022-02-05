@@ -963,8 +963,10 @@ void adxl_intr_handler(void *callback){
     		printf("<FIFO>[%2d]\r\n", fifo_entries);
 
     		for (int i = 0; i < fifo_entries; i++){
-    			axi_adxl_convert_raw_to_g(ptr, ptr->cfg->axis[i], &g);
-        		printf("<WM>[x] : %3.3f \t[y] : %3.3f \t [z] %3.3f\r\n", g.x, g.y, g.z);
+    			adxl_axis *coord = &(((ptr)->cfg)->axis[i]);
+    			axi_adxl_convert_raw_to_g(ptr, coord, &g);
+        		printf("<WM[%d]>[x] : %3.3f \t[y] : %3.3f \t [z] %3.3f\r\n", i, g.x, g.y, g.z);
+
     		}
 		break;
 
@@ -975,7 +977,8 @@ void adxl_intr_handler(void *callback){
     		printf("<FIFO>[%2d]\r\n", fifo_entries);
 
     		for (int i = 0; i < fifo_entries; i++){
-    			axi_adxl_convert_raw_to_g(ptr, ptr->cfg->axis[i], &g);
+    			adxl_axis *coord = &(((ptr)->cfg)->axis[i]);
+    			axi_adxl_convert_raw_to_g(ptr, coord, &g);
         		printf("<OVR>[x] : %3.3f \t[y] : %3.3f \t [z] %3.3f\r\n", g.x, g.y, g.z);
     		}
 		break;
