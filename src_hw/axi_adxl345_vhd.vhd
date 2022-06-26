@@ -8,6 +8,8 @@ entity axi_adxl345_vhd is
     generic (
         S_AXI_LITE_DEV_DATA_WIDTH   :           integer := 32                                                                   ;
         S_AXI_LITE_DEV_ADDR_WIDTH   :           integer := 6                                                                    ;
+        M_AXI_ADDR_WIDTH            :           integer := 32                                                                   ;
+        DEFAULT_MEM_BASEADDRESS     :           std_logic_Vector ( 31 downto 0 ) := x"10000000"                                 ;
         DEFAULT_DEVICE_ADDRESS      :           std_logic_Vector ( 6 downto 0 ) := "1010011"                                    ;
         DEFAULT_REQUEST_INTERVAL    :           integer := 1000                                                                 ;
         S_AXI_LITE_CFG_DATA_WIDTH   :           integer := 32                                                                   ;
@@ -56,6 +58,25 @@ entity axi_adxl345_vhd is
         S_AXI_LITE_DEV_RRESP        :   out     std_logic_vector (                               1 downto 0 )                   ;
         S_AXI_LITE_DEV_RVALID       :   out     std_logic                                                                       ;
         S_AXI_LITE_DEV_RREADY       :   in      std_logic                                                                       ;
+
+        M_AXI_AWADDR                :  out      std_logic_vector (  M_AXI_ADDR_WIDTH-1 downto 0 )                               ;
+        M_AXI_AWLEN                 :  out      std_logic_vector (                   7 downto 0 )                               ;
+        M_AXI_AWSIZE                :  out      std_logic_vector (                   2 downto 0 )                               ;
+        M_AXI_AWBURST               :  out      std_logic_vector (                   1 downto 0 )                               ;
+        M_AXI_AWLOCK                :  out      std_logic                                                                       ;
+        M_AXI_AWCACHE               :  out      std_logic_vector (                   3 downto 0 )                               ;
+        M_AXI_AWPROT                :  out      std_logic_vector (                   2 downto 0 )                               ;
+        M_AXI_AWVALID               :  out      std_logic                                                                       ;
+        M_AXI_AWREADY               :  in       std_logic                                                                       ;
+        M_AXI_WDATA                 :  out      std_logic_vector (                  63 downto 0 )                               ;
+        M_AXI_WSTRB                 :  out      std_logic_vector (                   7 downto 0 )                               ;
+        M_AXI_WLAST                 :  out      std_logic                                                                       ;
+        M_AXI_WVALID                :  out      std_logic                                                                       ;
+        M_AXI_WREADY                :  in       std_logic                                                                       ;
+        M_AXI_BRESP                 :  in       std_logic_vector (                   1 downto 0 )                               ;
+        M_AXI_BVALID                :  in       std_logic                                                                       ;
+        M_AXI_BREADY                :  out      std_logic                                                                       ;
+
         M_AXIS_TDATA                :   out     std_logic_vector (                               7 downto 0 )                   ;
         M_AXIS_TKEEP                :   out     std_logic_vector (                               0 downto 0 )                   ;
         M_AXIS_TUSER                :   out     std_logic_vector (                               7 downto 0 )                   ;
@@ -87,6 +108,8 @@ architecture axi_adxl345_vhd_arch of axi_adxl345_vhd is
         generic (
             S_AXI_LITE_DEV_DATA_WIDTH   :           integer := 32                                                                   ;
             S_AXI_LITE_DEV_ADDR_WIDTH   :           integer := 6                                                                    ;
+            M_AXI_ADDR_WIDTH            :           integer := 32                                                                   ;
+            DEFAULT_MEM_BASEADDRESS     :           std_logic_Vector ( 31 downto 0 ) := x"10000000"                                 ;
             DEFAULT_DEVICE_ADDRESS      :           std_logic_Vector ( 6 downto 0 ) := "1010011"                                    ;
             DEFAULT_REQUEST_INTERVAL    :           integer := 1000                                                                 ;
             S_AXI_LITE_CFG_DATA_WIDTH   :           integer := 32                                                                   ;
@@ -135,6 +158,23 @@ architecture axi_adxl345_vhd_arch of axi_adxl345_vhd is
             S_AXI_LITE_DEV_RRESP        :   out     std_logic_vector (                               1 downto 0 )                   ;
             S_AXI_LITE_DEV_RVALID       :   out     std_logic                                                                       ;
             S_AXI_LITE_DEV_RREADY       :   in      std_logic                                                                       ;
+            M_AXI_AWADDR                :  out      std_logic_vector (  M_AXI_ADDR_WIDTH-1 downto 0 )                               ;
+            M_AXI_AWLEN                 :  out      std_logic_vector (                   7 downto 0 )                               ;
+            M_AXI_AWSIZE                :  out      std_logic_vector (                   2 downto 0 )                               ;
+            M_AXI_AWBURST               :  out      std_logic_vector (                   1 downto 0 )                               ;
+            M_AXI_AWLOCK                :  out      std_logic                                                                       ;
+            M_AXI_AWCACHE               :  out      std_logic_vector (                   3 downto 0 )                               ;
+            M_AXI_AWPROT                :  out      std_logic_vector (                   2 downto 0 )                               ;
+            M_AXI_AWVALID               :  out      std_logic                                                                       ;
+            M_AXI_AWREADY               :  in       std_logic                                                                       ;
+            M_AXI_WDATA                 :  out      std_logic_vector (                  63 downto 0 )                               ;
+            M_AXI_WSTRB                 :  out      std_logic_vector (                   7 downto 0 )                               ;
+            M_AXI_WLAST                 :  out      std_logic                                                                       ;
+            M_AXI_WVALID                :  out      std_logic                                                                       ;
+            M_AXI_WREADY                :  in       std_logic                                                                       ;
+            M_AXI_BRESP                 :  in       std_logic_vector (                   1 downto 0 )                               ;
+            M_AXI_BVALID                :  in       std_logic                                                                       ;
+            M_AXI_BREADY                :  out      std_logic                                                                       ;
             M_AXIS_TDATA                :   out     std_logic_vector (                               7 downto 0 )                   ;
             M_AXIS_TKEEP                :   out     std_logic_vector (                               0 downto 0 )                   ;
             M_AXIS_TUSER                :   out     std_logic_vector (                               7 downto 0 )                   ;
@@ -159,6 +199,9 @@ begin
         generic map (
             S_AXI_LITE_DEV_DATA_WIDTH   =>  S_AXI_LITE_DEV_DATA_WIDTH           ,
             S_AXI_LITE_DEV_ADDR_WIDTH   =>  S_AXI_LITE_DEV_ADDR_WIDTH           ,
+            M_AXI_ADDR_WIDTH            =>  M_AXI_ADDR_WIDTH                    ,
+            DEFAULT_MEM_BASEADDRESS     =>  DEFAULT_MEM_BASEADDRESS             ,
+
             DEFAULT_DEVICE_ADDRESS      =>  DEFAULT_DEVICE_ADDRESS              ,
             DEFAULT_REQUEST_INTERVAL    =>  DEFAULT_REQUEST_INTERVAL            ,
             S_AXI_LITE_CFG_DATA_WIDTH   =>  S_AXI_LITE_CFG_DATA_WIDTH           ,
@@ -207,6 +250,23 @@ begin
             S_AXI_LITE_DEV_RRESP        =>  S_AXI_LITE_DEV_RRESP                ,
             S_AXI_LITE_DEV_RVALID       =>  S_AXI_LITE_DEV_RVALID               ,
             S_AXI_LITE_DEV_RREADY       =>  S_AXI_LITE_DEV_RREADY               ,
+            M_AXI_AWADDR                =>  M_AXI_AWADDR                        ,
+            M_AXI_AWLEN                 =>  M_AXI_AWLEN                         ,
+            M_AXI_AWSIZE                =>  M_AXI_AWSIZE                        ,
+            M_AXI_AWBURST               =>  M_AXI_AWBURST                       ,
+            M_AXI_AWLOCK                =>  M_AXI_AWLOCK                        ,
+            M_AXI_AWCACHE               =>  M_AXI_AWCACHE                       ,
+            M_AXI_AWPROT                =>  M_AXI_AWPROT                        ,
+            M_AXI_AWVALID               =>  M_AXI_AWVALID                       ,
+            M_AXI_AWREADY               =>  M_AXI_AWREADY                       ,
+            M_AXI_WDATA                 =>  M_AXI_WDATA                         ,
+            M_AXI_WSTRB                 =>  M_AXI_WSTRB                         ,
+            M_AXI_WLAST                 =>  M_AXI_WLAST                         ,
+            M_AXI_WVALID                =>  M_AXI_WVALID                        ,
+            M_AXI_WREADY                =>  M_AXI_WREADY                        ,
+            M_AXI_BRESP                 =>  M_AXI_BRESP                         ,
+            M_AXI_BVALID                =>  M_AXI_BVALID                        ,
+            M_AXI_BREADY                =>  M_AXI_BREADY                        ,
             M_AXIS_TDATA                =>  M_AXIS_TDATA                        ,
             M_AXIS_TKEEP                =>  M_AXIS_TKEEP                        ,
             M_AXIS_TUSER                =>  M_AXIS_TUSER                        ,

@@ -3,15 +3,17 @@
 
 
 module axi_adxl345 #(
-    parameter integer       S_AXI_LITE_DEV_DATA_WIDTH = 32       ,
-    parameter integer       S_AXI_LITE_DEV_ADDR_WIDTH = 6        ,
-    parameter         [6:0] DEFAULT_DEVICE_ADDRESS    = 7'h53    ,
-    parameter integer       DEFAULT_REQUEST_INTERVAL  = 1000     ,
-    parameter integer       DEFAULT_CALIBRATION_LIMIT = 8        ,
-    parameter integer       S_AXI_LITE_CFG_DATA_WIDTH = 32       ,
-    parameter integer       S_AXI_LITE_CFG_ADDR_WIDTH = 8        ,
-    parameter integer       CLK_PERIOD                = 100000000,
-    parameter integer       RESET_DURATION            = 1000
+    parameter integer                        S_AXI_LITE_DEV_DATA_WIDTH = 32        ,
+    parameter integer                        S_AXI_LITE_DEV_ADDR_WIDTH = 6         ,
+    parameter integer                        M_AXI_ADDR_WIDTH          = 32        ,
+    parameter         [M_AXI_ADDR_WIDTH-1:0] DEFAULT_MEM_BASEADDRESS   = 'h00000000,
+    parameter         [                 6:0] DEFAULT_DEVICE_ADDRESS    = 7'h53     ,
+    parameter integer                        DEFAULT_REQUEST_INTERVAL  = 1000      ,
+    parameter integer                        DEFAULT_CALIBRATION_LIMIT = 8         ,
+    parameter integer                        S_AXI_LITE_CFG_DATA_WIDTH = 32        ,
+    parameter integer                        S_AXI_LITE_CFG_ADDR_WIDTH = 8         ,
+    parameter integer                        CLK_PERIOD                = 100000000 ,
+    parameter integer                        RESET_DURATION            = 1000
 ) (
     input  logic                                     CLK                   ,
     input  logic                                     RESETN                ,
@@ -55,6 +57,23 @@ module axi_adxl345 #(
     output logic [                              1:0] S_AXI_LITE_DEV_RRESP  ,
     output logic                                     S_AXI_LITE_DEV_RVALID ,
     input  logic                                     S_AXI_LITE_DEV_RREADY ,
+    output logic [             M_AXI_ADDR_WIDTH-1:0] M_AXI_AWADDR          ,
+    output logic [                              7:0] M_AXI_AWLEN           ,
+    output logic [                              2:0] M_AXI_AWSIZE          ,
+    output logic [                              1:0] M_AXI_AWBURST         ,
+    output logic                                     M_AXI_AWLOCK          ,
+    output logic [                              3:0] M_AXI_AWCACHE         ,
+    output logic [                              2:0] M_AXI_AWPROT          ,
+    output logic                                     M_AXI_AWVALID         ,
+    input  logic                                     M_AXI_AWREADY         ,
+    output logic [                             63:0] M_AXI_WDATA           ,
+    output logic [                              7:0] M_AXI_WSTRB           ,
+    output logic                                     M_AXI_WLAST           ,
+    output logic                                     M_AXI_WVALID          ,
+    input  logic                                     M_AXI_WREADY          ,
+    input  logic [                              1:0] M_AXI_BRESP           ,
+    input  logic                                     M_AXI_BVALID          ,
+    output logic                                     M_AXI_BREADY          ,
     // data from device
     output logic [                              7:0] M_AXIS_TDATA          ,
     output logic [                              0:0] M_AXIS_TKEEP          ,
@@ -69,12 +88,12 @@ module axi_adxl345 #(
     input  logic                                     S_AXIS_TVALID         ,
     input  logic                                     S_AXIS_TLAST          ,
     output logic                                     S_AXIS_TREADY         ,
-    // interrupt signals to component/from component            
-(* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_INTERRUPT INTERRUPT" *)
-(* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
-    input logic                                      ADXL_INTERRUPT        ,
-(* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_IRQ INTERRUPT" *)
-(* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
+    // interrupt signals to component/from component
+    (* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_INTERRUPT INTERRUPT" *)
+    (* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
+    input  logic                                     ADXL_INTERRUPT        ,
+    (* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_IRQ INTERRUPT" *)
+    (* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
     output logic                                     ADXL_IRQ
 );
 
@@ -105,7 +124,7 @@ module axi_adxl345 #(
     logic                                 axi_dev_rvalid ;
 
     localparam integer    ADDR_LSB_CFG          = (S_AXI_LITE_CFG_DATA_WIDTH/32) + 1;
-    localparam integer    OPT_MEM_ADDR_BITS_CFG = 5                                 ;
+    localparam integer    OPT_MEM_ADDR_BITS_CFG = 3                                 ;
     localparam integer    ADDR_LSB_DEV          = (S_AXI_LITE_DEV_DATA_WIDTH/32) + 1;
     localparam integer    OPT_MEM_ADDR_BITS_DEV = 3                                 ;
     localparam integer    DATA_WIDTH            = 8                                 ;
@@ -163,8 +182,8 @@ module axi_adxl345 #(
 
 
     logic [                         15:0][S_AXI_LITE_CFG_DATA_WIDTH-1:0] register_cfg     = '{default:'{default:0}};
-    logic [                        191:0][                          7:0] register_samples = '{default:'{default:0}};
-    logic [                          7:0]                                sample_address   = '{default:0}           ;
+    // logic [                        191:0][                          7:0] register_samples = '{default:'{default:0}};
+    logic [                         15:0]                                sample_address   = '{default:0}           ;
     logic                                                                slv_reg_rden_cfg                          ;
     logic                                                                slv_reg_wren_cfg                          ;
     logic [S_AXI_LITE_CFG_DATA_WIDTH-1:0]                                reg_data_out_cfg                          ;
@@ -203,6 +222,7 @@ module axi_adxl345 #(
         TX_WRITE_WM_DATA_PTR_ST         , 
         TX_READ_WM_DATA_ST              ,
         RX_WM_DATA_ST                   ,
+        AWAIT_M_AXI_TRANSIT_ST          ,
 
         CHECK_INTR_DEASSERT             ,  // 
 
@@ -236,7 +256,7 @@ module axi_adxl345 #(
     logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h02                   ; // read only,
-    logic [                         7:0] version_minor        = 8'h00                   ; // read only,
+    logic [                         7:0] version_minor        = 8'h01                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
     (* dont_touch="true" *)logic                                calibration_flaq     = 1'b0                    ;
@@ -246,15 +266,15 @@ module axi_adxl345 #(
     (* dont_touch="true" *)logic                                allow_irq            = 1'b0                    ; // reg[0][2]
     (* dont_touch="true" *)logic                                enable               = 1'b0                    ; // reg[0][1]
     (* dont_touch="true" *)logic [($clog2(RESET_DURATION)-1):0] reset_logic_timer    = 1'b0                    ; // reg[0][0]
-    logic                                reset                = 1'b0                    ;
-    logic [                        31:0] request_interval     = DEFAULT_REQUEST_INTERVAL;
-    logic [                        31:0] read_valid_count     = '{default:0}            ;
-    logic [                        31:0] read_valid_reg       = '{default:0}            ;
-    logic [                        31:0] write_valid_count    = '{default:0}            ;
-    logic [                        31:0] write_valid_reg      = '{default:0}            ;
-    logic [                        31:0] write_transactions   = '{default:0}            ;
-    logic [                        31:0] read_transactions    = '{default:0}            ;
-    logic [                        31:0] transactions_timer   = '{default:0}            ;
+    (* dont_touch="true" *)logic        reset              = 1'b0                    ;
+    logic [31:0] request_interval   = DEFAULT_REQUEST_INTERVAL;
+    logic [31:0] read_valid_count   = '{default:0}            ;
+    logic [31:0] read_valid_reg     = '{default:0}            ;
+    logic [31:0] write_valid_count  = '{default:0}            ;
+    logic [31:0] write_valid_reg    = '{default:0}            ;
+    logic [31:0] write_transactions = '{default:0}            ;
+    logic [31:0] read_transactions  = '{default:0}            ;
+    logic [31:0] transactions_timer = '{default:0}            ;
 
     // Calibration data 
     logic [31:0] calibration_timer           = '{default:0};
@@ -275,12 +295,17 @@ module axi_adxl345 #(
     logic [7:0] offset_lsb_y = '{default:0};
     logic [7:0] offset_lsb_z = '{default:0};
 
-    logic refresh_after_calib_flaq = 1'b0;
-    // Interrupt data
-    logic [7:0] int_source_reg = '{default:0};
-    logic [7:0] int_enable_reg = '{default:0};
+    (* dont_touch="true" *)logic refresh_after_calib_flaq = 1'b0;
 
-    logic intr_ack;
+
+    logic  [M_AXI_ADDR_WIDTH-1:0] mem_baseaddress_reg = DEFAULT_MEM_BASEADDRESS;
+
+    // Interrupt data
+    (* dont_touch="true" *)logic [7:0] int_source_reg = '{default:0};
+    (* dont_touch="true" *)logic [7:0] int_enable_reg = '{default:0};
+
+    (* dont_touch="true" *)logic intr_ack;
+
 
     (* dont_touch="true" *)logic has_dataready_intr;
     (* dont_touch="true" *)logic has_st_intr;
@@ -291,67 +316,10 @@ module axi_adxl345 #(
     (* dont_touch="true" *)logic has_wm_intr;
     (* dont_touch="true" *)logic has_ovrrn_intr;
 
-    logic [5:0] entries = '{default:0};
+    (* dont_touch="true" *)logic [5:0] entries = '{default:0};
 
     logic [31:0] calibration_elapsed_time = '{default:0};
 
-    // always_comb begin 
-    //     case (current_state)
-    //         IDLE_ST :                        fsm_logic = 'b000000; // 0
-    //         CHK_UPD_NEEDED_ST :              fsm_logic = 'b000001; // 1
-    //         SEND_WRITE_CMD_ST :              fsm_logic = 'b000010; // 2
-    //         INC_ADDR_ST :                    fsm_logic = 'b000011; // 3
-    //         TX_SEND_ADDR_PTR :               fsm_logic = 'b000100; // 4
-    //         TX_READ_REQUEST_ST :             fsm_logic = 'b000101; // 5
-    //         AWAIT_RECEIVE_DATA_ST :          fsm_logic = 'b000110; // 6
-    //         TX_WRITE_INT_SOURCE_PTR_ST :     fsm_logic = 'b000111; // 7
-    //         TX_READ_INT_SOURCE_ST :          fsm_logic = 'b001000; // 8
-    //         RX_INT_SOURCE_ST :               fsm_logic = 'b001001; // 9
-    //         INT_PROCESSING_ST :              fsm_logic = 'b001010; // 10
-    //         TX_WRITE_ACT_TAP_STATUS_PTR_ST : fsm_logic = 'b001011; // 11
-    //         TX_READ_ACT_TAP_STATUS_ST :      fsm_logic = 'b001100; // 12
-    //         RX_ACT_TAP_STATUS_ST :           fsm_logic = 'b001101; // 13
-    //         TX_WRITE_INTR_DATA_PTR_ST :      fsm_logic = 'b001110; // 14
-    //         TX_READ_INTR_DATA_ST :           fsm_logic = 'b001111; // 15
-    //         RX_INTR_DATA_ST :                fsm_logic = 'b010000; // 16
-    //         TX_WRITE_WM_FIFO_STS_PTR_ST :    fsm_logic = 'b010001; // 17
-    //         TX_READ_WM_FIFO_STS_ST :         fsm_logic = 'b010010; // 18
-    //         RX_WM_FIFO_STS_ST :              fsm_logic = 'b010011; // 19
-    //         TX_WRITE_WM_DATA_PTR_ST :        fsm_logic = 'b010100; // 20
-    //         TX_READ_WM_DATA_ST :             fsm_logic = 'b010101; // 21
-    //         RX_WM_DATA_ST :                  fsm_logic = 'b010110; // 22
-    //         CHECK_INTR_DEASSERT :            fsm_logic = 'b010111; // 23
-    //         TX_WRITE_CALIB_OFS_CLEAR_ST :    fsm_logic = 'b011000; // 24
-    //         AWAIT_CALIB_TIMER_ST :           fsm_logic = 'b011001; // 25
-    //         TX_WRITE_CALIB_DATA_PTR_ST :     fsm_logic = 'b011010; // 26
-    //         TX_READ_CALIB_DATA_ST :          fsm_logic = 'b011011; // 27
-    //         RX_CALIB_DATA_ST :               fsm_logic = 'b011100; // 28
-    //         ADD_CALIB_CALC_ST :              fsm_logic = 'b011101; // 29
-    //         AVG_CALIB_CALC_ST :              fsm_logic = 'b011110; // 30
-    //         OFFSET_CALIB_CALC_ST :           fsm_logic = 'b011111; // 31
-    //         OFFSET_LSB_CALIB_CALC_ST :       fsm_logic = 'b100000; // 32
-    //         TX_WRITE_CALIB_OFS_ST :          fsm_logic = 'b100001; // 33
-    //         default :                       fsm_logic = 'b111111; // 33
-
-    //     endcase // current_state
-    // end 
-
-
-    // ila_adxl ila_adxl_inst (
-    //     .clk    (CLK                     ), // input wire clk
-    //     .probe0 (S_AXIS_TDATA            ), // input wire [5:0]  probe0
-    //     .probe1 (S_AXIS_TVALID           ), // input wire [0:0]  probe1
-    //     .probe2 (fsm_logic               ), // input wire [0:0]  probe2
-    //     .probe3 (address                 ),
-    //     .probe4 (S_AXIS_TLAST            ),
-    //     .probe5 (ADXL_INTERRUPT          ),
-    //     .probe6 (update_request          ),
-    //     .probe7 (perform_request_flaq    ),
-    //     .probe8 (refresh_after_calib_flaq),
-    //     .probe9 (enable                  ),
-    //     .probe10(request_timer           ),
-    //     .probe11(request_interval        )
-    // );
 
 
     always_comb begin : has_dataready_intr_proc
@@ -431,6 +399,53 @@ module axi_adxl345 #(
         endcase // register[11][0][7:0]
     end 
 
+    always_ff @(posedge CLK) begin 
+        case (current_state)
+            IDLE_ST :                        fsm_logic <= 'b000000; // 0
+            CHK_UPD_NEEDED_ST :              fsm_logic <= 'b000001; // 1
+            SEND_WRITE_CMD_ST :              fsm_logic <= 'b000010; // 2
+            INC_ADDR_ST :                    fsm_logic <= 'b000011; // 3
+            TX_SEND_ADDR_PTR :               fsm_logic <= 'b000100; // 4
+            TX_READ_REQUEST_ST :             fsm_logic <= 'b000101; // 5
+            AWAIT_RECEIVE_DATA_ST :          fsm_logic <= 'b000110; // 6
+            TX_WRITE_INT_SOURCE_PTR_ST :     fsm_logic <= 'b000111; // 7
+            TX_READ_INT_SOURCE_ST :          fsm_logic <= 'b001000; // 8
+            RX_INT_SOURCE_ST :               fsm_logic <= 'b001001; // 9
+            INT_PROCESSING_ST :              fsm_logic <= 'b001010; // 10
+            TX_WRITE_ACT_TAP_STATUS_PTR_ST : fsm_logic <= 'b001011; // 11
+            TX_READ_ACT_TAP_STATUS_ST :      fsm_logic <= 'b001100; // 12
+            RX_ACT_TAP_STATUS_ST :           fsm_logic <= 'b001101; // 13
+            TX_WRITE_INTR_DATA_PTR_ST :      fsm_logic <= 'b001110; // 14
+            TX_READ_INTR_DATA_ST :           fsm_logic <= 'b001111; // 15
+            RX_INTR_DATA_ST :                fsm_logic <= 'b010000; // 16
+            TX_WRITE_WM_FIFO_STS_PTR_ST :    fsm_logic <= 'b010001; // 17
+            TX_READ_WM_FIFO_STS_ST :         fsm_logic <= 'b010010; // 18
+            RX_WM_FIFO_STS_ST :              fsm_logic <= 'b010011; // 19
+            TX_WRITE_WM_DATA_PTR_ST :        fsm_logic <= 'b010100; // 20
+            TX_READ_WM_DATA_ST :             fsm_logic <= 'b010101; // 21
+            RX_WM_DATA_ST :                  fsm_logic <= 'b010110; // 22
+            CHECK_INTR_DEASSERT :            fsm_logic <= 'b010111; // 23
+            TX_WRITE_CALIB_OFS_CLEAR_ST :    fsm_logic <= 'b011000; // 24
+            AWAIT_CALIB_TIMER_ST :           fsm_logic <= 'b011001; // 25
+            TX_WRITE_CALIB_DATA_PTR_ST :     fsm_logic <= 'b011010; // 26
+            TX_READ_CALIB_DATA_ST :          fsm_logic <= 'b011011; // 27
+            RX_CALIB_DATA_ST :               fsm_logic <= 'b011100; // 28
+            ADD_CALIB_CALC_ST :              fsm_logic <= 'b011101; // 29
+            AVG_CALIB_CALC_ST :              fsm_logic <= 'b011110; // 30
+            OFFSET_CALIB_CALC_ST :           fsm_logic <= 'b011111; // 31
+            OFFSET_LSB_CALIB_CALC_ST :       fsm_logic <= 'b100000; // 32
+            TX_WRITE_CALIB_OFS_ST :          fsm_logic <= 'b100001; // 33
+            AWAIT_M_AXI_TRANSIT_ST :         fsm_logic <= 'b100010; // 34
+            default :                       fsm_logic <= 'b111111; // 33
+
+        endcase // current_state
+    end 
+
+
+    ila_adxl ila_adxl_inst (
+        .clk    (CLK                     ), // input wire clk
+        .probe0 (fsm_logic               )  // input wire [0:0]  probe2
+    );
 
     always_comb begin
         S_AXI_LITE_DEV_AWREADY = axi_dev_awready;
@@ -460,6 +475,7 @@ module axi_adxl345 #(
     end 
 
     always_ff @( posedge CLK ) begin : S_AXI_LITE_DEV_RVALID_proc
+
         S_AXI_LITE_DEV_RVALID <= axi_dev_rvalid;
     end 
 
@@ -478,6 +494,8 @@ module axi_adxl345 #(
                     axi_dev_awready <= 1'b0;
     end       
 
+
+
     always_ff @( posedge CLK ) begin : aw_en_proc
         if (~RESETN)
             aw_en <= 1'b1;
@@ -489,6 +507,8 @@ module axi_adxl345 #(
                     aw_en <= 1'b1;
     end       
 
+
+
     always_ff @( posedge CLK ) begin : axi_dev_awaddr_proc
         if (~RESETN)
             axi_dev_awaddr <= '{default:0};
@@ -496,6 +516,8 @@ module axi_adxl345 #(
             if (~axi_dev_awready & S_AXI_LITE_DEV_AWVALID & S_AXI_LITE_DEV_WVALID & aw_en)
                 axi_dev_awaddr <= S_AXI_LITE_DEV_AWADDR;
     end       
+
+
 
     always_ff @( posedge CLK ) begin : axi_dev_wready_proc
         if (~RESETN)
@@ -507,10 +529,14 @@ module axi_adxl345 #(
                 axi_dev_wready <= 1'b0;
     end       
 
+
+
     always_comb begin 
 
         slv_reg_wren = axi_dev_wready & S_AXI_LITE_DEV_WVALID & axi_dev_awready & S_AXI_LITE_DEV_AWVALID;
     end
+
+
 
     generate 
 
@@ -687,6 +713,7 @@ module axi_adxl345 #(
 
 
     always_ff @(posedge CLK) begin 
+
         slv_reg_rden <= axi_dev_arready & S_AXI_LITE_DEV_ARVALID & ~axi_dev_rvalid;
     end 
 
@@ -971,9 +998,15 @@ module axi_adxl345 #(
                 RX_WM_DATA_ST : 
                     if (S_AXIS_TVALID & S_AXIS_TLAST)  
                         if (!entries) 
-                            current_state <= CHECK_INTR_DEASSERT;
+                            current_state <= AWAIT_M_AXI_TRANSIT_ST;
                         else  
                             current_state <= TX_WRITE_WM_DATA_PTR_ST;
+                    else 
+                        current_state <= current_state;
+
+                AWAIT_M_AXI_TRANSIT_ST : 
+                    if (unallow_transit) 
+                        current_state <= CHECK_INTR_DEASSERT ;
                     else 
                         current_state <= current_state;
 
@@ -1087,9 +1120,9 @@ module axi_adxl345 #(
                 TX_WRITE_WM_DATA_PTR_ST: 
                     address <= 8'h32;
 
-                RX_WM_DATA_ST: 
-                    if (S_AXIS_TVALID)
-                        address <= address + 1;
+                // RX_WM_DATA_ST: 
+                //     if (S_AXIS_TVALID)
+                //         address <= address + 1;
                 
                 TX_WRITE_CALIB_DATA_PTR_ST : 
                     address <= 8'h32;
@@ -1733,15 +1766,15 @@ module axi_adxl345 #(
         slv_reg_rden_cfg <= axi_arready_cfg & S_AXI_LITE_CFG_ARVALID & ~axi_rvalid_cfg;
     end 
 
-    logic [47:0][31:0] register_file;
+    // logic [47:0][31:0] register_file;
 
-    generate 
-        for (genvar rf_idx = 0; rf_idx < 48; rf_idx++) begin 
-            always_comb begin 
-                register_file[rf_idx][31:0] = {register_samples[(rf_idx*4)+3], register_samples[(rf_idx*4)+2], register_samples[(rf_idx*4)+1], register_samples[rf_idx*4]};
-            end 
-        end   
-    endgenerate
+    // generate 
+    //     for (genvar rf_idx = 0; rf_idx < 48; rf_idx++) begin 
+    //         always_comb begin 
+    //             register_file[rf_idx][31:0] = {register_samples[(rf_idx*4)+3], register_samples[(rf_idx*4)+2], register_samples[(rf_idx*4)+1], register_samples[rf_idx*4]};
+    //         end 
+    //     end   
+    // endgenerate
 
 
     always_ff @(posedge CLK) begin
@@ -1768,63 +1801,63 @@ module axi_adxl345 #(
             8'h05    : reg_data_out_cfg <= write_transactions;
             8'h06    : reg_data_out_cfg <= read_transactions;
             8'h07    : reg_data_out_cfg <= CLK_PERIOD;
-            8'h08    : reg_data_out_cfg <= {23'h0, has_ovrrn_intr, sample_address};
+            8'h08    : reg_data_out_cfg <= {15'h0, has_ovrrn_intr, sample_address};
             8'h09    : reg_data_out_cfg <= opt_request_interval;
             8'h0a    : reg_data_out_cfg <= calibration_count_limit_reg;
             8'h0b    : reg_data_out_cfg <= calibration_elapsed_time;
-            8'h0c    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0d    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0e    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0f    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0c    : reg_data_out_cfg <= mem_baseaddress_reg; // reserved
+            8'h0d : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0e : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0f : reg_data_out_cfg <= '{default:0}; // reserved
 
-            8'h10    : reg_data_out_cfg <= register_file[0][31:0];
-            8'h11    : reg_data_out_cfg <= register_file[1][31:0];
-            8'h12    : reg_data_out_cfg <= register_file[2][31:0];
-            8'h13    : reg_data_out_cfg <= register_file[3][31:0];
-            8'h14    : reg_data_out_cfg <= register_file[4][31:0];
-            8'h15    : reg_data_out_cfg <= register_file[5][31:0];
-            8'h16    : reg_data_out_cfg <= register_file[6][31:0];
-            8'h17    : reg_data_out_cfg <= register_file[7][31:0];
-            8'h18    : reg_data_out_cfg <= register_file[8][31:0];
-            8'h19    : reg_data_out_cfg <= register_file[9][31:0];
-            8'h1a    : reg_data_out_cfg <= register_file[10][31:0];
-            8'h1b    : reg_data_out_cfg <= register_file[11][31:0];
-            8'h1c    : reg_data_out_cfg <= register_file[12][31:0];
-            8'h1d    : reg_data_out_cfg <= register_file[13][31:0];
-            8'h1e    : reg_data_out_cfg <= register_file[14][31:0];
-            8'h1f    : reg_data_out_cfg <= register_file[15][31:0];
-            8'h20    : reg_data_out_cfg <= register_file[16][31:0];
-            8'h21    : reg_data_out_cfg <= register_file[17][31:0];
-            8'h22    : reg_data_out_cfg <= register_file[18][31:0];
-            8'h23    : reg_data_out_cfg <= register_file[19][31:0];
-            8'h24    : reg_data_out_cfg <= register_file[20][31:0];
-            8'h25    : reg_data_out_cfg <= register_file[21][31:0];
-            8'h26    : reg_data_out_cfg <= register_file[22][31:0];
-            8'h27    : reg_data_out_cfg <= register_file[23][31:0];
-            8'h28    : reg_data_out_cfg <= register_file[24][31:0];
-            8'h29    : reg_data_out_cfg <= register_file[25][31:0];
-            8'h2a    : reg_data_out_cfg <= register_file[26][31:0];
-            8'h2b    : reg_data_out_cfg <= register_file[27][31:0];
-            8'h2c    : reg_data_out_cfg <= register_file[28][31:0];
-            8'h2d    : reg_data_out_cfg <= register_file[29][31:0];
-            8'h2e    : reg_data_out_cfg <= register_file[30][31:0];
-            8'h2f    : reg_data_out_cfg <= register_file[31][31:0];
-            8'h30    : reg_data_out_cfg <= register_file[32][31:0];
-            8'h31    : reg_data_out_cfg <= register_file[33][31:0];
-            8'h32    : reg_data_out_cfg <= register_file[34][31:0];
-            8'h33    : reg_data_out_cfg <= register_file[35][31:0];
-            8'h34    : reg_data_out_cfg <= register_file[36][31:0];
-            8'h35    : reg_data_out_cfg <= register_file[37][31:0];
-            8'h36    : reg_data_out_cfg <= register_file[38][31:0];
-            8'h37    : reg_data_out_cfg <= register_file[39][31:0];
-            8'h38    : reg_data_out_cfg <= register_file[40][31:0];
-            8'h39    : reg_data_out_cfg <= register_file[41][31:0];
-            8'h3a    : reg_data_out_cfg <= register_file[42][31:0];
-            8'h3b    : reg_data_out_cfg <= register_file[43][31:0];
-            8'h3c    : reg_data_out_cfg <= register_file[44][31:0];
-            8'h3d    : reg_data_out_cfg <= register_file[45][31:0];
-            8'h3e    : reg_data_out_cfg <= register_file[46][31:0];
-            8'h3f    : reg_data_out_cfg <= register_file[47][31:0];
+            // 8'h10    : reg_data_out_cfg <= register_file[0][31:0];
+            // 8'h11    : reg_data_out_cfg <= register_file[1][31:0];
+            // 8'h12    : reg_data_out_cfg <= register_file[2][31:0];
+            // 8'h13    : reg_data_out_cfg <= register_file[3][31:0];
+            // 8'h14    : reg_data_out_cfg <= register_file[4][31:0];
+            // 8'h15    : reg_data_out_cfg <= register_file[5][31:0];
+            // 8'h16    : reg_data_out_cfg <= register_file[6][31:0];
+            // 8'h17    : reg_data_out_cfg <= register_file[7][31:0];
+            // 8'h18    : reg_data_out_cfg <= register_file[8][31:0];
+            // 8'h19    : reg_data_out_cfg <= register_file[9][31:0];
+            // 8'h1a    : reg_data_out_cfg <= register_file[10][31:0];
+            // 8'h1b    : reg_data_out_cfg <= register_file[11][31:0];
+            // 8'h1c    : reg_data_out_cfg <= register_file[12][31:0];
+            // 8'h1d    : reg_data_out_cfg <= register_file[13][31:0];
+            // 8'h1e    : reg_data_out_cfg <= register_file[14][31:0];
+            // 8'h1f    : reg_data_out_cfg <= register_file[15][31:0];
+            // 8'h20    : reg_data_out_cfg <= register_file[16][31:0];
+            // 8'h21    : reg_data_out_cfg <= register_file[17][31:0];
+            // 8'h22    : reg_data_out_cfg <= register_file[18][31:0];
+            // 8'h23    : reg_data_out_cfg <= register_file[19][31:0];
+            // 8'h24    : reg_data_out_cfg <= register_file[20][31:0];
+            // 8'h25    : reg_data_out_cfg <= register_file[21][31:0];
+            // 8'h26    : reg_data_out_cfg <= register_file[22][31:0];
+            // 8'h27    : reg_data_out_cfg <= register_file[23][31:0];
+            // 8'h28    : reg_data_out_cfg <= register_file[24][31:0];
+            // 8'h29    : reg_data_out_cfg <= register_file[25][31:0];
+            // 8'h2a    : reg_data_out_cfg <= register_file[26][31:0];
+            // 8'h2b    : reg_data_out_cfg <= register_file[27][31:0];
+            // 8'h2c    : reg_data_out_cfg <= register_file[28][31:0];
+            // 8'h2d    : reg_data_out_cfg <= register_file[29][31:0];
+            // 8'h2e    : reg_data_out_cfg <= register_file[30][31:0];
+            // 8'h2f    : reg_data_out_cfg <= register_file[31][31:0];
+            // 8'h30    : reg_data_out_cfg <= register_file[32][31:0];
+            // 8'h31    : reg_data_out_cfg <= register_file[33][31:0];
+            // 8'h32    : reg_data_out_cfg <= register_file[34][31:0];
+            // 8'h33    : reg_data_out_cfg <= register_file[35][31:0];
+            // 8'h34    : reg_data_out_cfg <= register_file[36][31:0];
+            // 8'h35    : reg_data_out_cfg <= register_file[37][31:0];
+            // 8'h36    : reg_data_out_cfg <= register_file[38][31:0];
+            // 8'h37    : reg_data_out_cfg <= register_file[39][31:0];
+            // 8'h38    : reg_data_out_cfg <= register_file[40][31:0];
+            // 8'h39    : reg_data_out_cfg <= register_file[41][31:0];
+            // 8'h3a    : reg_data_out_cfg <= register_file[42][31:0];
+            // 8'h3b    : reg_data_out_cfg <= register_file[43][31:0];
+            // 8'h3c    : reg_data_out_cfg <= register_file[44][31:0];
+            // 8'h3d    : reg_data_out_cfg <= register_file[45][31:0];
+            // 8'h3e    : reg_data_out_cfg <= register_file[46][31:0];
+            // 8'h3f    : reg_data_out_cfg <= register_file[47][31:0];
 
             default : reg_data_out_cfg <= '{default:0};
         endcase
@@ -1873,6 +1906,18 @@ module axi_adxl345 #(
             if (slv_reg_wren_cfg)
                 if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 10)
                     calibration_count_limit_reg <= S_AXI_LITE_CFG_WDATA;            
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : mem_baseaddress_reg_proc 
+        if (~RESETN | reset) begin 
+            mem_baseaddress_reg <= DEFAULT_MEM_BASEADDRESS;
+        end else begin  
+            if (slv_reg_wren_cfg)
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 12)
+                    mem_baseaddress_reg <= S_AXI_LITE_CFG_WDATA[M_AXI_ADDR_WIDTH-1:0];            
         end 
     end 
 
@@ -1965,12 +2010,6 @@ module axi_adxl345 #(
                         end else begin  
                             perform_request_flaq <= perform_request_flaq;
                         end 
-                    
-                    // TX_WRITE_CALIB_OFS_ST : 
-                    //     if (~out_awfull)
-                    //         if (write_cmd_word_cnt == 4'h4)
-                    //             perform_request_flaq <= 1'b1;
-
 
                     default : 
                         perform_request_flaq <= perform_request_flaq;
@@ -2152,7 +2191,7 @@ module axi_adxl345 #(
 
 
     always_ff @(posedge CLK) begin 
-        if (~RESETN | reset | intr_ack) begin 
+        if (~RESETN | reset ) begin 
             sample_address <= '{default:0};
         end else begin  
             case (current_state) 
@@ -2161,17 +2200,23 @@ module axi_adxl345 #(
                         sample_address <= sample_address + 1;
                     end 
 
+                IDLE_ST : 
+                    if (ADXL_INTERRUPT & allow_irq)  
+                        sample_address <= '{default:0};
+                    
+
+
                 default: 
                     sample_address <= sample_address;
             endcase // current_state;
         end 
     end 
 
-    always_ff @(posedge CLK) begin 
-        if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
-            register_samples[sample_address][7:0] <= S_AXIS_TDATA;
-        end 
-    end 
+    // always_ff @(posedge CLK) begin 
+    //     if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
+    //         register_samples[sample_address][7:0] <= S_AXIS_TDATA;
+    //     end 
+    // end 
 
 
     always_ff @(posedge CLK) begin : entries_proc
@@ -2226,7 +2271,6 @@ module axi_adxl345 #(
 
             ADD_CALIB_CALC_ST :
                 sum_x <= sum_x + {{16{register[12][3][7]}}, {register[12][3], register[12][2]}}; 
-                // sum_x <= sum_x + {register[12][3], register[12][2]};
 
             default : 
                 sum_x <= sum_x;
@@ -2239,11 +2283,9 @@ module axi_adxl345 #(
             IDLE_ST :
                 if (calibration_flaq) 
                     sum_y <= '{default:0};
-
             
             ADD_CALIB_CALC_ST : 
                 sum_y <= sum_y + {{16{register[13][1][7]}}, {register[13][1], register[13][0]}}; 
-                // sum_y <= sum_y + {register[13][1], register[13][0]};
 
             default : 
                 sum_y <= sum_y;
@@ -2258,8 +2300,6 @@ module axi_adxl345 #(
 
             ADD_CALIB_CALC_ST : 
                 sum_z <= sum_z + {{16{register[13][3][7]}}, {register[13][3], register[13][2]}}; 
-
-                // sum_z <= sum_z + {register[13][3], register[13][2]};
 
             default : 
                 sum_z <= sum_z;
@@ -2355,11 +2395,13 @@ module axi_adxl345 #(
 
 
     always_ff @(posedge CLK) begin : offset_x_proc
+        
         offset_x <= avg_x;
     end 
 
 
     always_ff @(posedge CLK) begin : offset_y_proc
+
         offset_y <= avg_y;
     end 
 
@@ -2475,5 +2517,374 @@ module axi_adxl345 #(
 
         endcase
     end 
+
+
+
+
+    logic [7:0][7:0] fifo_din = '{default:0}       ;
+    logic        fifo_wren  = 'b0;
+    logic        fifo_rden  = 'b0;
+    logic [63:0] fifo_dout       ;
+    logic        fifo_empty      ;
+    logic        fifo_full       ;
+
+    logic [2:0] fifo_word_counter = '{default:0};
+
+    always_ff @(posedge CLK) begin 
+        if (reset) 
+            fifo_wren <= 1'b0;
+        else 
+
+            case (current_state) 
+
+                RX_WM_DATA_ST : 
+
+                    if (S_AXIS_TVALID) begin 
+                        if (fifo_word_counter == 3'b111) begin 
+                            fifo_wren <= 1'b1;
+                        end else begin  
+                            if (S_AXIS_TLAST & !entries) begin 
+                                fifo_wren <= 1'b1;
+                            end else begin 
+                                fifo_wren <= 1'b0;
+                            end  
+                        end 
+                    end else begin 
+                        fifo_wren <= 1'b0;
+                    end  
+
+
+                default : 
+                    fifo_wren <= 1'b0;
+
+            endcase // current_state
+
+    end 
+
+    always_ff @(posedge CLK) begin 
+        case (current_state)
+            RX_WM_DATA_ST : 
+                if (S_AXIS_TVALID)
+                    fifo_din[fifo_word_counter] <= S_AXIS_TDATA;
+
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin 
+        case (current_state)
+            RX_WM_DATA_ST : 
+                if (S_AXIS_TVALID)
+                    fifo_word_counter <= fifo_word_counter + 1;
+                else 
+                    fifo_word_counter <= fifo_word_counter;
+
+            CHECK_INTR_DEASSERT : 
+                fifo_word_counter <= '{default:0};
+
+        endcase
+    end 
+
+    xpm_fifo_sync #(
+        .DOUT_RESET_VALUE   ("0"     ), // String
+        .ECC_MODE           ("no_ecc"), // String
+        .FIFO_MEMORY_TYPE   ("auto"  ), // String
+        .FIFO_READ_LATENCY  (0       ), // DECIMAL
+        .FIFO_WRITE_DEPTH   (128    ), // DECIMAL
+        .FULL_RESET_VALUE   (0       ), // DECIMAL
+        .PROG_EMPTY_THRESH  (10      ), // DECIMAL
+        .PROG_FULL_THRESH   (10      ), // DECIMAL
+        .RD_DATA_COUNT_WIDTH(1       ), // DECIMAL
+        .READ_DATA_WIDTH    (64      ), // DECIMAL
+        .READ_MODE          ("fwft"  ), // String
+        .SIM_ASSERT_CHK     (0       ), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_ADV_FEATURES   ("0000"  ), // String
+        .WAKEUP_TIME        (0       ), // DECIMAL
+        .WRITE_DATA_WIDTH   (64      ), // DECIMAL
+        .WR_DATA_COUNT_WIDTH(1       )  // DECIMAL
+    ) xpm_fifo_sync_inst (
+        .almost_empty (          ), // 1-bit output: Almost Empty : When asserted, this signal indicates that
+        .almost_full  (          ), // 1-bit output: Almost Full: When asserted, this signal indicates that
+        .data_valid   (          ), // 1-bit output: Read Data Valid: When asserted, this signal indicates
+        .dbiterr      (          ), // 1-bit output: Double Bit Error: Indicates that the ECC decoder detected
+        .dout         (fifo_dout ), // READ_DATA_WIDTH-bit output: Read Data: The output data bus is driven
+        .empty        (fifo_empty), // 1-bit output: Empty Flag: When asserted, this signal indicates that the
+        .full         (fifo_full ), // 1-bit output: Full Flag: When asserted, this signal indicates that the
+        .overflow     (          ), // 1-bit output: Overflow: This signal indicates that a write request
+        .prog_empty   (          ), // 1-bit output: Programmable Empty: This signal is asserted when the
+        .prog_full    (          ), // 1-bit output: Programmable Full: This signal is asserted when the
+        .rd_data_count(          ), // RD_DATA_COUNT_WIDTH-bit output: Read Data Count: This bus indicates the
+        .rd_rst_busy  (          ), // 1-bit output: Read Reset Busy: Active-High indicator that the FIFO read
+        .sbiterr      (          ), // 1-bit output: Single Bit Error: Indicates that the ECC decoder detected
+        .underflow    (          ), // 1-bit output: Underflow: Indicates that the read request (rd_en) during
+        .wr_ack       (          ), // 1-bit output: Write Acknowledge: This signal indicates that a write
+        .wr_data_count(          ), // WR_DATA_COUNT_WIDTH-bit output: Write Data Count: This bus indicates
+        .wr_rst_busy  (          ), // 1-bit output: Write Reset Busy: Active-High indicator that the FIFO
+        .din          (fifo_din  ), // WRITE_DATA_WIDTH-bit input: Write Data: The input data bus used when
+        .injectdbiterr('b0       ), // 1-bit input: Double Bit Error Injection: Injects a double bit error if
+        .injectsbiterr('b0       ), // 1-bit input: Single Bit Error Injection: Injects a single bit error if
+        .rd_en        (fifo_rden ), // 1-bit input: Read Enable: If the FIFO is not empty, asserting this
+        .rst          (reset     ), // 1-bit input: Reset: Must be synchronous to wr_clk. The clock(s) can be
+        .sleep        ('b0       ), // 1-bit input: Dynamic power saving- If sleep is High, the memory/fifo
+        .wr_clk       (CLK       ), // 1-bit input: Write clock: Used for write operation. wr_clk must be a
+        .wr_en        (fifo_wren )  // 1-bit input: Write Enable: If the FIFO is not full, asserting this
+    );
+
+    
+
+    typedef enum {
+        WR_IDLE_ST                         ,
+        WR_WAIT_FOR_DATA_ST                ,
+        WR_WRITE_ST                        ,
+        WR_WRITE_WAIT_BRESP_ST
+    } wr_fsm;
+
+    wr_fsm current_state_write = WR_IDLE_ST;
+
+    logic [M_AXI_ADDR_WIDTH-1:0] m_axi_awaddr_reg  = '{default:0};
+    logic [                 7:0] m_axi_awlen_reg   = '{default:0};
+    logic                        m_axi_awvalid_reg = 'b0         ;
+
+    logic [ 7:0] m_axi_wstrb_reg  = '{default:0};
+    logic        m_axi_wlast_reg                ;
+    logic        m_axi_wvalid_reg               ;
+
+    logic [ 7:0] awburst_counter    = '{default:0};
+    logic [63:0] word_counter_write = '{default:0};
+    logic [ 8:0] awlen_reg          = '{default:0};
+
+    logic   has_bresp_flaq          = 'b0;
+
+    logic allow_transit   = 'b0;
+    logic unallow_transit = 'b0;
+
+
+    always_comb begin
+        M_AXI_AWSIZE  = 3'b011;
+        M_AXI_AWCACHE = '{default:0};
+        M_AXI_AWPROT  = '{default:0};
+        M_AXI_AWLOCK  = 'b0;
+        M_AXI_AWADDR  = m_axi_awaddr_reg;
+        M_AXI_AWLEN   = m_axi_awlen_reg;
+        M_AXI_AWBURST = 2'b01;
+        M_AXI_AWVALID = m_axi_awvalid_reg;
+        M_AXI_WDATA  = fifo_dout     ;
+        M_AXI_WSTRB  = m_axi_wstrb_reg     ;
+        M_AXI_WLAST  = m_axi_wlast_reg     ;
+        M_AXI_WVALID = m_axi_wvalid_reg    ;
+        M_AXI_BREADY = 1'b1;
+    end 
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state)
+            RX_WM_DATA_ST : 
+                if (S_AXIS_TVALID & S_AXIS_TLAST)  
+                    if (!entries) 
+                        if (unallow_transit) 
+                            allow_transit <= 1'b0;
+                        else 
+                            allow_transit <= 1'b1;
+                    else  
+                        allow_transit <= 1'b0;
+                else 
+                    allow_transit <= 1'b0;
+
+
+
+            default :   
+                allow_transit <= allow_transit;
+
+        endcase
+    end
+
+    always_ff @(posedge CLK) begin 
+        case (current_state_write) 
+
+            WR_WRITE_ST :
+                if (m_axi_wvalid_reg & M_AXI_WREADY & m_axi_wlast_reg)
+                    unallow_transit <= 1'b1;
+                else
+                    unallow_transit <= 1'b0;
+
+            default : 
+                unallow_transit <= 1'b0;
+
+
+        endcase
+    end 
+
+
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state_write)
+            WR_IDLE_ST:
+                if (sample_address[2:0] == 0)
+                    word_counter_write <= sample_address[15:3];
+                else
+                    word_counter_write <= sample_address[15:3] + 1;
+
+            default : 
+                word_counter_write <= word_counter_write;
+        endcase
+    end 
+
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state_write)
+                WR_IDLE_ST: 
+                    m_axi_awaddr_reg <= mem_baseaddress_reg;
+
+                default : 
+                    m_axi_awaddr_reg <= m_axi_awaddr_reg;
+
+        endcase;
+    end
+
+    always_ff @(posedge CLK) begin 
+        m_axi_awlen_reg <= word_counter_write[7:0]-1;
+    end
+
+    always_ff @(posedge CLK) begin 
+        awlen_reg <= word_counter_write[7:0];
+    end
+
+    always_ff @(posedge CLK) begin 
+        case (current_state_write)
+
+            WR_IDLE_ST:
+                if (allow_transit & !fifo_empty)
+                    m_axi_awvalid_reg <= 1'b1;
+                else 
+                    m_axi_awvalid_reg <= 1'b0;
+
+            WR_WRITE_ST:
+                if (m_axi_awvalid_reg & M_AXI_AWREADY)
+                    m_axi_awvalid_reg <= 1'b0;
+                else
+                    m_axi_awvalid_reg <= m_axi_awvalid_reg;
+ 
+            default:
+                m_axi_awvalid_reg <= 1'b0;
+
+        endcase
+    end
+
+
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state_write)
+
+            WR_WAIT_FOR_DATA_ST : 
+                if (allow_transit & !fifo_empty)
+                    m_axi_wvalid_reg <= 1'b1;
+
+            WR_WRITE_ST:
+                if (m_axi_wlast_reg & M_AXI_WREADY)
+                    m_axi_wvalid_reg <= 1'b0;
+                else    
+                    m_axi_wvalid_reg <= 1'b1;
+
+            default:  
+                m_axi_wvalid_reg <= 1'b0;
+
+        endcase;
+    end
+    
+    always_comb begin  
+        if ((awburst_counter == m_axi_awlen_reg) & current_state_write == WR_WRITE_ST)
+            m_axi_wlast_reg = 1'b1;
+        else 
+            m_axi_wlast_reg = 1'b0;
+    end 
+
+    always_comb begin 
+        if ((awburst_counter == m_axi_awlen_reg) & current_state_write == WR_WRITE_ST)
+            case (sample_address[2:0]) 
+                3'b000 : m_axi_wstrb_reg <= 8'hFF;
+                3'b001 : m_axi_wstrb_reg <= 8'h01;
+                3'b010 : m_axi_wstrb_reg <= 8'h03;
+                3'b011 : m_axi_wstrb_reg <= 8'h07;
+                3'b100 : m_axi_wstrb_reg <= 8'h0F;
+                3'b101 : m_axi_wstrb_reg <= 8'h1F;
+                3'b110 : m_axi_wstrb_reg <= 8'h3F;
+                3'b111 : m_axi_wstrb_reg <= 8'h7F;
+            endcase
+        else 
+            m_axi_wstrb_reg <= 8'hFF;
+    end 
+   
+    always_ff @(posedge CLK) begin 
+        case (current_state_write)
+            WR_WRITE_ST:
+                if (m_axi_wvalid_reg & M_AXI_WREADY)
+                    awburst_counter <= awburst_counter + 1;
+                else
+                    awburst_counter <= awburst_counter;
+
+            default: 
+                awburst_counter <= '{default:0};
+
+        endcase
+    end
+
+
+    always_comb begin 
+        if (m_axi_wvalid_reg & M_AXI_WREADY)
+            fifo_rden = 1'b1;
+        else 
+            fifo_rden = 1'b0;
+    end 
+
+
+    always_ff @(posedge CLK) begin 
+
+        if (reset) 
+            current_state_write <= WR_IDLE_ST;
+        else
+                
+            case (current_state_write)
+                WR_IDLE_ST :
+                    if (allow_transit & !fifo_empty)
+                        current_state_write <= WR_WRITE_ST;
+                    else 
+                        current_state_write <= current_state_write;
+
+                WR_WRITE_ST :
+                    if (m_axi_wvalid_reg & M_AXI_WREADY & m_axi_wlast_reg)
+                        current_state_write <= WR_WRITE_WAIT_BRESP_ST;
+                    else
+                        current_state_write <= current_state_write;
+
+                WR_WRITE_WAIT_BRESP_ST :
+                    if (M_AXI_BVALID | has_bresp_flaq)  
+                        current_state_write <= WR_IDLE_ST;
+
+                default: 
+                    current_state_write <= current_state_write;
+
+            endcase
+    end 
+
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state_write)
+            WR_WRITE_WAIT_BRESP_ST:
+                if (M_AXI_BVALID)
+                    has_bresp_flaq <= 1'b1;
+                else
+                    has_bresp_flaq <= has_bresp_flaq;
+
+            default :
+                has_bresp_flaq <= 1'b0;
+
+        endcase
+    end
+
+
+
 
 endmodule
