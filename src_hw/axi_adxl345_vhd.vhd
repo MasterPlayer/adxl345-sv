@@ -7,11 +7,11 @@ library IEEE;
 entity axi_adxl345_vhd is
     generic (
         S_AXI_LITE_DEV_DATA_WIDTH   :           integer := 32                                                                   ;
-        S_AXI_LITE_DEV_ADDR_WIDTH   :           integer := 6                                                                    ;
+        S_AXI_LITE_DEV_ADDR_WIDTH   :           integer := 8                                                                    ;
         DEFAULT_DEVICE_ADDRESS      :           std_logic_Vector ( 6 downto 0 ) := "1010011"                                    ;
         DEFAULT_REQUEST_INTERVAL    :           integer := 1000                                                                 ;
         S_AXI_LITE_CFG_DATA_WIDTH   :           integer := 32                                                                   ;
-        S_AXI_LITE_CFG_ADDR_WIDTH   :           integer := 6                                                                    ;
+        S_AXI_LITE_CFG_ADDR_WIDTH   :           integer := 8                                                                    ;
         CLK_PERIOD                  :           integer := 100000000                                                            ; 
         RESET_DURATION              :           integer := 1000
     );

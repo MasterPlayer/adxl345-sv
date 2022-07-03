@@ -4,12 +4,12 @@
 
 module axi_adxl345 #(
     parameter integer       S_AXI_LITE_DEV_DATA_WIDTH = 32       ,
-    parameter integer       S_AXI_LITE_DEV_ADDR_WIDTH = 6        ,
+    parameter integer       S_AXI_LITE_DEV_ADDR_WIDTH = 32       ,
     parameter         [6:0] DEFAULT_DEVICE_ADDRESS    = 7'h53    ,
     parameter integer       DEFAULT_REQUEST_INTERVAL  = 1000     ,
     parameter integer       DEFAULT_CALIBRATION_LIMIT = 8        ,
     parameter integer       S_AXI_LITE_CFG_DATA_WIDTH = 32       ,
-    parameter integer       S_AXI_LITE_CFG_ADDR_WIDTH = 8        ,
+    parameter integer       S_AXI_LITE_CFG_ADDR_WIDTH = 32        ,
     parameter integer       CLK_PERIOD                = 100000000,
     parameter integer       RESET_DURATION            = 1000
 ) (
@@ -104,15 +104,15 @@ module axi_adxl345 #(
     logic [                          1:0] axi_dev_rresp  ;
     logic                                 axi_dev_rvalid ;
 
-    localparam integer    ADDR_LSB_CFG          = (S_AXI_LITE_CFG_DATA_WIDTH/32) + 1;
-    localparam integer    OPT_MEM_ADDR_BITS_CFG = 5                                 ;
-    localparam integer    ADDR_LSB_DEV          = (S_AXI_LITE_DEV_DATA_WIDTH/32) + 1;
-    localparam integer    OPT_MEM_ADDR_BITS_DEV = 3                                 ;
-    localparam integer    DATA_WIDTH            = 8                                 ;
-    localparam integer    USER_WIDTH            = 8                                 ;
-    localparam ADDRESS_LIMIT                    = 'h3A                              ;
+    localparam integer ADDR_LSB_CFG          = (S_AXI_LITE_CFG_DATA_WIDTH/32) + 1;
+    localparam integer OPT_MEM_ADDR_BITS_CFG = 5                                 ;
+    localparam integer ADDR_LSB_DEV          = (S_AXI_LITE_DEV_DATA_WIDTH/32) + 1;
+    localparam integer OPT_MEM_ADDR_BITS_DEV = 3                                 ;
+    localparam integer DATA_WIDTH            = 8                                 ;
+    localparam integer USER_WIDTH            = 8                                 ;
+    localparam integer ADDRESS_LIMIT         = 'h3A                              ;
 
-    logic [0:15][(S_AXI_LITE_DEV_DATA_WIDTH/8)-1:0][7:0] register = '{default:'{default:'{default:0}}}   ;
+    // logic [0:15][(S_AXI_LITE_DEV_DATA_WIDTH/8)-1:0][7:0] register = '{default:'{default:'{default:0}}}   ;
     logic [0:15][3:0] need_update_reg = '{
         '{0, 0, 0, 0}, // 0x00
         '{0, 0, 0, 0}, // 0x04
@@ -157,10 +157,7 @@ module axi_adxl345 #(
     logic [S_AXI_LITE_DEV_DATA_WIDTH-1:0] reg_data_out;
     logic                                 aw_en       ;
 
-    integer byte_index;
-
     logic update_request = 1'b0;
-
 
     logic [                         15:0][S_AXI_LITE_CFG_DATA_WIDTH-1:0] register_cfg     = '{default:'{default:0}};
     logic [                        191:0][                          7:0] register_samples = '{default:'{default:0}};
@@ -239,14 +236,15 @@ module axi_adxl345 #(
     logic [                         7:0] version_minor        = 8'h00                   ; // read only,
     logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
     logic                                link_on              = 1'b0                    ;
-    (* dont_touch="true" *)logic                                calibration_flaq     = 1'b0                    ;
+    logic                                calibration_flaq     = 1'b0                    ;
     logic                                on_work              = 1'b0                    ; // reg[0][4]
-    (* dont_touch="true" *)logic                                perform_request_flaq = 1'b0                    ; // reg[0][3]
-    (* dont_touch="true" *)logic                                request_performed    = 1'b0                    ; // reg[0][6]
-    (* dont_touch="true" *)logic                                allow_irq            = 1'b0                    ; // reg[0][2]
-    (* dont_touch="true" *)logic                                enable               = 1'b0                    ; // reg[0][1]
-    (* dont_touch="true" *)logic [($clog2(RESET_DURATION)-1):0] reset_logic_timer    = 1'b0                    ; // reg[0][0]
+    logic                                perform_request_flaq = 1'b0                    ; // reg[0][3]
+    logic                                request_performed    = 1'b0                    ; // reg[0][6]
+    logic                                allow_irq            = 1'b0                    ; // reg[0][2]
+    logic                                enable               = 1'b0                    ; // reg[0][1]
+    logic [($clog2(RESET_DURATION)-1):0] reset_logic_timer    = 1'b0                    ; // reg[0][0]
     logic                                reset                = 1'b0                    ;
+
     logic [                        31:0] request_interval     = DEFAULT_REQUEST_INTERVAL;
     logic [                        31:0] read_valid_count     = '{default:0}            ;
     logic [                        31:0] read_valid_reg       = '{default:0}            ;
@@ -295,141 +293,84 @@ module axi_adxl345 #(
 
     logic [31:0] calibration_elapsed_time = '{default:0};
 
-    // always_comb begin 
-    //     case (current_state)
-    //         IDLE_ST :                        fsm_logic = 'b000000; // 0
-    //         CHK_UPD_NEEDED_ST :              fsm_logic = 'b000001; // 1
-    //         SEND_WRITE_CMD_ST :              fsm_logic = 'b000010; // 2
-    //         INC_ADDR_ST :                    fsm_logic = 'b000011; // 3
-    //         TX_SEND_ADDR_PTR :               fsm_logic = 'b000100; // 4
-    //         TX_READ_REQUEST_ST :             fsm_logic = 'b000101; // 5
-    //         AWAIT_RECEIVE_DATA_ST :          fsm_logic = 'b000110; // 6
-    //         TX_WRITE_INT_SOURCE_PTR_ST :     fsm_logic = 'b000111; // 7
-    //         TX_READ_INT_SOURCE_ST :          fsm_logic = 'b001000; // 8
-    //         RX_INT_SOURCE_ST :               fsm_logic = 'b001001; // 9
-    //         INT_PROCESSING_ST :              fsm_logic = 'b001010; // 10
-    //         TX_WRITE_ACT_TAP_STATUS_PTR_ST : fsm_logic = 'b001011; // 11
-    //         TX_READ_ACT_TAP_STATUS_ST :      fsm_logic = 'b001100; // 12
-    //         RX_ACT_TAP_STATUS_ST :           fsm_logic = 'b001101; // 13
-    //         TX_WRITE_INTR_DATA_PTR_ST :      fsm_logic = 'b001110; // 14
-    //         TX_READ_INTR_DATA_ST :           fsm_logic = 'b001111; // 15
-    //         RX_INTR_DATA_ST :                fsm_logic = 'b010000; // 16
-    //         TX_WRITE_WM_FIFO_STS_PTR_ST :    fsm_logic = 'b010001; // 17
-    //         TX_READ_WM_FIFO_STS_ST :         fsm_logic = 'b010010; // 18
-    //         RX_WM_FIFO_STS_ST :              fsm_logic = 'b010011; // 19
-    //         TX_WRITE_WM_DATA_PTR_ST :        fsm_logic = 'b010100; // 20
-    //         TX_READ_WM_DATA_ST :             fsm_logic = 'b010101; // 21
-    //         RX_WM_DATA_ST :                  fsm_logic = 'b010110; // 22
-    //         CHECK_INTR_DEASSERT :            fsm_logic = 'b010111; // 23
-    //         TX_WRITE_CALIB_OFS_CLEAR_ST :    fsm_logic = 'b011000; // 24
-    //         AWAIT_CALIB_TIMER_ST :           fsm_logic = 'b011001; // 25
-    //         TX_WRITE_CALIB_DATA_PTR_ST :     fsm_logic = 'b011010; // 26
-    //         TX_READ_CALIB_DATA_ST :          fsm_logic = 'b011011; // 27
-    //         RX_CALIB_DATA_ST :               fsm_logic = 'b011100; // 28
-    //         ADD_CALIB_CALC_ST :              fsm_logic = 'b011101; // 29
-    //         AVG_CALIB_CALC_ST :              fsm_logic = 'b011110; // 30
-    //         OFFSET_CALIB_CALC_ST :           fsm_logic = 'b011111; // 31
-    //         OFFSET_LSB_CALIB_CALC_ST :       fsm_logic = 'b100000; // 32
-    //         TX_WRITE_CALIB_OFS_ST :          fsm_logic = 'b100001; // 33
-    //         default :                       fsm_logic = 'b111111; // 33
 
-    //     endcase // current_state
+
+
+    // always_comb begin : has_dataready_intr_proc
+    //     has_dataready_intr = int_source_reg[7] & int_enable_reg[7];
+    // end 
+
+    // always_comb begin : has_st_intr_proc
+    //     has_st_intr = int_source_reg[6] & int_enable_reg[6];
+    // end 
+
+    // always_comb begin : has_dt_intr_proc 
+    //     has_dt_intr = int_source_reg[5] & int_enable_reg[5];
+    // end 
+
+    // always_comb begin : has_act_intr_proc
+    //     has_act_intr = int_source_reg[4] & int_enable_reg[4];
+    // end 
+
+    // always_comb begin : has_inact_intr_proc
+    //     has_inact_intr = int_source_reg[3] & int_enable_reg[3];
+    // end 
+
+    // always_comb begin : has_ff_intr_proc
+    //     has_ff_intr = int_source_reg[2] & int_enable_reg[2];
+    // end 
+
+    // always_comb begin : has_wm_intr_proc
+    //     has_wm_intr = int_source_reg[1] & int_enable_reg[1];
+    // end 
+
+    // always_comb begin : has_ovrrn_intr_proc
+    //     has_ovrrn_intr = int_source_reg[0] & int_enable_reg[0];
     // end 
 
 
-    // ila_adxl ila_adxl_inst (
-    //     .clk    (CLK                     ), // input wire clk
-    //     .probe0 (S_AXIS_TDATA            ), // input wire [5:0]  probe0
-    //     .probe1 (S_AXIS_TVALID           ), // input wire [0:0]  probe1
-    //     .probe2 (fsm_logic               ), // input wire [0:0]  probe2
-    //     .probe3 (address                 ),
-    //     .probe4 (S_AXIS_TLAST            ),
-    //     .probe5 (ADXL_INTERRUPT          ),
-    //     .probe6 (update_request          ),
-    //     .probe7 (perform_request_flaq    ),
-    //     .probe8 (refresh_after_calib_flaq),
-    //     .probe9 (enable                  ),
-    //     .probe10(request_timer           ),
-    //     .probe11(request_interval        )
-    // );
+    // always_comb begin 
+    //     int_enable_reg = register[11][2];
+    // end 
 
-
-    always_comb begin : has_dataready_intr_proc
-        has_dataready_intr = int_source_reg[7] & int_enable_reg[7];
-    end 
-
-
-    always_comb begin : has_st_intr_proc
-        has_st_intr = int_source_reg[6] & int_enable_reg[6];
-    end 
-
-    always_comb begin : has_dt_intr_proc 
-        has_dt_intr = int_source_reg[5] & int_enable_reg[5];
-    end 
-
-    always_comb begin : has_act_intr_proc
-        has_act_intr = int_source_reg[4] & int_enable_reg[4];
-    end 
-
-    always_comb begin : has_inact_intr_proc
-        has_inact_intr = int_source_reg[3] & int_enable_reg[3];
-    end 
-
-    always_comb begin : has_ff_intr_proc
-        has_ff_intr = int_source_reg[2] & int_enable_reg[2];
-    end 
-
-    always_comb begin : has_wm_intr_proc
-        has_wm_intr = int_source_reg[1] & int_enable_reg[1];
-    end 
-
-    always_comb begin : has_ovrrn_intr_proc
-        has_ovrrn_intr = int_source_reg[0] & int_enable_reg[0];
-    end 
-
-
-    always_comb begin 
-        int_enable_reg = register[11][2];
-    end 
-
-    always_ff @(posedge CLK) begin : opt_request_interval_proc 
-        case (register[11][0][3:0]) 
-            8'hF : 
-                opt_request_interval <= OPT_REQ_INTERVAL;
-            8'hE :
-                opt_request_interval <= (OPT_REQ_INTERVAL<<1); 
-            8'hD :
-                opt_request_interval <= (OPT_REQ_INTERVAL<<2); 
-            8'hC : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<3);
-            8'hB : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<4);
-            8'hA : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<5);
-            8'h9 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<6);
-            8'h8 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<7);
-            8'h7 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<8);
-            8'h6 :
-                opt_request_interval <= (OPT_REQ_INTERVAL<<9);
-            8'h5 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<10);
-            8'h4 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<11);
-            8'h3 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<12);
-            8'h2 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<13);
-            8'h1 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<14);
-            8'h0 : 
-                opt_request_interval <= (OPT_REQ_INTERVAL<<15);
-            default :
-                opt_request_interval <= (OPT_REQ_INTERVAL);
-        endcase // register[11][0][7:0]
-    end 
+    // always_ff @(posedge CLK) begin : opt_request_interval_proc 
+    //     case (register[11][0][3:0]) 
+    //         8'hF : 
+    //             opt_request_interval <= OPT_REQ_INTERVAL;
+    //         8'hE :
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<1); 
+    //         8'hD :
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<2); 
+    //         8'hC : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<3);
+    //         8'hB : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<4);
+    //         8'hA : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<5);
+    //         8'h9 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<6);
+    //         8'h8 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<7);
+    //         8'h7 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<8);
+    //         8'h6 :
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<9);
+    //         8'h5 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<10);
+    //         8'h4 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<11);
+    //         8'h3 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<12);
+    //         8'h2 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<13);
+    //         8'h1 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<14);
+    //         8'h0 : 
+    //             opt_request_interval <= (OPT_REQ_INTERVAL<<15);
+    //         default :
+    //             opt_request_interval <= (OPT_REQ_INTERVAL);
+    //     endcase // register[11][0][7:0]
+    // end 
 
 
     always_comb begin
@@ -514,114 +455,115 @@ module axi_adxl345 #(
 
     generate 
 
-        for (genvar reg_index = 0; reg_index < 15; reg_index++) begin 
+        for (genvar reg_index = 0; reg_index < 15; reg_index++) begin : GEN_REGISTER_INDEX
+            for (genvar byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index++ ) begin : GEN_BYTE_INDEX
     
-            always_ff @(posedge CLK) begin : register_proc
-                if (~RESETN | reset)
-                    register[reg_index] <= '{default:0};
-                else
-                    if (slv_reg_wren) begin 
-                        if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin 
-                            for ( byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1 ) begin 
-                                if ( S_AXI_LITE_DEV_WSTRB[byte_index] == 1 & write_mask_register[reg_index][byte_index]) begin 
-                                    register[reg_index][byte_index] <= S_AXI_LITE_DEV_WDATA[(byte_index*8) +: 8];
-                                end 
-                            end 
-                        end 
-                    end else begin 
-                        case (current_state) 
-                            AWAIT_RECEIVE_DATA_ST : 
-                                if (S_AXIS_TVALID) 
-                                    if (address[5:2] == reg_index)  
-                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                                            if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index]))
-                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
-                                        end 
+                // always_ff @(posedge CLK) begin : register_proc
+                //     if (~RESETN | reset)
+                //         register[reg_index] <= '{default:0};
+                //     else
+                //         if (slv_reg_wren) begin 
+                //             if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin 
+                //                 if ( S_AXI_LITE_DEV_WSTRB[byte_index] == 1 & write_mask_register[reg_index][byte_index]) begin 
+                //                     register[reg_index][byte_index] <= S_AXI_LITE_DEV_WDATA[(byte_index*8) +: 8];
+                //                 end 
+                //             end 
+                //         end else begin 
+                //         //     case (current_state) 
+                //         //         AWAIT_RECEIVE_DATA_ST : 
+                //                     if (S_AXIS_TVALID) begin 
+                //                         if (address[5:2] == reg_index) begin 
+                //                             if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index])) begin
+                //                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
+                //                             end
+                //                         end 
+                //                     end 
+                                
                             
-                            RX_INT_SOURCE_ST : 
-                                if (S_AXIS_TVALID) 
-                                    if (address[5:2] == reg_index)
-                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                                            if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index]))
-                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
-                                        end 
+                            // RX_INT_SOURCE_ST : 
+                            //     if (S_AXIS_TVALID) 
+                            //         if (address[5:2] == reg_index)
+                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                            //                 if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index]))
+                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+                            //             end 
 
-                            RX_ACT_TAP_STATUS_ST: 
-                                if (S_AXIS_TVALID)
-                                    if (address[5:2] == reg_index)
-                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                                            if (byte_index == address[1:0])
-                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
-                                        end 
+                            // RX_ACT_TAP_STATUS_ST: 
+                            //     if (S_AXIS_TVALID)
+                            //         if (address[5:2] == reg_index)
+                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                            //                 if (byte_index == address[1:0])
+                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+                            //             end 
 
-                            RX_INTR_DATA_ST: 
-                                if (S_AXIS_TVALID)
-                                    if (address[5:2] == reg_index)
-                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                                            if (byte_index == address[1:0])
-                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
-                                        end 
+                            // RX_INTR_DATA_ST: 
+                            //     if (S_AXIS_TVALID)
+                            //         if (address[5:2] == reg_index)
+                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                            //                 if (byte_index == address[1:0])
+                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+                            //             end 
 
-                            RX_WM_FIFO_STS_ST: 
-                                if (S_AXIS_TVALID)
-                                    if (address[5:2] == reg_index)
-                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                                            if (byte_index == address[1:0])
-                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
-                                        end 
+                            // RX_WM_FIFO_STS_ST: 
+                            //     if (S_AXIS_TVALID)
+                            //         if (address[5:2] == reg_index)
+                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                            //                 if (byte_index == address[1:0])
+                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+                            //             end 
 
-                            RX_WM_DATA_ST: 
-                                if (S_AXIS_TVALID)
-                                    if (address[5:2] == reg_index)
-                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                                            if (byte_index == address[1:0])
-                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
-                                        end 
+                            // RX_WM_DATA_ST: 
+                            //     if (S_AXIS_TVALID)
+                            //         if (address[5:2] == reg_index)
+                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                            //                 if (byte_index == address[1:0])
+                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+                            //             end 
 
-                            RX_CALIB_DATA_ST: 
-                                if (S_AXIS_TVALID)
-                                    if (address[5:2] == reg_index)
-                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                                            if (byte_index == address[1:0])
-                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
-                                        end 
+                            // RX_CALIB_DATA_ST: 
+                            //     if (S_AXIS_TVALID)
+                            //         if (address[5:2] == reg_index)
+                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                            //                 if (byte_index == address[1:0])
+                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+                            //             end 
 
 
-                            default: 
-                                register <= register;
+                        //     default: 
+                        //         register <= register;
 
-                        endcase // current_state
-                    end 
-            end    
+                        // endcase // current_state
+                //     end 
+                // end    
 
-            always_ff @(posedge CLK) begin : need_update_reg_proc 
-                if (~RESETN | reset)
-                    need_update_reg[reg_index] <= '{default:0};
-                else
-                    if (slv_reg_wren) begin
-                        if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin
-                            for (byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1) begin
-                                if (S_AXI_LITE_DEV_WSTRB[byte_index]) begin 
-                                    need_update_reg[reg_index][byte_index] <= write_mask_register[reg_index][byte_index];
-                                end 
-                            end 
-                        end 
-                    end else begin 
-                        case (current_state) 
-                            SEND_WRITE_CMD_ST  : 
-                                if (~out_awfull)
-                                   if (write_cmd_word_cnt == 4'h2)
-                                        if (address[5:2] == reg_index) 
-                                            need_update_reg[reg_index][address[1:0]] <= 1'b0;
-                            default : 
-                                need_update_reg[reg_index][address[1:0]] <= need_update_reg[reg_index][address[1:0]];
+                // always_ff @(posedge CLK) begin : need_update_reg_proc 
+                //     if (~RESETN | reset)
+                //         need_update_reg[reg_index] <= '{default:0};
+                //     else
+                //         if (slv_reg_wren) begin
+                //             if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin
+                //                 for (byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1) begin
+                //                     if (S_AXI_LITE_DEV_WSTRB[byte_index]) begin 
+                //                         need_update_reg[reg_index][byte_index] <= write_mask_register[reg_index][byte_index];
+                //                     end 
+                //                 end 
+                //             end 
+                //         end else begin 
+                //             case (current_state) 
+                //                 SEND_WRITE_CMD_ST  : 
+                //                     if (~out_awfull)
+                //                        if (write_cmd_word_cnt == 4'h2)
+                //                             if (address[5:2] == reg_index) 
+                //                                 need_update_reg[reg_index][address[1:0]] <= 1'b0;
+                //                 default : 
+                //                     need_update_reg[reg_index][address[1:0]] <= need_update_reg[reg_index][address[1:0]];
 
-                        endcase // current_state
-                    end 
+                //             endcase // current_state
+                //         end 
 
-            end    
+                end    
 
-        end 
+            end 
 
     endgenerate
 
@@ -693,22 +635,22 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin
         case ( axi_dev_araddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] )
-            4'h0    : reg_data_out <= register[ 0];
-            4'h1    : reg_data_out <= register[ 1];
-            4'h2    : reg_data_out <= register[ 2];
-            4'h3    : reg_data_out <= register[ 3];
-            4'h4    : reg_data_out <= register[ 4];
-            4'h5    : reg_data_out <= register[ 5];
-            4'h6    : reg_data_out <= register[ 6];
-            4'h7    : reg_data_out <= register[ 7];
-            4'h8    : reg_data_out <= register[ 8];
-            4'h9    : reg_data_out <= register[ 9];
-            4'hA    : reg_data_out <= register[10];
-            4'hB    : reg_data_out <= register[11];
-            4'hC    : reg_data_out <= register[12];
-            4'hD    : reg_data_out <= register[13];
-            4'hE    : reg_data_out <= register[14];
-            4'hF    : reg_data_out <= register[15];
+            // 4'h0    : reg_data_out <= register[ 0];
+            // 4'h1    : reg_data_out <= register[ 1];
+            // 4'h2    : reg_data_out <= register[ 2];
+            // 4'h3    : reg_data_out <= register[ 3];
+            // 4'h4    : reg_data_out <= register[ 4];
+            // 4'h5    : reg_data_out <= register[ 5];
+            // 4'h6    : reg_data_out <= register[ 6];
+            // 4'h7    : reg_data_out <= register[ 7];
+            // 4'h8    : reg_data_out <= register[ 8];
+            // 4'h9    : reg_data_out <= register[ 9];
+            // 4'hA    : reg_data_out <= register[10];
+            // 4'hB    : reg_data_out <= register[11];
+            // 4'hC    : reg_data_out <= register[12];
+            // 4'hD    : reg_data_out <= register[13];
+            // 4'hE    : reg_data_out <= register[14];
+            // 4'hF    : reg_data_out <= register[15];
             default : reg_data_out <= '{default:0};
         endcase
     end
@@ -727,51 +669,53 @@ module axi_adxl345 #(
             write_cmd_word_cnt <= 'b0;
         else 
             case (current_state)
-                SEND_WRITE_CMD_ST : 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // SEND_WRITE_CMD_ST : 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
                 TX_SEND_ADDR_PTR : 
                     if (~out_awfull)
                         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
                 
-                TX_WRITE_INT_SOURCE_PTR_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // TX_WRITE_INT_SOURCE_PTR_ST: 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_INTR_DATA_PTR_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // TX_WRITE_INTR_DATA_PTR_ST: 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_WM_FIFO_STS_PTR_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_WM_DATA_PTR_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // TX_WRITE_WM_DATA_PTR_ST: 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_CALIB_DATA_PTR_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // TX_WRITE_CALIB_DATA_PTR_ST: 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_CALIB_OFS_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // TX_WRITE_CALIB_OFS_ST: 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_WRITE_CALIB_OFS_CLEAR_ST: 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+                // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+                //     if (~out_awfull)
+                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
                 default : 
                     write_cmd_word_cnt <= 1'b0;
 
             endcase // current_state
     end 
+
+
 
     always_ff @(posedge CLK) begin : current_state_proc 
         if (~RESETN | reset) 
@@ -780,47 +724,48 @@ module axi_adxl345 #(
             case (current_state)
 
                 IDLE_ST : 
-                    if (calibration_flaq) 
-                        current_state <= TX_WRITE_CALIB_OFS_CLEAR_ST;
-                    else 
-                        if (ADXL_INTERRUPT & allow_irq)  
-                            current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
-                        else 
-                            if (update_request) 
-                                current_state <= CHK_UPD_NEEDED_ST;
-                            else 
-                                if (perform_request_flaq | refresh_after_calib_flaq) 
+                    // if (calibration_flaq) 
+                    //     current_state <= TX_WRITE_CALIB_OFS_CLEAR_ST;
+                    // else 
+                        // if (ADXL_INTERRUPT & allow_irq)  
+                        //     current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
+                        // else 
+                            // if (update_request) 
+                            //     current_state <= CHK_UPD_NEEDED_ST;
+                            // else 
+                                if (perform_request_flaq | refresh_after_calib_flaq) begin 
                                     current_state <= TX_SEND_ADDR_PTR;
-                                else 
-                                    if (enable) 
-                                        if (request_timer == request_interval) 
-                                            current_state <= TX_SEND_ADDR_PTR;
-                                        else  
-                                            current_state <= IDLE_ST; 
-                                    else  
-                                        current_state <= IDLE_ST;
+                                end else begin 
+                                    current_state <= IDLE_ST;
+                                end  
+                                    // if (enable) 
+                                    //     if (request_timer == request_interval) 
+                                    //         current_state <= TX_SEND_ADDR_PTR;
+                                    //     else  
+                                    //         current_state <= IDLE_ST; 
+                                    // else  
         
 
-                CHK_UPD_NEEDED_ST : 
-                    if (need_update_reg[address[5:2]][address[1:0]])
-                        current_state <= SEND_WRITE_CMD_ST;
-                    else 
-                        current_state <= INC_ADDR_ST;
+                // CHK_UPD_NEEDED_ST : 
+                //     if (need_update_reg[address[5:2]][address[1:0]])
+                //         current_state <= SEND_WRITE_CMD_ST;
+                //     else 
+                //         current_state <= INC_ADDR_ST;
 
-                SEND_WRITE_CMD_ST  : 
-                    if (!out_awfull)
-                       if (write_cmd_word_cnt == 4'h2)
-                            current_state <= INC_ADDR_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // SEND_WRITE_CMD_ST  : 
+                //     if (!out_awfull)
+                //        if (write_cmd_word_cnt == 4'h2)
+                //             current_state <= INC_ADDR_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
 
-                INC_ADDR_ST  : 
-                    if (address == ADDRESS_LIMIT) 
-                        current_state <= IDLE_ST;
-                    else 
-                        current_state <= CHK_UPD_NEEDED_ST;
+                // INC_ADDR_ST  : 
+                //     if (address == ADDRESS_LIMIT) 
+                //         current_state <= IDLE_ST;
+                //     else 
+                //         current_state <= CHK_UPD_NEEDED_ST;
 
                 TX_SEND_ADDR_PTR: 
                     if (!out_awfull)
@@ -843,207 +788,207 @@ module axi_adxl345 #(
                     else 
                         current_state <= current_state;
 
-                TX_WRITE_INT_SOURCE_PTR_ST : 
-                    if (!out_awfull) 
-                        if (write_cmd_word_cnt == 4'h1) 
-                            current_state <= TX_READ_INT_SOURCE_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // TX_WRITE_INT_SOURCE_PTR_ST : 
+                //     if (!out_awfull) 
+                //         if (write_cmd_word_cnt == 4'h1) 
+                //             current_state <= TX_READ_INT_SOURCE_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
 
 
-                TX_READ_INT_SOURCE_ST : 
-                    if (!out_awfull) 
-                        current_state <= RX_INT_SOURCE_ST;
-                    else 
-                        current_state <= current_state;
+                // TX_READ_INT_SOURCE_ST : 
+                //     if (!out_awfull) 
+                //         current_state <= RX_INT_SOURCE_ST;
+                //     else 
+                //         current_state <= current_state;
 
 
-                RX_INT_SOURCE_ST : 
-                    if (S_AXIS_TVALID)  
-                        if (S_AXIS_TLAST) 
-                            current_state <= INT_PROCESSING_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // RX_INT_SOURCE_ST : 
+                //     if (S_AXIS_TVALID)  
+                //         if (S_AXIS_TLAST) 
+                //             current_state <= INT_PROCESSING_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
                     
 
-                INT_PROCESSING_ST : 
-                    if (has_st_intr | has_dt_intr | has_act_intr | has_inact_intr)
-                        current_state <= TX_WRITE_ACT_TAP_STATUS_PTR_ST;
-                    else 
-                        if (has_dataready_intr | has_ff_intr)
-                            current_state <= TX_WRITE_INTR_DATA_PTR_ST;
-                        else
-                            if (has_wm_intr | has_ovrrn_intr)
-                                current_state <= TX_WRITE_WM_FIFO_STS_PTR_ST;
-                            else     
-                                current_state <= IDLE_ST;
+                // INT_PROCESSING_ST : 
+                //     if (has_st_intr | has_dt_intr | has_act_intr | has_inact_intr)
+                //         current_state <= TX_WRITE_ACT_TAP_STATUS_PTR_ST;
+                //     else 
+                //         if (has_dataready_intr | has_ff_intr)
+                //             current_state <= TX_WRITE_INTR_DATA_PTR_ST;
+                //         else
+                //             if (has_wm_intr | has_ovrrn_intr)
+                //                 current_state <= TX_WRITE_WM_FIFO_STS_PTR_ST;
+                //             else     
+                //                 current_state <= IDLE_ST;
 
                 // SINGLE/DOUBLE TAP interrupt processsing states
 
-                TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                    if (!out_awfull) 
-                        if (write_cmd_word_cnt == 4'h1) 
-                            current_state <= TX_READ_ACT_TAP_STATUS_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+                //     if (!out_awfull) 
+                //         if (write_cmd_word_cnt == 4'h1) 
+                //             current_state <= TX_READ_ACT_TAP_STATUS_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
 
 
-                TX_READ_ACT_TAP_STATUS_ST: 
-                    if (!out_awfull)
-                        current_state <= RX_ACT_TAP_STATUS_ST;
-                    else 
-                        current_state <= current_state;
+                // TX_READ_ACT_TAP_STATUS_ST: 
+                //     if (!out_awfull)
+                //         current_state <= RX_ACT_TAP_STATUS_ST;
+                //     else 
+                //         current_state <= current_state;
 
-                RX_ACT_TAP_STATUS_ST: 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)
-                        current_state <= TX_WRITE_INTR_DATA_PTR_ST;
-                    else 
-                        current_state <= current_state;
+                // RX_ACT_TAP_STATUS_ST: 
+                //     if (S_AXIS_TVALID & S_AXIS_TLAST)
+                //         current_state <= TX_WRITE_INTR_DATA_PTR_ST;
+                //     else 
+                //         current_state <= current_state;
 
-                TX_WRITE_INTR_DATA_PTR_ST: 
-                    if (!out_awfull)
-                        if (write_cmd_word_cnt == 4'h1) 
-                            current_state <= TX_READ_INTR_DATA_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // TX_WRITE_INTR_DATA_PTR_ST: 
+                //     if (!out_awfull)
+                //         if (write_cmd_word_cnt == 4'h1) 
+                //             current_state <= TX_READ_INTR_DATA_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
                     
 
 
-                TX_READ_INTR_DATA_ST: 
-                    if (!out_awfull)
-                        current_state <= RX_INTR_DATA_ST;
-                    else 
-                        current_state <= current_state;
+                // TX_READ_INTR_DATA_ST: 
+                //     if (!out_awfull)
+                //         current_state <= RX_INTR_DATA_ST;
+                //     else 
+                //         current_state <= current_state;
 
 
-                RX_INTR_DATA_ST: 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)
-                        current_state <= CHECK_INTR_DEASSERT;
-                    else 
-                        current_state <= current_state;
+                // RX_INTR_DATA_ST: 
+                //     if (S_AXIS_TVALID & S_AXIS_TLAST)
+                //         current_state <= CHECK_INTR_DEASSERT;
+                //     else 
+                //         current_state <= current_state;
 
-                TX_WRITE_WM_FIFO_STS_PTR_ST : 
-                    if (!out_awfull) 
-                        if (write_cmd_word_cnt == 4'h1) 
-                            current_state <= TX_READ_WM_FIFO_STS_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // TX_WRITE_WM_FIFO_STS_PTR_ST : 
+                //     if (!out_awfull) 
+                //         if (write_cmd_word_cnt == 4'h1) 
+                //             current_state <= TX_READ_WM_FIFO_STS_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
 
-                TX_READ_WM_FIFO_STS_ST : 
-                    if (!out_awfull) 
-                        current_state <= RX_WM_FIFO_STS_ST;
-                    else 
-                        current_state <= current_state;
-
-
-                RX_WM_FIFO_STS_ST : 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)
-                        current_state <= TX_WRITE_WM_DATA_PTR_ST;
-                    else 
-                        current_state <= current_state;
-
-                TX_WRITE_WM_DATA_PTR_ST : 
-                    if (!out_awfull) 
-                        if (write_cmd_word_cnt == 4'h1) 
-                            current_state <= TX_READ_WM_DATA_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // TX_READ_WM_FIFO_STS_ST : 
+                //     if (!out_awfull) 
+                //         current_state <= RX_WM_FIFO_STS_ST;
+                //     else 
+                //         current_state <= current_state;
 
 
-                TX_READ_WM_DATA_ST : 
-                    if (!out_awfull) 
-                        current_state <= RX_WM_DATA_ST;
-                    else 
-                        current_state <= current_state;
+                // RX_WM_FIFO_STS_ST : 
+                //     if (S_AXIS_TVALID & S_AXIS_TLAST)
+                //         current_state <= TX_WRITE_WM_DATA_PTR_ST;
+                //     else 
+                //         current_state <= current_state;
 
-                RX_WM_DATA_ST : 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)  
-                        if (!entries) 
-                            current_state <= CHECK_INTR_DEASSERT;
-                        else  
-                            current_state <= TX_WRITE_WM_DATA_PTR_ST;
-                    else 
-                        current_state <= current_state;
-
-                CHECK_INTR_DEASSERT: 
-                    if (ADXL_INTERRUPT) 
-                        current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
-                        // current_state <= INT_PROCESSING_ST;
-                    else 
-                        current_state <= IDLE_ST;
+                // TX_WRITE_WM_DATA_PTR_ST : 
+                //     if (!out_awfull) 
+                //         if (write_cmd_word_cnt == 4'h1) 
+                //             current_state <= TX_READ_WM_DATA_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
 
 
-                TX_WRITE_CALIB_OFS_CLEAR_ST: 
-                    if (!out_awfull) 
-                        if (write_cmd_word_cnt == 4'h4)
-                            current_state <= AWAIT_CALIB_TIMER_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // TX_READ_WM_DATA_ST : 
+                //     if (!out_awfull) 
+                //         current_state <= RX_WM_DATA_ST;
+                //     else 
+                //         current_state <= current_state;
 
-                AWAIT_CALIB_TIMER_ST : 
-                    if (calibration_timer < opt_request_interval) 
-                        current_state <= current_state;
-                    else 
-                        current_state <= TX_WRITE_CALIB_DATA_PTR_ST;
+                // RX_WM_DATA_ST : 
+                //     if (S_AXIS_TVALID & S_AXIS_TLAST)  
+                //         if (!entries) 
+                //             current_state <= CHECK_INTR_DEASSERT;
+                //         else  
+                //             current_state <= TX_WRITE_WM_DATA_PTR_ST;
+                //     else 
+                //         current_state <= current_state;
 
-                TX_WRITE_CALIB_DATA_PTR_ST : 
-                    if (!out_awfull)
-                        if (write_cmd_word_cnt == 4'h1) 
-                            current_state <= TX_READ_CALIB_DATA_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // CHECK_INTR_DEASSERT: 
+                //     if (ADXL_INTERRUPT) 
+                //         current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
+                //         // current_state <= INT_PROCESSING_ST;
+                //     else 
+                //         current_state <= IDLE_ST;
 
-                TX_READ_CALIB_DATA_ST: 
-                    if (!out_awfull) 
-                        current_state <= RX_CALIB_DATA_ST;
-                    else 
-                        current_state <= current_state;
 
-                RX_CALIB_DATA_ST : 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)  
-                        current_state <= ADD_CALIB_CALC_ST;
-                    else 
-                        current_state <= current_state;
+                // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+                //     if (!out_awfull) 
+                //         if (write_cmd_word_cnt == 4'h4)
+                //             current_state <= AWAIT_CALIB_TIMER_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
 
-                ADD_CALIB_CALC_ST : 
-                    if (calibration_count == calibration_count_limit_reg)
-                        current_state <= AVG_CALIB_CALC_ST;
-                    else 
-                        current_state <= AWAIT_CALIB_TIMER_ST;
+                // AWAIT_CALIB_TIMER_ST : 
+                //     if (calibration_timer < opt_request_interval) 
+                //         current_state <= current_state;
+                //     else 
+                //         current_state <= TX_WRITE_CALIB_DATA_PTR_ST;
 
-                AVG_CALIB_CALC_ST : 
-                    current_state <= OFFSET_CALIB_CALC_ST;
+                // TX_WRITE_CALIB_DATA_PTR_ST : 
+                //     if (!out_awfull)
+                //         if (write_cmd_word_cnt == 4'h1) 
+                //             current_state <= TX_READ_CALIB_DATA_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
 
-                OFFSET_CALIB_CALC_ST : 
-                    current_state <= OFFSET_LSB_CALIB_CALC_ST;
+                // TX_READ_CALIB_DATA_ST: 
+                //     if (!out_awfull) 
+                //         current_state <= RX_CALIB_DATA_ST;
+                //     else 
+                //         current_state <= current_state;
 
-                OFFSET_LSB_CALIB_CALC_ST : 
-                    current_state <= TX_WRITE_CALIB_OFS_ST;
+                // RX_CALIB_DATA_ST : 
+                //     if (S_AXIS_TVALID & S_AXIS_TLAST)  
+                //         current_state <= ADD_CALIB_CALC_ST;
+                //     else 
+                //         current_state <= current_state;
 
-                TX_WRITE_CALIB_OFS_ST : 
-                    if (!out_awfull) 
-                        if (write_cmd_word_cnt == 4'h4)
-                            current_state <= IDLE_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+                // ADD_CALIB_CALC_ST : 
+                //     if (calibration_count == calibration_count_limit_reg)
+                //         current_state <= AVG_CALIB_CALC_ST;
+                //     else 
+                //         current_state <= AWAIT_CALIB_TIMER_ST;
+
+                // AVG_CALIB_CALC_ST : 
+                //     current_state <= OFFSET_CALIB_CALC_ST;
+
+                // OFFSET_CALIB_CALC_ST : 
+                //     current_state <= OFFSET_LSB_CALIB_CALC_ST;
+
+                // OFFSET_LSB_CALIB_CALC_ST : 
+                //     current_state <= TX_WRITE_CALIB_OFS_ST;
+
+                // TX_WRITE_CALIB_OFS_ST : 
+                //     if (!out_awfull) 
+                //         if (write_cmd_word_cnt == 4'h4)
+                //             current_state <= IDLE_ST;
+                //         else 
+                //             current_state <= current_state;
+                //     else 
+                //         current_state <= current_state;
 
                 default : 
                     current_state <= current_state;
@@ -1061,42 +1006,42 @@ module axi_adxl345 #(
                 IDLE_ST : 
                     address <= '{default:0};
 
-                INC_ADDR_ST : 
-                    address <= address + 1;
+                // INC_ADDR_ST : 
+                //     address <= address + 1;
 
                 AWAIT_RECEIVE_DATA_ST : 
                     if (S_AXIS_TVALID)
                         address <= address + 1;
 
-                TX_READ_INT_SOURCE_ST : 
-                    address <= 8'h30;
+                // TX_READ_INT_SOURCE_ST : 
+                //     address <= 8'h30;
 
-                TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                    address <= 8'h2B;   
+                // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+                //     address <= 8'h2B;   
 
-                TX_WRITE_INTR_DATA_PTR_ST: 
-                    address <= 8'h32;
+                // TX_WRITE_INTR_DATA_PTR_ST: 
+                //     address <= 8'h32;
 
-                TX_WRITE_WM_FIFO_STS_PTR_ST:
-                    address <= 8'h39;
+                // TX_WRITE_WM_FIFO_STS_PTR_ST:
+                //     address <= 8'h39;
 
-                RX_INTR_DATA_ST: 
-                    if (S_AXIS_TVALID)
-                        address <= address + 1;
+                // RX_INTR_DATA_ST: 
+                //     if (S_AXIS_TVALID)
+                //         address <= address + 1;
 
-                TX_WRITE_WM_DATA_PTR_ST: 
-                    address <= 8'h32;
+                // TX_WRITE_WM_DATA_PTR_ST: 
+                //     address <= 8'h32;
 
-                RX_WM_DATA_ST: 
-                    if (S_AXIS_TVALID)
-                        address <= address + 1;
+                // RX_WM_DATA_ST: 
+                //     if (S_AXIS_TVALID)
+                //         address <= address + 1;
                 
-                TX_WRITE_CALIB_DATA_PTR_ST : 
-                    address <= 8'h32;
+                // TX_WRITE_CALIB_DATA_PTR_ST : 
+                //     address <= 8'h32;
 
-                RX_CALIB_DATA_ST : 
-                    if (S_AXIS_TVALID)
-                        address <= address + 1;
+                // RX_CALIB_DATA_ST : 
+                //     if (S_AXIS_TVALID)
+                //         address <= address + 1;
 
                 default : 
                     address <= address;
@@ -1104,27 +1049,27 @@ module axi_adxl345 #(
             endcase // current_state
     end 
 
-    always_ff @(posedge CLK) begin : update_request_proc
-        if (~RESETN | reset)
-            update_request <= 1'b0;
-        else
-            if (slv_reg_wren) begin 
-                for ( byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1 ) begin 
-                    if (write_mask_register[axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV]][byte_index]) begin 
-                        update_request <= 1'b1;
-                    end 
-                end 
-            end else begin 
-                case (current_state)
-                    INC_ADDR_ST : 
-                        if (address == ADDRESS_LIMIT)
-                            update_request <= 1'b0;
+    // always_ff @(posedge CLK) begin : update_request_proc
+    //     if (~RESETN | reset)
+    //         update_request <= 1'b0;
+    //     else
+    //         if (slv_reg_wren) begin 
+    //             for ( byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1 ) begin 
+    //                 if (write_mask_register[axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV]][byte_index]) begin 
+    //                     update_request <= 1'b1;
+    //                 end 
+    //             end 
+    //         end else begin 
+    //             case (current_state)
+    //                 INC_ADDR_ST : 
+    //                     if (address == ADDRESS_LIMIT)
+    //                         update_request <= 1'b0;
                     
-                    default : 
-                        update_request <= update_request;
-                endcase // current_state
-            end 
-    end  
+    //                 default : 
+    //                     update_request <= update_request;
+    //             endcase // current_state
+    //         end 
+    // end  
 
     fifo_out_sync_tuser_xpm #(
         .DATA_WIDTH(DATA_WIDTH),
@@ -1155,21 +1100,21 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin : out_din_data_proc
         case (current_state)
-            SEND_WRITE_CMD_ST : 
-                case(write_cmd_word_cnt)
-                    4'h0 : 
-                        out_din_data <= 8'h02;
+            // SEND_WRITE_CMD_ST : 
+            //     case(write_cmd_word_cnt)
+            //         4'h0 : 
+            //             out_din_data <= 8'h02;
 
-                    4'h1 : 
-                        out_din_data <= {2'b00, address};
+            //         4'h1 : 
+            //             out_din_data <= {2'b00, address};
 
-                    4'h2 : 
-                        out_din_data <= register[address[5:2]][address[1:0]];
+            //         4'h2 : 
+            //             out_din_data <= register[address[5:2]][address[1:0]];
 
-                    default : 
-                        out_din_data <= out_din_data;
+            //         default : 
+            //             out_din_data <= out_din_data;
 
-                endcase // write_cmd_word_cnt
+            //     endcase // write_cmd_word_cnt
 
             TX_SEND_ADDR_PTR : 
                 case (write_cmd_word_cnt)
@@ -1181,94 +1126,94 @@ module axi_adxl345 #(
             TX_READ_REQUEST_ST : 
                 out_din_data <= ADDRESS_LIMIT;
 
-            TX_WRITE_INT_SOURCE_PTR_ST:
-                case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h01;
-                    4'h1 : out_din_data <= 8'h30;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
+            // TX_WRITE_INT_SOURCE_PTR_ST:
+            //     case (write_cmd_word_cnt)
+            //         4'h0 : out_din_data <= 8'h01;
+            //         4'h1 : out_din_data <= 8'h30;
+            //         default : out_din_data <= out_din_data;
+            //     endcase // write_cmd_word_cnt
 
-            TX_READ_INT_SOURCE_ST: 
-                out_din_data <= 8'h01;
-
-
-
-
-            TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h01;
-                    4'h1 : out_din_data <= 8'h2B;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
-
-            TX_READ_ACT_TAP_STATUS_ST: 
-                out_din_data <= 8'h01;
-
-            TX_WRITE_INTR_DATA_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h01;
-                    4'h1 : out_din_data <= 8'h32;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
-
-            TX_READ_INTR_DATA_ST: 
-                out_din_data <= 8'h06;
-
-
-            TX_WRITE_WM_FIFO_STS_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h01;
-                    4'h1 : out_din_data <= 8'h39;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
-
-            TX_READ_WM_FIFO_STS_ST: 
-                out_din_data <= 8'h01;
-
-
-            TX_WRITE_WM_DATA_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h01;
-                    4'h1 : out_din_data <= 8'h32;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
-
-            TX_READ_WM_DATA_ST: 
-                out_din_data <= 8'h06;
+            // TX_READ_INT_SOURCE_ST: 
+            //     out_din_data <= 8'h01;
 
 
 
-            TX_WRITE_CALIB_DATA_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h01;
-                    4'h1 : out_din_data <= 8'h32;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
 
-            TX_READ_CALIB_DATA_ST: 
-                out_din_data <= 8'h06;
+            // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h0 : out_din_data <= 8'h01;
+            //         4'h1 : out_din_data <= 8'h2B;
+            //         default : out_din_data <= out_din_data;
+            //     endcase // write_cmd_word_cnt
+
+            // TX_READ_ACT_TAP_STATUS_ST: 
+            //     out_din_data <= 8'h01;
+
+            // TX_WRITE_INTR_DATA_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h0 : out_din_data <= 8'h01;
+            //         4'h1 : out_din_data <= 8'h32;
+            //         default : out_din_data <= out_din_data;
+            //     endcase // write_cmd_word_cnt
+
+            // TX_READ_INTR_DATA_ST: 
+            //     out_din_data <= 8'h06;
 
 
-            TX_WRITE_CALIB_OFS_ST: 
-                case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h04;
-                    4'h1 : out_din_data <= 8'h1E;
-                    4'h2 : out_din_data <= offset_lsb_x;
-                    4'h3 : out_din_data <= offset_lsb_y;
-                    4'h4 : out_din_data <= offset_lsb_z;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
+            // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h0 : out_din_data <= 8'h01;
+            //         4'h1 : out_din_data <= 8'h39;
+            //         default : out_din_data <= out_din_data;
+            //     endcase // write_cmd_word_cnt
+
+            // TX_READ_WM_FIFO_STS_ST: 
+            //     out_din_data <= 8'h01;
 
 
-            TX_WRITE_CALIB_OFS_CLEAR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h0 : out_din_data <= 8'h04;
-                    4'h1 : out_din_data <= 8'h1E;
-                    4'h2 : out_din_data <= 8'h00;
-                    4'h3 : out_din_data <= 8'h00;
-                    4'h4 : out_din_data <= 8'h00;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
+            // TX_WRITE_WM_DATA_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h0 : out_din_data <= 8'h01;
+            //         4'h1 : out_din_data <= 8'h32;
+            //         default : out_din_data <= out_din_data;
+            //     endcase // write_cmd_word_cnt
+
+            // TX_READ_WM_DATA_ST: 
+            //     out_din_data <= 8'h06;
+
+
+
+            // TX_WRITE_CALIB_DATA_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h0 : out_din_data <= 8'h01;
+            //         4'h1 : out_din_data <= 8'h32;
+            //         default : out_din_data <= out_din_data;
+            //     endcase // write_cmd_word_cnt
+
+            // TX_READ_CALIB_DATA_ST: 
+            //     out_din_data <= 8'h06;
+
+
+            // TX_WRITE_CALIB_OFS_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h0 : out_din_data <= 8'h04;
+            //         4'h1 : out_din_data <= 8'h1E;
+            //         4'h2 : out_din_data <= offset_lsb_x;
+            //         4'h3 : out_din_data <= offset_lsb_y;
+            //         4'h4 : out_din_data <= offset_lsb_z;
+            //         default : out_din_data <= out_din_data;
+            //     endcase // write_cmd_word_cnt
+
+
+            // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h0 : out_din_data <= 8'h04;
+            //         4'h1 : out_din_data <= 8'h1E;
+            //         4'h2 : out_din_data <= 8'h00;
+            //         4'h3 : out_din_data <= 8'h00;
+            //         4'h4 : out_din_data <= 8'h00;
+            //         default : out_din_data <= out_din_data;
+            //     endcase // write_cmd_word_cnt
 
 
 
@@ -1281,11 +1226,11 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin : out_wren_proc
         case (current_state)
-            SEND_WRITE_CMD_ST : 
-                if (!out_awfull) 
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // SEND_WRITE_CMD_ST : 
+            //     if (!out_awfull) 
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
             TX_READ_REQUEST_ST: 
                 if (!out_awfull) 
@@ -1299,89 +1244,89 @@ module axi_adxl345 #(
                 else 
                     out_wren <= 1'b0;
 
-            TX_WRITE_INT_SOURCE_PTR_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_WRITE_INT_SOURCE_PTR_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_READ_INT_SOURCE_ST:
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_READ_INT_SOURCE_ST:
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_READ_ACT_TAP_STATUS_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_READ_ACT_TAP_STATUS_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_WRITE_INTR_DATA_PTR_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_WRITE_INTR_DATA_PTR_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_READ_INTR_DATA_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_READ_INTR_DATA_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_WRITE_WM_FIFO_STS_PTR_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_READ_WM_FIFO_STS_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_READ_WM_FIFO_STS_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_WRITE_WM_DATA_PTR_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_WRITE_WM_DATA_PTR_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_READ_WM_DATA_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_READ_WM_DATA_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_WRITE_CALIB_DATA_PTR_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_WRITE_CALIB_DATA_PTR_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_READ_CALIB_DATA_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_READ_CALIB_DATA_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_WRITE_CALIB_OFS_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_WRITE_CALIB_OFS_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
-            TX_WRITE_CALIB_OFS_CLEAR_ST: 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
+            // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+            //     if (!out_awfull)
+            //         out_wren <= 1'b1;
+            //     else 
+            //         out_wren <= 1'b0;
 
             default : 
                 out_wren <= 1'b0;
@@ -1391,8 +1336,8 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin : out_din_user_proc
         case (current_state)
-            SEND_WRITE_CMD_ST : 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // SEND_WRITE_CMD_ST : 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
             TX_READ_REQUEST_ST : 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
@@ -1400,47 +1345,47 @@ module axi_adxl345 #(
             TX_SEND_ADDR_PTR : 
                 out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_WRITE_INT_SOURCE_PTR_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // TX_WRITE_INT_SOURCE_PTR_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_READ_INT_SOURCE_ST : 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+            // TX_READ_INT_SOURCE_ST : 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
-            TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_READ_ACT_TAP_STATUS_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+            // TX_READ_ACT_TAP_STATUS_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
-            TX_WRITE_INTR_DATA_PTR_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // TX_WRITE_INTR_DATA_PTR_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_READ_INTR_DATA_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+            // TX_READ_INTR_DATA_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
-            TX_WRITE_WM_FIFO_STS_PTR_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_READ_WM_FIFO_STS_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+            // TX_READ_WM_FIFO_STS_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
-            TX_WRITE_WM_DATA_PTR_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // TX_WRITE_WM_DATA_PTR_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_READ_WM_DATA_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+            // TX_READ_WM_DATA_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
-            TX_WRITE_CALIB_DATA_PTR_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // TX_WRITE_CALIB_DATA_PTR_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_READ_CALIB_DATA_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+            // TX_READ_CALIB_DATA_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
 
-            TX_WRITE_CALIB_OFS_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // TX_WRITE_CALIB_OFS_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
-            TX_WRITE_CALIB_OFS_CLEAR_ST: 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+            // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
 
 
             default : 
@@ -1450,15 +1395,15 @@ module axi_adxl345 #(
 
     always_ff @(posedge CLK) begin 
         case (current_state)
-            SEND_WRITE_CMD_ST : 
-                case (write_cmd_word_cnt) 
-                    4'h2 :
-                        out_din_last <= 1'b1;
+            // SEND_WRITE_CMD_ST : 
+            //     case (write_cmd_word_cnt) 
+            //         4'h2 :
+            //             out_din_last <= 1'b1;
 
-                    default: 
-                        out_din_last <= 1'b0;
+            //         default: 
+            //             out_din_last <= 1'b0;
 
-                endcase // write_cmd_word_cnt
+            //     endcase // write_cmd_word_cnt
 
             TX_READ_REQUEST_ST : 
                 out_din_last <= 1'b1;
@@ -1471,93 +1416,93 @@ module axi_adxl345 #(
                         out_din_last <= 1'b0;
                 endcase // write_cmd_word_cnt
 
-            TX_WRITE_INT_SOURCE_PTR_ST : 
-                case (write_cmd_word_cnt)
-                    4'h1 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
+            // TX_WRITE_INT_SOURCE_PTR_ST : 
+            //     case (write_cmd_word_cnt)
+            //         4'h1 : 
+            //             out_din_last <= 1'b1;
+            //         default : 
+            //             out_din_last <= 1'b0;
+            //     endcase // write_cmd_word_cnt
 
-            TX_READ_INT_SOURCE_ST : 
-                out_din_last <= 1'b1;
+            // TX_READ_INT_SOURCE_ST : 
+            //     out_din_last <= 1'b1;
 
-            TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h1 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
+            // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h1 : 
+            //             out_din_last <= 1'b1;
+            //         default : 
+            //             out_din_last <= 1'b0;
+            //     endcase // write_cmd_word_cnt
 
-            TX_READ_ACT_TAP_STATUS_ST: 
-                out_din_last <= 1'b1;
+            // TX_READ_ACT_TAP_STATUS_ST: 
+            //     out_din_last <= 1'b1;
 
-            TX_WRITE_INTR_DATA_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h1 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
+            // TX_WRITE_INTR_DATA_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h1 : 
+            //             out_din_last <= 1'b1;
+            //         default : 
+            //             out_din_last <= 1'b0;
+            //     endcase // write_cmd_word_cnt
 
-            TX_READ_INTR_DATA_ST: 
-                out_din_last <= 1'b1;
-
-
-
-            TX_WRITE_WM_FIFO_STS_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h1 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
-
-            TX_READ_WM_FIFO_STS_ST: 
-                out_din_last <= 1'b1;
-
-            TX_WRITE_WM_DATA_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h1 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
-
-            TX_READ_WM_DATA_ST: 
-                out_din_last <= 1'b1;
+            // TX_READ_INTR_DATA_ST: 
+            //     out_din_last <= 1'b1;
 
 
 
+            // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h1 : 
+            //             out_din_last <= 1'b1;
+            //         default : 
+            //             out_din_last <= 1'b0;
+            //     endcase // write_cmd_word_cnt
 
-            TX_WRITE_CALIB_DATA_PTR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h1 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
+            // TX_READ_WM_FIFO_STS_ST: 
+            //     out_din_last <= 1'b1;
 
-            TX_READ_CALIB_DATA_ST: 
-                out_din_last <= 1'b1;
+            // TX_WRITE_WM_DATA_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h1 : 
+            //             out_din_last <= 1'b1;
+            //         default : 
+            //             out_din_last <= 1'b0;
+            //     endcase // write_cmd_word_cnt
+
+            // TX_READ_WM_DATA_ST: 
+            //     out_din_last <= 1'b1;
 
 
-            TX_WRITE_CALIB_OFS_ST: 
-                case (write_cmd_word_cnt)
-                    4'h4 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
 
-            TX_WRITE_CALIB_OFS_CLEAR_ST: 
-                case (write_cmd_word_cnt)
-                    4'h4 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
+
+            // TX_WRITE_CALIB_DATA_PTR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h1 : 
+            //             out_din_last <= 1'b1;
+            //         default : 
+            //             out_din_last <= 1'b0;
+            //     endcase // write_cmd_word_cnt
+
+            // TX_READ_CALIB_DATA_ST: 
+            //     out_din_last <= 1'b1;
+
+
+            // TX_WRITE_CALIB_OFS_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h4 : 
+            //             out_din_last <= 1'b1;
+            //         default : 
+            //             out_din_last <= 1'b0;
+            //     endcase // write_cmd_word_cnt
+
+            // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+            //     case (write_cmd_word_cnt)
+            //         4'h4 : 
+            //             out_din_last <= 1'b1;
+            //         default : 
+            //             out_din_last <= 1'b0;
+            //     endcase // write_cmd_word_cnt
 
 
             default : 
@@ -1566,36 +1511,36 @@ module axi_adxl345 #(
         endcase // current_state
     end 
 
-    always_ff @(posedge CLK) begin : request_timer_proc
-        case (current_state)
-            IDLE_ST : 
-                if (enable) begin
-                    if (request_timer < request_interval) begin 
-                        request_timer <= request_timer + 1;
-                    end else begin 
-                        request_timer <= '{default:0};
-                    end 
-                end else begin 
-                    request_timer <= '{default:0};
-                end 
+    // always_ff @(posedge CLK) begin : request_timer_proc
+    //     case (current_state)
+    //         IDLE_ST : 
+    //             if (enable) begin
+    //                 if (request_timer < request_interval) begin 
+    //                     request_timer <= request_timer + 1;
+    //                 end else begin 
+    //                     request_timer <= '{default:0};
+    //                 end 
+    //             end else begin 
+    //                 request_timer <= '{default:0};
+    //             end 
 
-            default : 
-                request_timer <= '{default:0};
+    //         default : 
+    //             request_timer <= '{default:0};
 
-        endcase
-    end 
+    //     endcase
+    // end 
 
 
-    always_ff @(posedge CLK) begin : int_source_reg_proc
-        case (current_state)
+    // always_ff @(posedge CLK) begin : int_source_reg_proc
+    //     case (current_state)
 
-            RX_INT_SOURCE_ST : 
-                if (S_AXIS_TVALID)
-                    int_source_reg <= S_AXIS_TDATA;
+    //         RX_INT_SOURCE_ST : 
+    //             if (S_AXIS_TVALID)
+    //                 int_source_reg <= S_AXIS_TDATA;
 
-            default: int_source_reg <= int_source_reg;
-        endcase // current_state
-    end 
+    //         default: int_source_reg <= int_source_reg;
+    //     endcase // current_state
+    // end 
 
 
 
@@ -1733,15 +1678,15 @@ module axi_adxl345 #(
         slv_reg_rden_cfg <= axi_arready_cfg & S_AXI_LITE_CFG_ARVALID & ~axi_rvalid_cfg;
     end 
 
-    logic [47:0][31:0] register_file;
+    // logic [47:0][31:0] register_file;
 
-    generate 
-        for (genvar rf_idx = 0; rf_idx < 48; rf_idx++) begin 
-            always_comb begin 
-                register_file[rf_idx][31:0] = {register_samples[(rf_idx*4)+3], register_samples[(rf_idx*4)+2], register_samples[(rf_idx*4)+1], register_samples[rf_idx*4]};
-            end 
-        end   
-    endgenerate
+    // generate 
+    //     for (genvar rf_idx = 0; rf_idx < 48; rf_idx++) begin 
+    //         always_comb begin 
+    //             register_file[rf_idx][31:0] = {register_samples[(rf_idx*4)+3], register_samples[(rf_idx*4)+2], register_samples[(rf_idx*4)+1], register_samples[rf_idx*4]};
+    //         end 
+    //     end   
+    // endgenerate
 
 
     always_ff @(posedge CLK) begin
@@ -1777,54 +1722,54 @@ module axi_adxl345 #(
             8'h0e    : reg_data_out_cfg <= '{default:0}; // reserved
             8'h0f    : reg_data_out_cfg <= '{default:0}; // reserved
 
-            8'h10    : reg_data_out_cfg <= register_file[0][31:0];
-            8'h11    : reg_data_out_cfg <= register_file[1][31:0];
-            8'h12    : reg_data_out_cfg <= register_file[2][31:0];
-            8'h13    : reg_data_out_cfg <= register_file[3][31:0];
-            8'h14    : reg_data_out_cfg <= register_file[4][31:0];
-            8'h15    : reg_data_out_cfg <= register_file[5][31:0];
-            8'h16    : reg_data_out_cfg <= register_file[6][31:0];
-            8'h17    : reg_data_out_cfg <= register_file[7][31:0];
-            8'h18    : reg_data_out_cfg <= register_file[8][31:0];
-            8'h19    : reg_data_out_cfg <= register_file[9][31:0];
-            8'h1a    : reg_data_out_cfg <= register_file[10][31:0];
-            8'h1b    : reg_data_out_cfg <= register_file[11][31:0];
-            8'h1c    : reg_data_out_cfg <= register_file[12][31:0];
-            8'h1d    : reg_data_out_cfg <= register_file[13][31:0];
-            8'h1e    : reg_data_out_cfg <= register_file[14][31:0];
-            8'h1f    : reg_data_out_cfg <= register_file[15][31:0];
-            8'h20    : reg_data_out_cfg <= register_file[16][31:0];
-            8'h21    : reg_data_out_cfg <= register_file[17][31:0];
-            8'h22    : reg_data_out_cfg <= register_file[18][31:0];
-            8'h23    : reg_data_out_cfg <= register_file[19][31:0];
-            8'h24    : reg_data_out_cfg <= register_file[20][31:0];
-            8'h25    : reg_data_out_cfg <= register_file[21][31:0];
-            8'h26    : reg_data_out_cfg <= register_file[22][31:0];
-            8'h27    : reg_data_out_cfg <= register_file[23][31:0];
-            8'h28    : reg_data_out_cfg <= register_file[24][31:0];
-            8'h29    : reg_data_out_cfg <= register_file[25][31:0];
-            8'h2a    : reg_data_out_cfg <= register_file[26][31:0];
-            8'h2b    : reg_data_out_cfg <= register_file[27][31:0];
-            8'h2c    : reg_data_out_cfg <= register_file[28][31:0];
-            8'h2d    : reg_data_out_cfg <= register_file[29][31:0];
-            8'h2e    : reg_data_out_cfg <= register_file[30][31:0];
-            8'h2f    : reg_data_out_cfg <= register_file[31][31:0];
-            8'h30    : reg_data_out_cfg <= register_file[32][31:0];
-            8'h31    : reg_data_out_cfg <= register_file[33][31:0];
-            8'h32    : reg_data_out_cfg <= register_file[34][31:0];
-            8'h33    : reg_data_out_cfg <= register_file[35][31:0];
-            8'h34    : reg_data_out_cfg <= register_file[36][31:0];
-            8'h35    : reg_data_out_cfg <= register_file[37][31:0];
-            8'h36    : reg_data_out_cfg <= register_file[38][31:0];
-            8'h37    : reg_data_out_cfg <= register_file[39][31:0];
-            8'h38    : reg_data_out_cfg <= register_file[40][31:0];
-            8'h39    : reg_data_out_cfg <= register_file[41][31:0];
-            8'h3a    : reg_data_out_cfg <= register_file[42][31:0];
-            8'h3b    : reg_data_out_cfg <= register_file[43][31:0];
-            8'h3c    : reg_data_out_cfg <= register_file[44][31:0];
-            8'h3d    : reg_data_out_cfg <= register_file[45][31:0];
-            8'h3e    : reg_data_out_cfg <= register_file[46][31:0];
-            8'h3f    : reg_data_out_cfg <= register_file[47][31:0];
+            // 8'h10    : reg_data_out_cfg <= register_file[0][31:0];
+            // 8'h11    : reg_data_out_cfg <= register_file[1][31:0];
+            // 8'h12    : reg_data_out_cfg <= register_file[2][31:0];
+            // 8'h13    : reg_data_out_cfg <= register_file[3][31:0];
+            // 8'h14    : reg_data_out_cfg <= register_file[4][31:0];
+            // 8'h15    : reg_data_out_cfg <= register_file[5][31:0];
+            // 8'h16    : reg_data_out_cfg <= register_file[6][31:0];
+            // 8'h17    : reg_data_out_cfg <= register_file[7][31:0];
+            // 8'h18    : reg_data_out_cfg <= register_file[8][31:0];
+            // 8'h19    : reg_data_out_cfg <= register_file[9][31:0];
+            // 8'h1a    : reg_data_out_cfg <= register_file[10][31:0];
+            // 8'h1b    : reg_data_out_cfg <= register_file[11][31:0];
+            // 8'h1c    : reg_data_out_cfg <= register_file[12][31:0];
+            // 8'h1d    : reg_data_out_cfg <= register_file[13][31:0];
+            // 8'h1e    : reg_data_out_cfg <= register_file[14][31:0];
+            // 8'h1f    : reg_data_out_cfg <= register_file[15][31:0];
+            // 8'h20    : reg_data_out_cfg <= register_file[16][31:0];
+            // 8'h21    : reg_data_out_cfg <= register_file[17][31:0];
+            // 8'h22    : reg_data_out_cfg <= register_file[18][31:0];
+            // 8'h23    : reg_data_out_cfg <= register_file[19][31:0];
+            // 8'h24    : reg_data_out_cfg <= register_file[20][31:0];
+            // 8'h25    : reg_data_out_cfg <= register_file[21][31:0];
+            // 8'h26    : reg_data_out_cfg <= register_file[22][31:0];
+            // 8'h27    : reg_data_out_cfg <= register_file[23][31:0];
+            // 8'h28    : reg_data_out_cfg <= register_file[24][31:0];
+            // 8'h29    : reg_data_out_cfg <= register_file[25][31:0];
+            // 8'h2a    : reg_data_out_cfg <= register_file[26][31:0];
+            // 8'h2b    : reg_data_out_cfg <= register_file[27][31:0];
+            // 8'h2c    : reg_data_out_cfg <= register_file[28][31:0];
+            // 8'h2d    : reg_data_out_cfg <= register_file[29][31:0];
+            // 8'h2e    : reg_data_out_cfg <= register_file[30][31:0];
+            // 8'h2f    : reg_data_out_cfg <= register_file[31][31:0];
+            // 8'h30    : reg_data_out_cfg <= register_file[32][31:0];
+            // 8'h31    : reg_data_out_cfg <= register_file[33][31:0];
+            // 8'h32    : reg_data_out_cfg <= register_file[34][31:0];
+            // 8'h33    : reg_data_out_cfg <= register_file[35][31:0];
+            // 8'h34    : reg_data_out_cfg <= register_file[36][31:0];
+            // 8'h35    : reg_data_out_cfg <= register_file[37][31:0];
+            // 8'h36    : reg_data_out_cfg <= register_file[38][31:0];
+            // 8'h37    : reg_data_out_cfg <= register_file[39][31:0];
+            // 8'h38    : reg_data_out_cfg <= register_file[40][31:0];
+            // 8'h39    : reg_data_out_cfg <= register_file[41][31:0];
+            // 8'h3a    : reg_data_out_cfg <= register_file[42][31:0];
+            // 8'h3b    : reg_data_out_cfg <= register_file[43][31:0];
+            // 8'h3c    : reg_data_out_cfg <= register_file[44][31:0];
+            // 8'h3d    : reg_data_out_cfg <= register_file[45][31:0];
+            // 8'h3e    : reg_data_out_cfg <= register_file[46][31:0];
+            // 8'h3f    : reg_data_out_cfg <= register_file[47][31:0];
 
             default : reg_data_out_cfg <= '{default:0};
         endcase
@@ -1855,26 +1800,26 @@ module axi_adxl345 #(
 
     end    
 
-    always_ff @(posedge CLK) begin : calibration_flaq_processing 
-        if (~RESETN | reset | (current_state == TX_WRITE_CALIB_OFS_ST)) begin 
-            calibration_flaq <= 1'b0;
-        end else begin 
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                    if ( S_AXI_LITE_CFG_WSTRB[1] == 1 )
-                        calibration_flaq <= S_AXI_LITE_CFG_WDATA[5];
-        end 
-    end 
+    // always_ff @(posedge CLK) begin : calibration_flaq_processing 
+    //     if (~RESETN | reset | (current_state == TX_WRITE_CALIB_OFS_ST)) begin 
+    //         calibration_flaq <= 1'b0;
+    //     end else begin 
+    //         if (slv_reg_wren_cfg)
+    //             if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+    //                 if ( S_AXI_LITE_CFG_WSTRB[1] == 1 )
+    //                     calibration_flaq <= S_AXI_LITE_CFG_WDATA[5];
+    //     end 
+    // end 
 
-    always_ff @(posedge CLK) begin : calibration_count_limit_reg_proc 
-        if (~RESETN | reset) begin 
-            calibration_count_limit_reg <= DEFAULT_CALIBRATION_LIMIT;
-        end else begin  
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 10)
-                    calibration_count_limit_reg <= S_AXI_LITE_CFG_WDATA;            
-        end 
-    end 
+    // always_ff @(posedge CLK) begin : calibration_count_limit_reg_proc 
+    //     if (~RESETN | reset) begin 
+    //         calibration_count_limit_reg <= DEFAULT_CALIBRATION_LIMIT;
+    //     end else begin  
+    //         if (slv_reg_wren_cfg)
+    //             if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 10)
+    //                 calibration_count_limit_reg <= S_AXI_LITE_CFG_WDATA;            
+    //     end 
+    // end 
 
     always_ff @(posedge CLK) begin 
         if (~RESETN | reset)
@@ -1901,45 +1846,45 @@ module axi_adxl345 #(
 
     end
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset) begin 
-            request_performed <= 1'b0;
-        end else begin 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN | reset) begin 
+    //         request_performed <= 1'b0;
+    //     end else begin 
 
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                    if ( S_AXI_LITE_CFG_WSTRB[1] == 1 )
-                        if (S_AXI_LITE_CFG_WDATA[6])
-                            request_performed <= 1'b0;
-                        else 
-                            request_performed <= request_performed;
-                    else 
-                        request_performed <= request_performed;
-                else 
-                    request_performed <= request_performed;
-            else
-                case (current_state) 
-                    AWAIT_RECEIVE_DATA_ST : 
-                        if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
-                            request_performed <= 1'b1;
-                        end else begin 
-                            request_performed <= request_performed;
-                        end 
+    //         if (slv_reg_wren_cfg)
+    //             if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+    //                 if ( S_AXI_LITE_CFG_WSTRB[1] == 1 )
+    //                     if (S_AXI_LITE_CFG_WDATA[6])
+    //                         request_performed <= 1'b0;
+    //                     else 
+    //                         request_performed <= request_performed;
+    //                 else 
+    //                     request_performed <= request_performed;
+    //             else 
+    //                 request_performed <= request_performed;
+    //         else
+    //             case (current_state) 
+    //                 AWAIT_RECEIVE_DATA_ST : 
+    //                     if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
+    //                         request_performed <= 1'b1;
+    //                     end else begin 
+    //                         request_performed <= request_performed;
+    //                     end 
 
-                    default : request_performed <= request_performed;
-                endcase
-        end 
-    end 
+    //                 default : request_performed <= request_performed;
+    //             endcase
+    //     end 
+    // end 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset)
-            allow_irq <= 1'b0;
-        else 
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                    if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
-                        allow_irq <= S_AXI_LITE_CFG_WDATA[2];
-    end 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN | reset)
+    //         allow_irq <= 1'b0;
+    //     else 
+    //         if (slv_reg_wren_cfg)
+    //             if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+    //                 if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
+    //                     allow_irq <= S_AXI_LITE_CFG_WDATA[2];
+    // end 
 
     always_ff @(posedge CLK) begin 
         if (~RESETN | reset) 
@@ -1978,128 +1923,128 @@ module axi_adxl345 #(
                 endcase // current_state
     end 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset) begin 
-            intr_ack <= 1'b0;
-        end else begin 
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                    if ((S_AXI_LITE_CFG_WSTRB[0] == 1) & S_AXI_LITE_CFG_WDATA[4] & ADXL_IRQ )
-                        intr_ack <= 1'b1;
-                    else
-                        intr_ack <= 1'b0;
-                else 
-                    intr_ack <= 1'b0;
-            else 
-                intr_ack <= 1'b0;
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN | reset) begin 
+    //         intr_ack <= 1'b0;
+    //     end else begin 
+    //         if (slv_reg_wren_cfg)
+    //             if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+    //                 if ((S_AXI_LITE_CFG_WSTRB[0] == 1) & S_AXI_LITE_CFG_WDATA[4] & ADXL_IRQ )
+    //                     intr_ack <= 1'b1;
+    //                 else
+    //                     intr_ack <= 1'b0;
+    //             else 
+    //                 intr_ack <= 1'b0;
+    //         else 
+    //             intr_ack <= 1'b0;
 
-        end
-    end 
-
-
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset)
-            enable <= 1'b0;
-        else 
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                        if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
-                            enable <= S_AXI_LITE_CFG_WDATA[1];
-    end 
-
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset )
-            request_interval <= DEFAULT_REQUEST_INTERVAL;
-        else 
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 1)
-                    for ( byte_index_cfg = 0; byte_index_cfg <= (S_AXI_LITE_CFG_DATA_WIDTH/8)-1; byte_index_cfg = byte_index_cfg + 1 )
-                        if ( S_AXI_LITE_CFG_WSTRB[byte_index_cfg] == 1 )
-                            request_interval[(byte_index_cfg*8) +: 8] <= S_AXI_LITE_CFG_WDATA[(byte_index_cfg*8) +: 8];
-    end 
+    //     end
+    // end 
 
 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN | reset)
+    //         enable <= 1'b0;
+    //     else 
+    //         if (slv_reg_wren_cfg)
+    //             if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+    //                     if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
+    //                         enable <= S_AXI_LITE_CFG_WDATA[1];
+    // end 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN)
-            transactions_timer <= '{default:0};
-        else 
-            if (transactions_timer < CLK_PERIOD-1) 
-                transactions_timer <= transactions_timer + 1;
-            else 
-                transactions_timer <= '{default:0};
-    end
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN | reset )
+    //         request_interval <= DEFAULT_REQUEST_INTERVAL;
+    //     else 
+    //         if (slv_reg_wren_cfg)
+    //             if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 1)
+    //                 for ( byte_index_cfg = 0; byte_index_cfg <= (S_AXI_LITE_CFG_DATA_WIDTH/8)-1; byte_index_cfg = byte_index_cfg + 1 )
+    //                     if ( S_AXI_LITE_CFG_WSTRB[byte_index_cfg] == 1 )
+    //                         request_interval[(byte_index_cfg*8) +: 8] <= S_AXI_LITE_CFG_WDATA[(byte_index_cfg*8) +: 8];
+    // end 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN)
-            read_valid_count <= '{default:0};
-        else 
-            if (transactions_timer < CLK_PERIOD-1) begin 
-                if (S_AXIS_TVALID & S_AXIS_TREADY) begin
-                    read_valid_count <= read_valid_count + 1;
-                end else begin  
-                    read_valid_count <= read_valid_count;
-                end  
-            end else begin  
-                read_valid_count <= '{default:0};
-            end 
-    end 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN)
-            read_valid_reg <= '{default:0};
-        else 
-            if (transactions_timer < (CLK_PERIOD-1)) begin 
-                read_valid_reg <= read_valid_reg;
-            end else begin 
-                read_valid_reg <= read_valid_count;
-            end 
-    end 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN)
-            write_valid_count <= '{default:0};
-        else 
-            if (transactions_timer < (CLK_PERIOD-1)) begin 
-                if (out_wren) begin
-                    write_valid_count <= write_valid_count + 1;
-                end else begin  
-                    write_valid_count <= write_valid_count;
-                end  
-            end else begin  
-                write_valid_count <= '{default:0};
-            end 
-    end 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN)
+    //         transactions_timer <= '{default:0};
+    //     else 
+    //         if (transactions_timer < CLK_PERIOD-1) 
+    //             transactions_timer <= transactions_timer + 1;
+    //         else 
+    //             transactions_timer <= '{default:0};
+    // end
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN)
-            write_valid_reg <= '{default:0};
-        else 
-            if (transactions_timer < (CLK_PERIOD-1)) begin 
-                write_valid_reg <= write_valid_reg;
-            end else begin  
-                write_valid_reg <= write_valid_count;
-            end 
-    end 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN)
+    //         read_valid_count <= '{default:0};
+    //     else 
+    //         if (transactions_timer < CLK_PERIOD-1) begin 
+    //             if (S_AXIS_TVALID & S_AXIS_TREADY) begin
+    //                 read_valid_count <= read_valid_count + 1;
+    //             end else begin  
+    //                 read_valid_count <= read_valid_count;
+    //             end  
+    //         end else begin  
+    //             read_valid_count <= '{default:0};
+    //         end 
+    // end 
 
-    always_ff @(posedge CLK) begin : write_transactions_proc
-        if (~RESETN | reset)
-            write_transactions <= '{default:0};
-        else
-            if (out_wren)
-                if (out_din_last)
-                    write_transactions <= write_transactions + 1;
-    end 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN)
+    //         read_valid_reg <= '{default:0};
+    //     else 
+    //         if (transactions_timer < (CLK_PERIOD-1)) begin 
+    //             read_valid_reg <= read_valid_reg;
+    //         end else begin 
+    //             read_valid_reg <= read_valid_count;
+    //         end 
+    // end 
 
-    always_ff @(posedge CLK) begin : read_transactions_proc
-        if (~RESETN | reset)
-            read_transactions <= '{default:0};
-        else
-            if (S_AXIS_TVALID & S_AXIS_TREADY)
-                if (S_AXIS_TLAST)
-                    read_transactions <= read_transactions + 1;
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN)
+    //         write_valid_count <= '{default:0};
+    //     else 
+    //         if (transactions_timer < (CLK_PERIOD-1)) begin 
+    //             if (out_wren) begin
+    //                 write_valid_count <= write_valid_count + 1;
+    //             end else begin  
+    //                 write_valid_count <= write_valid_count;
+    //             end  
+    //         end else begin  
+    //             write_valid_count <= '{default:0};
+    //         end 
+    // end 
 
-    end 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN)
+    //         write_valid_reg <= '{default:0};
+    //     else 
+    //         if (transactions_timer < (CLK_PERIOD-1)) begin 
+    //             write_valid_reg <= write_valid_reg;
+    //         end else begin  
+    //             write_valid_reg <= write_valid_count;
+    //         end 
+    // end 
+
+    // always_ff @(posedge CLK) begin : write_transactions_proc
+    //     if (~RESETN | reset)
+    //         write_transactions <= '{default:0};
+    //     else
+    //         if (out_wren)
+    //             if (out_din_last)
+    //                 write_transactions <= write_transactions + 1;
+    // end 
+
+    // always_ff @(posedge CLK) begin : read_transactions_proc
+    //     if (~RESETN | reset)
+    //         read_transactions <= '{default:0};
+    //     else
+    //         if (S_AXIS_TVALID & S_AXIS_TREADY)
+    //             if (S_AXIS_TLAST)
+    //                 read_transactions <= read_transactions + 1;
+
+    // end 
 
 
 
@@ -2151,329 +2096,340 @@ module axi_adxl345 #(
     end 
 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset | intr_ack) begin 
-            sample_address <= '{default:0};
-        end else begin  
-            case (current_state) 
-                RX_WM_DATA_ST: 
-                    if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
-                        sample_address <= sample_address + 1;
-                    end 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN | reset | intr_ack) begin 
+    //         sample_address <= '{default:0};
+    //     end else begin  
+    //         case (current_state) 
+    //             RX_WM_DATA_ST: 
+    //                 if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
+    //                     sample_address <= sample_address + 1;
+    //                 end 
 
-                default: 
-                    sample_address <= sample_address;
-            endcase // current_state;
-        end 
-    end 
+    //             default: 
+    //                 sample_address <= sample_address;
+    //         endcase // current_state;
+    //     end 
+    // end 
 
-    always_ff @(posedge CLK) begin 
-        if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
-            register_samples[sample_address][7:0] <= S_AXIS_TDATA;
-        end 
-    end 
-
-
-    always_ff @(posedge CLK) begin : entries_proc
-        case (current_state)
-            RX_WM_FIFO_STS_ST : 
-                if (S_AXIS_TVALID) 
-                    entries <= S_AXIS_TDATA[5:0];
-
-            TX_READ_WM_DATA_ST : 
-                if (~out_awfull)
-                    entries <= entries - 1;
-
-            default: 
-                entries <= entries;
-
-        endcase // current_state
-    end 
-
-    always_ff @(posedge CLK) begin : calibration_timer_proc 
-        case (current_state)
-            AWAIT_CALIB_TIMER_ST : 
-                calibration_timer <= calibration_timer + 1;
-
-            default : 
-                calibration_timer <= '{default:0};
-
-        endcase // current_state
-    end  
-
-    always_ff @(posedge CLK) begin : calibration_count_proc 
-        case (current_state)
-
-            IDLE_ST : 
-                calibration_count <= '{default:0};
-
-            RX_CALIB_DATA_ST : 
-                if (S_AXIS_TVALID & S_AXIS_TLAST)
-                    calibration_count <= calibration_count + 1;
-
-            default : 
-                calibration_count <= calibration_count;
-
-        endcase // current_state
-    end 
+    // always_ff @(posedge CLK) begin 
+    //     if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
+    //         register_samples[sample_address][7:0] <= S_AXIS_TDATA;
+    //     end 
+    // end 
 
 
-    always_ff @(posedge CLK) begin : sum_x_proc
-        case (current_state)
-            IDLE_ST : 
-                if (calibration_flaq)
-                    sum_x <= '{default:0};
+    // always_ff @(posedge CLK) begin : entries_proc
+    //     case (current_state)
+    //         RX_WM_FIFO_STS_ST : 
+    //             if (S_AXIS_TVALID) 
+    //                 entries <= S_AXIS_TDATA[5:0];
 
-            ADD_CALIB_CALC_ST :
-                sum_x <= sum_x + {{16{register[12][3][7]}}, {register[12][3], register[12][2]}}; 
-                // sum_x <= sum_x + {register[12][3], register[12][2]};
+    //         TX_READ_WM_DATA_ST : 
+    //             if (~out_awfull)
+    //                 entries <= entries - 1;
 
-            default : 
-                sum_x <= sum_x;
-        endcase // current_state
-    end 
+    //         default: 
+    //             entries <= entries;
 
-    always_ff @(posedge CLK) begin : sum_y_proc
-        case (current_state)
+    //     endcase // current_state
+    // end 
 
-            IDLE_ST :
-                if (calibration_flaq) 
-                    sum_y <= '{default:0};
+    // always_ff @(posedge CLK) begin : calibration_timer_proc 
+    //     case (current_state)
+    //         AWAIT_CALIB_TIMER_ST : 
+    //             calibration_timer <= calibration_timer + 1;
+
+    //         default : 
+    //             calibration_timer <= '{default:0};
+
+    //     endcase // current_state
+    // end  
+
+    // always_ff @(posedge CLK) begin : calibration_count_proc 
+    //     case (current_state)
+
+    //         IDLE_ST : 
+    //             calibration_count <= '{default:0};
+
+    //         RX_CALIB_DATA_ST : 
+    //             if (S_AXIS_TVALID & S_AXIS_TLAST)
+    //                 calibration_count <= calibration_count + 1;
+
+    //         default : 
+    //             calibration_count <= calibration_count;
+
+    //     endcase // current_state
+    // end 
+
+
+    // always_ff @(posedge CLK) begin : sum_x_proc
+    //     case (current_state)
+    //         IDLE_ST : 
+    //             if (calibration_flaq)
+    //                 sum_x <= '{default:0};
+
+    //         ADD_CALIB_CALC_ST :
+    //             sum_x <= sum_x + {{16{register[12][3][7]}}, {register[12][3], register[12][2]}}; 
+    //             // sum_x <= sum_x + {register[12][3], register[12][2]};
+
+    //         default : 
+    //             sum_x <= sum_x;
+    //     endcase // current_state
+    // end 
+
+    // always_ff @(posedge CLK) begin : sum_y_proc
+    //     case (current_state)
+
+    //         IDLE_ST :
+    //             if (calibration_flaq) 
+    //                 sum_y <= '{default:0};
 
             
-            ADD_CALIB_CALC_ST : 
-                sum_y <= sum_y + {{16{register[13][1][7]}}, {register[13][1], register[13][0]}}; 
-                // sum_y <= sum_y + {register[13][1], register[13][0]};
+    //         ADD_CALIB_CALC_ST : 
+    //             sum_y <= sum_y + {{16{register[13][1][7]}}, {register[13][1], register[13][0]}}; 
+    //             // sum_y <= sum_y + {register[13][1], register[13][0]};
 
-            default : 
-                sum_y <= sum_y;
-        endcase // current_state
-    end 
+    //         default : 
+    //             sum_y <= sum_y;
+    //     endcase // current_state
+    // end 
 
-    always_ff @(posedge CLK) begin : sum_z_proc
-        case (current_state)
-            IDLE_ST : 
-                if (calibration_flaq)
-                    sum_z <= '{default:0};
+    // always_ff @(posedge CLK) begin : sum_z_proc
+    //     case (current_state)
+    //         IDLE_ST : 
+    //             if (calibration_flaq)
+    //                 sum_z <= '{default:0};
 
-            ADD_CALIB_CALC_ST : 
-                sum_z <= sum_z + {{16{register[13][3][7]}}, {register[13][3], register[13][2]}}; 
+    //         ADD_CALIB_CALC_ST : 
+    //             sum_z <= sum_z + {{16{register[13][3][7]}}, {register[13][3], register[13][2]}}; 
 
-                // sum_z <= sum_z + {register[13][3], register[13][2]};
+    //             // sum_z <= sum_z + {register[13][3], register[13][2]};
 
-            default : 
-                sum_z <= sum_z;
-        endcase // current_state
-    end 
+    //         default : 
+    //             sum_z <= sum_z;
+    //     endcase // current_state
+    // end 
 
-    always_ff @(posedge CLK) begin : avg_x_proc  
-        case (calibration_count_limit_reg)
-            32'h00000001: avg_x <= sum_x[15:0];
-            32'h00000002: avg_x <= (sum_x >> 1 );
-            32'h00000004: avg_x <= (sum_x >> 2 );
-            32'h00000008: avg_x <= (sum_x >> 3 );
-            32'h00000010: avg_x <= (sum_x >> 4 );
-            32'h00000020: avg_x <= (sum_x >> 5 );
-            32'h00000040: avg_x <= (sum_x >> 6 );
-            32'h00000080: avg_x <= (sum_x >> 7 );
-            32'h00000100: avg_x <= (sum_x >> 8 );
-            32'h00000200: avg_x <= (sum_x >> 9 );
-            32'h00000400: avg_x <= (sum_x >> 10);
-            32'h00000800: avg_x <= (sum_x >> 11);
-            32'h00001000: avg_x <= (sum_x >> 12);
-            32'h00002000: avg_x <= (sum_x >> 13);
-            32'h00004000: avg_x <= (sum_x >> 14);
-            32'h00008000: avg_x <= (sum_x >> 15);
-            32'h00010000: avg_x <= (sum_x >> 16);
-            32'h00020000: avg_x <= (sum_x >> 17);
-            32'h00040000: avg_x <= (sum_x >> 18);
-            32'h00080000: avg_x <= (sum_x >> 19);
-            32'h00100000: avg_x <= (sum_x >> 20);
-            32'h00200000: avg_x <= (sum_x >> 21);
-            32'h00400000: avg_x <= (sum_x >> 22);
-            32'h00800000: avg_x <= (sum_x >> 23);
-        endcase // current_state
-    end 
+    // always_ff @(posedge CLK) begin : avg_x_proc  
+    //     case (calibration_count_limit_reg)
+    //         32'h00000001: avg_x <= sum_x[15:0];
+    //         32'h00000002: avg_x <= (sum_x >> 1 );
+    //         32'h00000004: avg_x <= (sum_x >> 2 );
+    //         32'h00000008: avg_x <= (sum_x >> 3 );
+    //         32'h00000010: avg_x <= (sum_x >> 4 );
+    //         32'h00000020: avg_x <= (sum_x >> 5 );
+    //         32'h00000040: avg_x <= (sum_x >> 6 );
+    //         32'h00000080: avg_x <= (sum_x >> 7 );
+    //         32'h00000100: avg_x <= (sum_x >> 8 );
+    //         32'h00000200: avg_x <= (sum_x >> 9 );
+    //         32'h00000400: avg_x <= (sum_x >> 10);
+    //         32'h00000800: avg_x <= (sum_x >> 11);
+    //         32'h00001000: avg_x <= (sum_x >> 12);
+    //         32'h00002000: avg_x <= (sum_x >> 13);
+    //         32'h00004000: avg_x <= (sum_x >> 14);
+    //         32'h00008000: avg_x <= (sum_x >> 15);
+    //         32'h00010000: avg_x <= (sum_x >> 16);
+    //         32'h00020000: avg_x <= (sum_x >> 17);
+    //         32'h00040000: avg_x <= (sum_x >> 18);
+    //         32'h00080000: avg_x <= (sum_x >> 19);
+    //         32'h00100000: avg_x <= (sum_x >> 20);
+    //         32'h00200000: avg_x <= (sum_x >> 21);
+    //         32'h00400000: avg_x <= (sum_x >> 22);
+    //         32'h00800000: avg_x <= (sum_x >> 23);
+    //     endcase // current_state
+    // end 
 
-    always_ff @(posedge CLK) begin : avg_y_proc  
-        case (calibration_count_limit_reg)
-            32'h00000001: avg_y <= sum_y[15:0];
-            32'h00000002: avg_y <= (sum_y >> 1 );
-            32'h00000004: avg_y <= (sum_y >> 2 );
-            32'h00000008: avg_y <= (sum_y >> 3 );
-            32'h00000010: avg_y <= (sum_y >> 4 );
-            32'h00000020: avg_y <= (sum_y >> 5 );
-            32'h00000040: avg_y <= (sum_y >> 6 );
-            32'h00000080: avg_y <= (sum_y >> 7 );
-            32'h00000100: avg_y <= (sum_y >> 8 );
-            32'h00000200: avg_y <= (sum_y >> 9 );
-            32'h00000400: avg_y <= (sum_y >> 10);
-            32'h00000800: avg_y <= (sum_y >> 11);
-            32'h00001000: avg_y <= (sum_y >> 12);
-            32'h00002000: avg_y <= (sum_y >> 13);
-            32'h00004000: avg_y <= (sum_y >> 14);
-            32'h00008000: avg_y <= (sum_y >> 15);
-            32'h00010000: avg_y <= (sum_y >> 16);
-            32'h00020000: avg_y <= (sum_y >> 17);
-            32'h00040000: avg_y <= (sum_y >> 18);
-            32'h00080000: avg_y <= (sum_y >> 19);
-            32'h00100000: avg_y <= (sum_y >> 20);
-            32'h00200000: avg_y <= (sum_y >> 21);
-            32'h00400000: avg_y <= (sum_y >> 22);
-            32'h00800000: avg_y <= (sum_y >> 23);
-        endcase // current_state
-    end 
+    // always_ff @(posedge CLK) begin : avg_y_proc  
+    //     case (calibration_count_limit_reg)
+    //         32'h00000001: avg_y <= sum_y[15:0];
+    //         32'h00000002: avg_y <= (sum_y >> 1 );
+    //         32'h00000004: avg_y <= (sum_y >> 2 );
+    //         32'h00000008: avg_y <= (sum_y >> 3 );
+    //         32'h00000010: avg_y <= (sum_y >> 4 );
+    //         32'h00000020: avg_y <= (sum_y >> 5 );
+    //         32'h00000040: avg_y <= (sum_y >> 6 );
+    //         32'h00000080: avg_y <= (sum_y >> 7 );
+    //         32'h00000100: avg_y <= (sum_y >> 8 );
+    //         32'h00000200: avg_y <= (sum_y >> 9 );
+    //         32'h00000400: avg_y <= (sum_y >> 10);
+    //         32'h00000800: avg_y <= (sum_y >> 11);
+    //         32'h00001000: avg_y <= (sum_y >> 12);
+    //         32'h00002000: avg_y <= (sum_y >> 13);
+    //         32'h00004000: avg_y <= (sum_y >> 14);
+    //         32'h00008000: avg_y <= (sum_y >> 15);
+    //         32'h00010000: avg_y <= (sum_y >> 16);
+    //         32'h00020000: avg_y <= (sum_y >> 17);
+    //         32'h00040000: avg_y <= (sum_y >> 18);
+    //         32'h00080000: avg_y <= (sum_y >> 19);
+    //         32'h00100000: avg_y <= (sum_y >> 20);
+    //         32'h00200000: avg_y <= (sum_y >> 21);
+    //         32'h00400000: avg_y <= (sum_y >> 22);
+    //         32'h00800000: avg_y <= (sum_y >> 23);
+    //     endcase // current_state
+    // end 
 
-    always_ff @(posedge CLK) begin : avg_z_proc  
-        case (calibration_count_limit_reg)
-            32'h00000001: avg_z <= sum_z[15:0];
-            32'h00000002: avg_z <= (sum_z >> 1 );
-            32'h00000004: avg_z <= (sum_z >> 2 );
-            32'h00000008: avg_z <= (sum_z >> 3 );
-            32'h00000010: avg_z <= (sum_z >> 4 );
-            32'h00000020: avg_z <= (sum_z >> 5 );
-            32'h00000040: avg_z <= (sum_z >> 6 );
-            32'h00000080: avg_z <= (sum_z >> 7 );
-            32'h00000100: avg_z <= (sum_z >> 8 );
-            32'h00000200: avg_z <= (sum_z >> 9 );
-            32'h00000400: avg_z <= (sum_z >> 10);
-            32'h00000800: avg_z <= (sum_z >> 11);
-            32'h00001000: avg_z <= (sum_z >> 12);
-            32'h00002000: avg_z <= (sum_z >> 13);
-            32'h00004000: avg_z <= (sum_z >> 14);
-            32'h00008000: avg_z <= (sum_z >> 15);
-            32'h00010000: avg_z <= (sum_z >> 16);
-            32'h00020000: avg_z <= (sum_z >> 17);
-            32'h00040000: avg_z <= (sum_z >> 18);
-            32'h00080000: avg_z <= (sum_z >> 19);
-            32'h00100000: avg_z <= (sum_z >> 20);
-            32'h00200000: avg_z <= (sum_z >> 21);
-            32'h00400000: avg_z <= (sum_z >> 22);
-            32'h00800000: avg_z <= (sum_z >> 23);
-        endcase // current_state
-    end 
-
-
-    always_ff @(posedge CLK) begin : offset_x_proc
-        offset_x <= avg_x;
-    end 
+    // always_ff @(posedge CLK) begin : avg_z_proc  
+    //     case (calibration_count_limit_reg)
+    //         32'h00000001: avg_z <= sum_z[15:0];
+    //         32'h00000002: avg_z <= (sum_z >> 1 );
+    //         32'h00000004: avg_z <= (sum_z >> 2 );
+    //         32'h00000008: avg_z <= (sum_z >> 3 );
+    //         32'h00000010: avg_z <= (sum_z >> 4 );
+    //         32'h00000020: avg_z <= (sum_z >> 5 );
+    //         32'h00000040: avg_z <= (sum_z >> 6 );
+    //         32'h00000080: avg_z <= (sum_z >> 7 );
+    //         32'h00000100: avg_z <= (sum_z >> 8 );
+    //         32'h00000200: avg_z <= (sum_z >> 9 );
+    //         32'h00000400: avg_z <= (sum_z >> 10);
+    //         32'h00000800: avg_z <= (sum_z >> 11);
+    //         32'h00001000: avg_z <= (sum_z >> 12);
+    //         32'h00002000: avg_z <= (sum_z >> 13);
+    //         32'h00004000: avg_z <= (sum_z >> 14);
+    //         32'h00008000: avg_z <= (sum_z >> 15);
+    //         32'h00010000: avg_z <= (sum_z >> 16);
+    //         32'h00020000: avg_z <= (sum_z >> 17);
+    //         32'h00040000: avg_z <= (sum_z >> 18);
+    //         32'h00080000: avg_z <= (sum_z >> 19);
+    //         32'h00100000: avg_z <= (sum_z >> 20);
+    //         32'h00200000: avg_z <= (sum_z >> 21);
+    //         32'h00400000: avg_z <= (sum_z >> 22);
+    //         32'h00800000: avg_z <= (sum_z >> 23);
+    //     endcase // current_state
+    // end 
 
 
-    always_ff @(posedge CLK) begin : offset_y_proc
-        offset_y <= avg_y;
-    end 
+    // always_ff @(posedge CLK) begin : offset_x_proc
+    //     offset_x <= avg_x;
+    // end 
 
 
-    always_ff @(posedge CLK) begin : offset_z_proc
-        if (register[12][1][3]) begin 
-            offset_z <= avg_z - 256;
-        end else begin 
-            case (register[12][1][1:0]) 
-                2'b00 : offset_z <= avg_z - 256; 
-                2'b01 : offset_z <= avg_z - 128;
-                2'b10 : offset_z <= avg_z - 64;
-                2'b11 : offset_z <= avg_z - 32;
-            endcase // register[12][1][1:0] 
-        end 
-    end 
+    // always_ff @(posedge CLK) begin : offset_y_proc
+    //     offset_y <= avg_y;
+    // end 
 
 
-    always_ff @(posedge CLK) begin : offset_lsb_x_proc
-        if (register[12][1][3]) begin 
-            offset_lsb_x <= -(offset_x >> 2);
-        end else begin 
-            case (register[12][1][1:0]) 
-                2'b00 : offset_lsb_x <= -(offset_x >> 2);
-                2'b01 : offset_lsb_x <= -(offset_x >> 1);
-                2'b10 : offset_lsb_x <= -(offset_x);
-                2'b11 : offset_lsb_x <= -(offset_x << 1);
-            endcase // current_state
-        end 
-    end 
-    always_ff @(posedge CLK) begin : offset_lsb_y_proc
-        if (register[12][1][3]) begin 
-            offset_lsb_y <= -(offset_y >> 2);
-        end else begin 
-            case (register[12][1][1:0]) 
-                2'b00 : offset_lsb_y <= -(offset_y >> 2);
-                2'b01 : offset_lsb_y <= -(offset_y >> 1);
-                2'b10 : offset_lsb_y <= -(offset_y);
-                2'b11 : offset_lsb_y <= -(offset_y << 1);
-            endcase // current_state
-        end 
-    end 
-    always_ff @(posedge CLK) begin : offset_lsb_z_proc
-        if (register[12][1][3]) begin 
-            offset_lsb_z <= -(offset_z >> 2);
-        end else begin 
-            case (register[12][1][1:0]) 
-                2'b00 : offset_lsb_z <= -(offset_z >> 2);
-                2'b01 : offset_lsb_z <= -(offset_z >> 1);
-                2'b10 : offset_lsb_z <= -(offset_z);
-                2'b11 : offset_lsb_z <= -(offset_z << 1);
-            endcase // current_state
-        end 
-    end 
+    // always_ff @(posedge CLK) begin : offset_z_proc
+    //     if (register[12][1][3]) begin 
+    //         offset_z <= avg_z - 256;
+    //     end else begin 
+    //         case (register[12][1][1:0]) 
+    //             2'b00 : offset_z <= avg_z - 256; 
+    //             2'b01 : offset_z <= avg_z - 128;
+    //             2'b10 : offset_z <= avg_z - 64;
+    //             2'b11 : offset_z <= avg_z - 32;
+    //         endcase // register[12][1][1:0] 
+    //     end 
+    // end 
 
-    always_ff @(posedge CLK) begin : calibration_elapsed_time_proc 
+
+    // always_ff @(posedge CLK) begin : offset_lsb_x_proc
+    //     if (register[12][1][3]) begin 
+    //         offset_lsb_x <= -(offset_x >> 2);
+    //     end else begin 
+    //         case (register[12][1][1:0]) 
+    //             2'b00 : offset_lsb_x <= -(offset_x >> 2);
+    //             2'b01 : offset_lsb_x <= -(offset_x >> 1);
+    //             2'b10 : offset_lsb_x <= -(offset_x);
+    //             2'b11 : offset_lsb_x <= -(offset_x << 1);
+    //         endcase // current_state
+    //     end 
+    // end 
+    // always_ff @(posedge CLK) begin : offset_lsb_y_proc
+    //     if (register[12][1][3]) begin 
+    //         offset_lsb_y <= -(offset_y >> 2);
+    //     end else begin 
+    //         case (register[12][1][1:0]) 
+    //             2'b00 : offset_lsb_y <= -(offset_y >> 2);
+    //             2'b01 : offset_lsb_y <= -(offset_y >> 1);
+    //             2'b10 : offset_lsb_y <= -(offset_y);
+    //             2'b11 : offset_lsb_y <= -(offset_y << 1);
+    //         endcase // current_state
+    //     end 
+    // end 
+    // always_ff @(posedge CLK) begin : offset_lsb_z_proc
+    //     if (register[12][1][3]) begin 
+    //         offset_lsb_z <= -(offset_z >> 2);
+    //     end else begin 
+    //         case (register[12][1][1:0]) 
+    //             2'b00 : offset_lsb_z <= -(offset_z >> 2);
+    //             2'b01 : offset_lsb_z <= -(offset_z >> 1);
+    //             2'b10 : offset_lsb_z <= -(offset_z);
+    //             2'b11 : offset_lsb_z <= -(offset_z << 1);
+    //         endcase // current_state
+    //     end 
+    // end 
+
+    // always_ff @(posedge CLK) begin : calibration_elapsed_time_proc 
         
-        case (current_state) 
-            IDLE_ST :
-                if (calibration_flaq) 
-                    calibration_elapsed_time <= '{default:0};
+    //     case (current_state) 
+    //         IDLE_ST :
+    //             if (calibration_flaq) 
+    //                 calibration_elapsed_time <= '{default:0};
 
-            TX_WRITE_CALIB_OFS_CLEAR_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         TX_WRITE_CALIB_OFS_CLEAR_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            AWAIT_CALIB_TIMER_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         AWAIT_CALIB_TIMER_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            TX_WRITE_CALIB_DATA_PTR_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         TX_WRITE_CALIB_DATA_PTR_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            TX_READ_CALIB_DATA_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         TX_READ_CALIB_DATA_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            RX_CALIB_DATA_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         RX_CALIB_DATA_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            ADD_CALIB_CALC_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         ADD_CALIB_CALC_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            AVG_CALIB_CALC_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         AVG_CALIB_CALC_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            OFFSET_CALIB_CALC_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         OFFSET_CALIB_CALC_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            OFFSET_LSB_CALIB_CALC_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         OFFSET_LSB_CALIB_CALC_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            TX_WRITE_CALIB_OFS_ST : 
-                calibration_elapsed_time <= calibration_elapsed_time + 1;
+    //         TX_WRITE_CALIB_OFS_ST : 
+    //             calibration_elapsed_time <= calibration_elapsed_time + 1;
 
-            default: 
-                calibration_elapsed_time <= calibration_elapsed_time;
-        endcase // current_state
-    end 
+    //         default: 
+    //             calibration_elapsed_time <= calibration_elapsed_time;
+    //     endcase // current_state
+    // end 
 
 
 
-    always_ff @(posedge CLK) begin 
-        case (current_state)
+    // always_ff @(posedge CLK) begin 
+    //     case (current_state)
 
-            TX_SEND_ADDR_PTR : 
-                refresh_after_calib_flaq <= 1'b0;
+    //         TX_SEND_ADDR_PTR : 
+    //             refresh_after_calib_flaq <= 1'b0;
 
-            TX_WRITE_CALIB_OFS_ST : 
-                if (!out_awfull)
-                    if (write_cmd_word_cnt == 4'h4)
-                        refresh_after_calib_flaq <= 1'b1;
+    //         TX_WRITE_CALIB_OFS_ST : 
+    //             if (!out_awfull)
+    //                 if (write_cmd_word_cnt == 4'h4)
+    //                     refresh_after_calib_flaq <= 1'b1;
 
-            default: 
-                refresh_after_calib_flaq <= refresh_after_calib_flaq;
+    //         default: 
+    //             refresh_after_calib_flaq <= refresh_after_calib_flaq;
 
-        endcase
-    end 
+    //     endcase
+    // end 
+
+
+    adxl345_functional adxl345_functional_inst (
+        .CLK   (CLK                 ),
+        .RESET (reset               ),
+        .WDATA (S_AXI_LITE_DEV_WDATA),
+        .WSTRB (S_AXI_LITE_DEV_WSTRB),
+        .WADDR (axi_dev_awaddr[5:2] ),
+        .RDATA (                    ),
+        .WVALID(slv_reg_wren        )
+    );
 
 endmodule
