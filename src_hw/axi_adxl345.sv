@@ -294,7 +294,13 @@ module axi_adxl345 #(
     logic [31:0] calibration_elapsed_time = '{default:0};
 
 
+    // renew 
 
+    logic single_request          = 'b0;
+    logic single_request_complete = 'b0;
+
+
+    ///
 
     // always_comb begin : has_dataready_intr_proc
     //     has_dataready_intr = int_source_reg[7] & int_enable_reg[7];
@@ -453,119 +459,119 @@ module axi_adxl345 #(
         slv_reg_wren = axi_dev_wready & S_AXI_LITE_DEV_WVALID & axi_dev_awready & S_AXI_LITE_DEV_AWVALID;
     end
 
-    generate 
+    // generate 
 
-        for (genvar reg_index = 0; reg_index < 15; reg_index++) begin : GEN_REGISTER_INDEX
-            for (genvar byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index++ ) begin : GEN_BYTE_INDEX
+    //     for (genvar reg_index = 0; reg_index < 15; reg_index++) begin : GEN_REGISTER_INDEX
+    //         for (genvar byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index++ ) begin : GEN_BYTE_INDEX
     
-                // always_ff @(posedge CLK) begin : register_proc
-                //     if (~RESETN | reset)
-                //         register[reg_index] <= '{default:0};
-                //     else
-                //         if (slv_reg_wren) begin 
-                //             if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin 
-                //                 if ( S_AXI_LITE_DEV_WSTRB[byte_index] == 1 & write_mask_register[reg_index][byte_index]) begin 
-                //                     register[reg_index][byte_index] <= S_AXI_LITE_DEV_WDATA[(byte_index*8) +: 8];
-                //                 end 
-                //             end 
-                //         end else begin 
-                //         //     case (current_state) 
-                //         //         AWAIT_RECEIVE_DATA_ST : 
-                //                     if (S_AXIS_TVALID) begin 
-                //                         if (address[5:2] == reg_index) begin 
-                //                             if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index])) begin
-                //                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
-                //                             end
-                //                         end 
-                //                     end 
+    //             // always_ff @(posedge CLK) begin : register_proc
+    //             //     if (~RESETN | reset)
+    //             //         register[reg_index] <= '{default:0};
+    //             //     else
+    //             //         if (slv_reg_wren) begin 
+    //             //             if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin 
+    //             //                 if ( S_AXI_LITE_DEV_WSTRB[byte_index] == 1 & write_mask_register[reg_index][byte_index]) begin 
+    //             //                     register[reg_index][byte_index] <= S_AXI_LITE_DEV_WDATA[(byte_index*8) +: 8];
+    //             //                 end 
+    //             //             end 
+    //             //         end else begin 
+    //             //         //     case (current_state) 
+    //             //         //         AWAIT_RECEIVE_DATA_ST : 
+    //             //                     if (S_AXIS_TVALID) begin 
+    //             //                         if (address[5:2] == reg_index) begin 
+    //             //                             if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index])) begin
+    //             //                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
+    //             //                             end
+    //             //                         end 
+    //             //                     end 
                                 
                             
-                            // RX_INT_SOURCE_ST : 
-                            //     if (S_AXIS_TVALID) 
-                            //         if (address[5:2] == reg_index)
-                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                            //                 if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index]))
-                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-                            //             end 
+    //                         // RX_INT_SOURCE_ST : 
+    //                         //     if (S_AXIS_TVALID) 
+    //                         //         if (address[5:2] == reg_index)
+    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+    //                         //                 if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index]))
+    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+    //                         //             end 
 
-                            // RX_ACT_TAP_STATUS_ST: 
-                            //     if (S_AXIS_TVALID)
-                            //         if (address[5:2] == reg_index)
-                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                            //                 if (byte_index == address[1:0])
-                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-                            //             end 
+    //                         // RX_ACT_TAP_STATUS_ST: 
+    //                         //     if (S_AXIS_TVALID)
+    //                         //         if (address[5:2] == reg_index)
+    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+    //                         //                 if (byte_index == address[1:0])
+    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+    //                         //             end 
 
-                            // RX_INTR_DATA_ST: 
-                            //     if (S_AXIS_TVALID)
-                            //         if (address[5:2] == reg_index)
-                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                            //                 if (byte_index == address[1:0])
-                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-                            //             end 
+    //                         // RX_INTR_DATA_ST: 
+    //                         //     if (S_AXIS_TVALID)
+    //                         //         if (address[5:2] == reg_index)
+    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+    //                         //                 if (byte_index == address[1:0])
+    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+    //                         //             end 
 
-                            // RX_WM_FIFO_STS_ST: 
-                            //     if (S_AXIS_TVALID)
-                            //         if (address[5:2] == reg_index)
-                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                            //                 if (byte_index == address[1:0])
-                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-                            //             end 
+    //                         // RX_WM_FIFO_STS_ST: 
+    //                         //     if (S_AXIS_TVALID)
+    //                         //         if (address[5:2] == reg_index)
+    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+    //                         //                 if (byte_index == address[1:0])
+    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+    //                         //             end 
 
-                            // RX_WM_DATA_ST: 
-                            //     if (S_AXIS_TVALID)
-                            //         if (address[5:2] == reg_index)
-                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                            //                 if (byte_index == address[1:0])
-                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-                            //             end 
+    //                         // RX_WM_DATA_ST: 
+    //                         //     if (S_AXIS_TVALID)
+    //                         //         if (address[5:2] == reg_index)
+    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+    //                         //                 if (byte_index == address[1:0])
+    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+    //                         //             end 
 
-                            // RX_CALIB_DATA_ST: 
-                            //     if (S_AXIS_TVALID)
-                            //         if (address[5:2] == reg_index)
-                            //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-                            //                 if (byte_index == address[1:0])
-                            //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-                            //             end 
+    //                         // RX_CALIB_DATA_ST: 
+    //                         //     if (S_AXIS_TVALID)
+    //                         //         if (address[5:2] == reg_index)
+    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+    //                         //                 if (byte_index == address[1:0])
+    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
+    //                         //             end 
 
 
-                        //     default: 
-                        //         register <= register;
+    //                     //     default: 
+    //                     //         register <= register;
 
-                        // endcase // current_state
-                //     end 
-                // end    
+    //                     // endcase // current_state
+    //             //     end 
+    //             // end    
 
-                // always_ff @(posedge CLK) begin : need_update_reg_proc 
-                //     if (~RESETN | reset)
-                //         need_update_reg[reg_index] <= '{default:0};
-                //     else
-                //         if (slv_reg_wren) begin
-                //             if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin
-                //                 for (byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1) begin
-                //                     if (S_AXI_LITE_DEV_WSTRB[byte_index]) begin 
-                //                         need_update_reg[reg_index][byte_index] <= write_mask_register[reg_index][byte_index];
-                //                     end 
-                //                 end 
-                //             end 
-                //         end else begin 
-                //             case (current_state) 
-                //                 SEND_WRITE_CMD_ST  : 
-                //                     if (~out_awfull)
-                //                        if (write_cmd_word_cnt == 4'h2)
-                //                             if (address[5:2] == reg_index) 
-                //                                 need_update_reg[reg_index][address[1:0]] <= 1'b0;
-                //                 default : 
-                //                     need_update_reg[reg_index][address[1:0]] <= need_update_reg[reg_index][address[1:0]];
+    //             // always_ff @(posedge CLK) begin : need_update_reg_proc 
+    //             //     if (~RESETN | reset)
+    //             //         need_update_reg[reg_index] <= '{default:0};
+    //             //     else
+    //             //         if (slv_reg_wren) begin
+    //             //             if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin
+    //             //                 for (byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1) begin
+    //             //                     if (S_AXI_LITE_DEV_WSTRB[byte_index]) begin 
+    //             //                         need_update_reg[reg_index][byte_index] <= write_mask_register[reg_index][byte_index];
+    //             //                     end 
+    //             //                 end 
+    //             //             end 
+    //             //         end else begin 
+    //             //             case (current_state) 
+    //             //                 SEND_WRITE_CMD_ST  : 
+    //             //                     if (~out_awfull)
+    //             //                        if (write_cmd_word_cnt == 4'h2)
+    //             //                             if (address[5:2] == reg_index) 
+    //             //                                 need_update_reg[reg_index][address[1:0]] <= 1'b0;
+    //             //                 default : 
+    //             //                     need_update_reg[reg_index][address[1:0]] <= need_update_reg[reg_index][address[1:0]];
 
-                //             endcase // current_state
-                //         end 
+    //             //             endcase // current_state
+    //             //         end 
 
-                end    
+    //             end    
 
-            end 
+    //         end 
 
-    endgenerate
+    // endgenerate
 
     always_ff @( posedge CLK ) begin : axi_dev_bvalid_proc
         if (~RESETN)
@@ -664,390 +670,390 @@ module axi_adxl345 #(
 ////////////////////////////////////////////////////// INTERNAL LOGIC SIGNALS //////////////////////////////////////////////////////
 
 
-    always_ff @(posedge CLK) begin : write_cmd_word_cnt_proc
-        if (~RESETN)
-            write_cmd_word_cnt <= 'b0;
-        else 
-            case (current_state)
-                // SEND_WRITE_CMD_ST : 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    // always_ff @(posedge CLK) begin : write_cmd_word_cnt_proc
+    //     if (~RESETN)
+    //         write_cmd_word_cnt <= 'b0;
+    //     else 
+    //         case (current_state)
+    //             // SEND_WRITE_CMD_ST : 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                TX_SEND_ADDR_PTR : 
-                    if (~out_awfull)
-                        write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             TX_SEND_ADDR_PTR : 
+    //                 if (~out_awfull)
+    //                     write_cmd_word_cnt <= write_cmd_word_cnt + 1;
                 
-                // TX_WRITE_INT_SOURCE_PTR_ST: 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             // TX_WRITE_INT_SOURCE_PTR_ST: 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                // TX_WRITE_INTR_DATA_PTR_ST: 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             // TX_WRITE_INTR_DATA_PTR_ST: 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                // TX_WRITE_WM_FIFO_STS_PTR_ST: 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                // TX_WRITE_WM_DATA_PTR_ST: 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             // TX_WRITE_WM_DATA_PTR_ST: 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                // TX_WRITE_CALIB_DATA_PTR_ST: 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             // TX_WRITE_CALIB_DATA_PTR_ST: 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                // TX_WRITE_CALIB_OFS_ST: 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             // TX_WRITE_CALIB_OFS_ST: 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                // TX_WRITE_CALIB_OFS_CLEAR_ST: 
-                //     if (~out_awfull)
-                //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
+    //             // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+    //             //     if (~out_awfull)
+    //             //         write_cmd_word_cnt <= write_cmd_word_cnt + 1;
 
-                default : 
-                    write_cmd_word_cnt <= 1'b0;
+    //             default : 
+    //                 write_cmd_word_cnt <= 1'b0;
 
-            endcase // current_state
-    end 
+    //         endcase // current_state
+    // end 
 
 
 
-    always_ff @(posedge CLK) begin : current_state_proc 
-        if (~RESETN | reset) 
-            current_state <= IDLE_ST;
-        else 
-            case (current_state)
+    // always_ff @(posedge CLK) begin : current_state_proc 
+    //     if (~RESETN | reset) 
+    //         current_state <= IDLE_ST;
+    //     else 
+    //         case (current_state)
 
-                IDLE_ST : 
-                    // if (calibration_flaq) 
-                    //     current_state <= TX_WRITE_CALIB_OFS_CLEAR_ST;
-                    // else 
-                        // if (ADXL_INTERRUPT & allow_irq)  
-                        //     current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
-                        // else 
-                            // if (update_request) 
-                            //     current_state <= CHK_UPD_NEEDED_ST;
-                            // else 
-                                if (perform_request_flaq | refresh_after_calib_flaq) begin 
-                                    current_state <= TX_SEND_ADDR_PTR;
-                                end else begin 
-                                    current_state <= IDLE_ST;
-                                end  
-                                    // if (enable) 
-                                    //     if (request_timer == request_interval) 
-                                    //         current_state <= TX_SEND_ADDR_PTR;
-                                    //     else  
-                                    //         current_state <= IDLE_ST; 
-                                    // else  
+    //             IDLE_ST : 
+    //                 // if (calibration_flaq) 
+    //                 //     current_state <= TX_WRITE_CALIB_OFS_CLEAR_ST;
+    //                 // else 
+    //                     // if (ADXL_INTERRUPT & allow_irq)  
+    //                     //     current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
+    //                     // else 
+    //                         // if (update_request) 
+    //                         //     current_state <= CHK_UPD_NEEDED_ST;
+    //                         // else 
+    //                             if (perform_request_flaq | refresh_after_calib_flaq) begin 
+    //                                 current_state <= TX_SEND_ADDR_PTR;
+    //                             end else begin 
+    //                                 current_state <= IDLE_ST;
+    //                             end  
+    //                                 // if (enable) 
+    //                                 //     if (request_timer == request_interval) 
+    //                                 //         current_state <= TX_SEND_ADDR_PTR;
+    //                                 //     else  
+    //                                 //         current_state <= IDLE_ST; 
+    //                                 // else  
         
 
-                // CHK_UPD_NEEDED_ST : 
-                //     if (need_update_reg[address[5:2]][address[1:0]])
-                //         current_state <= SEND_WRITE_CMD_ST;
-                //     else 
-                //         current_state <= INC_ADDR_ST;
+    //             // CHK_UPD_NEEDED_ST : 
+    //             //     if (need_update_reg[address[5:2]][address[1:0]])
+    //             //         current_state <= SEND_WRITE_CMD_ST;
+    //             //     else 
+    //             //         current_state <= INC_ADDR_ST;
 
-                // SEND_WRITE_CMD_ST  : 
-                //     if (!out_awfull)
-                //        if (write_cmd_word_cnt == 4'h2)
-                //             current_state <= INC_ADDR_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // SEND_WRITE_CMD_ST  : 
+    //             //     if (!out_awfull)
+    //             //        if (write_cmd_word_cnt == 4'h2)
+    //             //             current_state <= INC_ADDR_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // INC_ADDR_ST  : 
-                //     if (address == ADDRESS_LIMIT) 
-                //         current_state <= IDLE_ST;
-                //     else 
-                //         current_state <= CHK_UPD_NEEDED_ST;
+    //             // INC_ADDR_ST  : 
+    //             //     if (address == ADDRESS_LIMIT) 
+    //             //         current_state <= IDLE_ST;
+    //             //     else 
+    //             //         current_state <= CHK_UPD_NEEDED_ST;
 
-                TX_SEND_ADDR_PTR: 
-                    if (!out_awfull)
-                        if (write_cmd_word_cnt == 4'h1)
-                            current_state <= TX_READ_REQUEST_ST;
-                        else 
-                            current_state <= current_state;
-                    else 
-                        current_state <= current_state;
+    //             TX_SEND_ADDR_PTR: 
+    //                 if (!out_awfull)
+    //                     if (write_cmd_word_cnt == 4'h1)
+    //                         current_state <= TX_READ_REQUEST_ST;
+    //                     else 
+    //                         current_state <= current_state;
+    //                 else 
+    //                     current_state <= current_state;
 
-                TX_READ_REQUEST_ST : 
-                    if (!out_awfull) 
-                        current_state <= AWAIT_RECEIVE_DATA_ST;
-                    else 
-                        current_state <= current_state;
+    //             TX_READ_REQUEST_ST : 
+    //                 if (!out_awfull) 
+    //                     current_state <= AWAIT_RECEIVE_DATA_ST;
+    //                 else 
+    //                     current_state <= current_state;
 
-                AWAIT_RECEIVE_DATA_ST : 
-                    if (S_AXIS_TVALID & S_AXIS_TLAST)
-                        current_state <= IDLE_ST;
-                    else 
-                        current_state <= current_state;
+    //             AWAIT_RECEIVE_DATA_ST : 
+    //                 if (S_AXIS_TVALID & S_AXIS_TLAST)
+    //                     current_state <= IDLE_ST;
+    //                 else 
+    //                     current_state <= current_state;
 
-                // TX_WRITE_INT_SOURCE_PTR_ST : 
-                //     if (!out_awfull) 
-                //         if (write_cmd_word_cnt == 4'h1) 
-                //             current_state <= TX_READ_INT_SOURCE_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
-
-
-                // TX_READ_INT_SOURCE_ST : 
-                //     if (!out_awfull) 
-                //         current_state <= RX_INT_SOURCE_ST;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_WRITE_INT_SOURCE_PTR_ST : 
+    //             //     if (!out_awfull) 
+    //             //         if (write_cmd_word_cnt == 4'h1) 
+    //             //             current_state <= TX_READ_INT_SOURCE_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
 
 
-                // RX_INT_SOURCE_ST : 
-                //     if (S_AXIS_TVALID)  
-                //         if (S_AXIS_TLAST) 
-                //             current_state <= INT_PROCESSING_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_READ_INT_SOURCE_ST : 
+    //             //     if (!out_awfull) 
+    //             //         current_state <= RX_INT_SOURCE_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
+
+
+    //             // RX_INT_SOURCE_ST : 
+    //             //     if (S_AXIS_TVALID)  
+    //             //         if (S_AXIS_TLAST) 
+    //             //             current_state <= INT_PROCESSING_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
                     
 
-                // INT_PROCESSING_ST : 
-                //     if (has_st_intr | has_dt_intr | has_act_intr | has_inact_intr)
-                //         current_state <= TX_WRITE_ACT_TAP_STATUS_PTR_ST;
-                //     else 
-                //         if (has_dataready_intr | has_ff_intr)
-                //             current_state <= TX_WRITE_INTR_DATA_PTR_ST;
-                //         else
-                //             if (has_wm_intr | has_ovrrn_intr)
-                //                 current_state <= TX_WRITE_WM_FIFO_STS_PTR_ST;
-                //             else     
-                //                 current_state <= IDLE_ST;
+    //             // INT_PROCESSING_ST : 
+    //             //     if (has_st_intr | has_dt_intr | has_act_intr | has_inact_intr)
+    //             //         current_state <= TX_WRITE_ACT_TAP_STATUS_PTR_ST;
+    //             //     else 
+    //             //         if (has_dataready_intr | has_ff_intr)
+    //             //             current_state <= TX_WRITE_INTR_DATA_PTR_ST;
+    //             //         else
+    //             //             if (has_wm_intr | has_ovrrn_intr)
+    //             //                 current_state <= TX_WRITE_WM_FIFO_STS_PTR_ST;
+    //             //             else     
+    //             //                 current_state <= IDLE_ST;
 
-                // SINGLE/DOUBLE TAP interrupt processsing states
+    //             // SINGLE/DOUBLE TAP interrupt processsing states
 
-                // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                //     if (!out_awfull) 
-                //         if (write_cmd_word_cnt == 4'h1) 
-                //             current_state <= TX_READ_ACT_TAP_STATUS_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+    //             //     if (!out_awfull) 
+    //             //         if (write_cmd_word_cnt == 4'h1) 
+    //             //             current_state <= TX_READ_ACT_TAP_STATUS_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
 
 
-                // TX_READ_ACT_TAP_STATUS_ST: 
-                //     if (!out_awfull)
-                //         current_state <= RX_ACT_TAP_STATUS_ST;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_READ_ACT_TAP_STATUS_ST: 
+    //             //     if (!out_awfull)
+    //             //         current_state <= RX_ACT_TAP_STATUS_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // RX_ACT_TAP_STATUS_ST: 
-                //     if (S_AXIS_TVALID & S_AXIS_TLAST)
-                //         current_state <= TX_WRITE_INTR_DATA_PTR_ST;
-                //     else 
-                //         current_state <= current_state;
+    //             // RX_ACT_TAP_STATUS_ST: 
+    //             //     if (S_AXIS_TVALID & S_AXIS_TLAST)
+    //             //         current_state <= TX_WRITE_INTR_DATA_PTR_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // TX_WRITE_INTR_DATA_PTR_ST: 
-                //     if (!out_awfull)
-                //         if (write_cmd_word_cnt == 4'h1) 
-                //             current_state <= TX_READ_INTR_DATA_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_WRITE_INTR_DATA_PTR_ST: 
+    //             //     if (!out_awfull)
+    //             //         if (write_cmd_word_cnt == 4'h1) 
+    //             //             current_state <= TX_READ_INTR_DATA_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
                     
 
 
-                // TX_READ_INTR_DATA_ST: 
-                //     if (!out_awfull)
-                //         current_state <= RX_INTR_DATA_ST;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_READ_INTR_DATA_ST: 
+    //             //     if (!out_awfull)
+    //             //         current_state <= RX_INTR_DATA_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
 
-                // RX_INTR_DATA_ST: 
-                //     if (S_AXIS_TVALID & S_AXIS_TLAST)
-                //         current_state <= CHECK_INTR_DEASSERT;
-                //     else 
-                //         current_state <= current_state;
+    //             // RX_INTR_DATA_ST: 
+    //             //     if (S_AXIS_TVALID & S_AXIS_TLAST)
+    //             //         current_state <= CHECK_INTR_DEASSERT;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // TX_WRITE_WM_FIFO_STS_PTR_ST : 
-                //     if (!out_awfull) 
-                //         if (write_cmd_word_cnt == 4'h1) 
-                //             current_state <= TX_READ_WM_FIFO_STS_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_WRITE_WM_FIFO_STS_PTR_ST : 
+    //             //     if (!out_awfull) 
+    //             //         if (write_cmd_word_cnt == 4'h1) 
+    //             //             current_state <= TX_READ_WM_FIFO_STS_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // TX_READ_WM_FIFO_STS_ST : 
-                //     if (!out_awfull) 
-                //         current_state <= RX_WM_FIFO_STS_ST;
-                //     else 
-                //         current_state <= current_state;
-
-
-                // RX_WM_FIFO_STS_ST : 
-                //     if (S_AXIS_TVALID & S_AXIS_TLAST)
-                //         current_state <= TX_WRITE_WM_DATA_PTR_ST;
-                //     else 
-                //         current_state <= current_state;
-
-                // TX_WRITE_WM_DATA_PTR_ST : 
-                //     if (!out_awfull) 
-                //         if (write_cmd_word_cnt == 4'h1) 
-                //             current_state <= TX_READ_WM_DATA_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_READ_WM_FIFO_STS_ST : 
+    //             //     if (!out_awfull) 
+    //             //         current_state <= RX_WM_FIFO_STS_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
 
-                // TX_READ_WM_DATA_ST : 
-                //     if (!out_awfull) 
-                //         current_state <= RX_WM_DATA_ST;
-                //     else 
-                //         current_state <= current_state;
+    //             // RX_WM_FIFO_STS_ST : 
+    //             //     if (S_AXIS_TVALID & S_AXIS_TLAST)
+    //             //         current_state <= TX_WRITE_WM_DATA_PTR_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // RX_WM_DATA_ST : 
-                //     if (S_AXIS_TVALID & S_AXIS_TLAST)  
-                //         if (!entries) 
-                //             current_state <= CHECK_INTR_DEASSERT;
-                //         else  
-                //             current_state <= TX_WRITE_WM_DATA_PTR_ST;
-                //     else 
-                //         current_state <= current_state;
-
-                // CHECK_INTR_DEASSERT: 
-                //     if (ADXL_INTERRUPT) 
-                //         current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
-                //         // current_state <= INT_PROCESSING_ST;
-                //     else 
-                //         current_state <= IDLE_ST;
+    //             // TX_WRITE_WM_DATA_PTR_ST : 
+    //             //     if (!out_awfull) 
+    //             //         if (write_cmd_word_cnt == 4'h1) 
+    //             //             current_state <= TX_READ_WM_DATA_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
 
 
-                // TX_WRITE_CALIB_OFS_CLEAR_ST: 
-                //     if (!out_awfull) 
-                //         if (write_cmd_word_cnt == 4'h4)
-                //             current_state <= AWAIT_CALIB_TIMER_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_READ_WM_DATA_ST : 
+    //             //     if (!out_awfull) 
+    //             //         current_state <= RX_WM_DATA_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // AWAIT_CALIB_TIMER_ST : 
-                //     if (calibration_timer < opt_request_interval) 
-                //         current_state <= current_state;
-                //     else 
-                //         current_state <= TX_WRITE_CALIB_DATA_PTR_ST;
+    //             // RX_WM_DATA_ST : 
+    //             //     if (S_AXIS_TVALID & S_AXIS_TLAST)  
+    //             //         if (!entries) 
+    //             //             current_state <= CHECK_INTR_DEASSERT;
+    //             //         else  
+    //             //             current_state <= TX_WRITE_WM_DATA_PTR_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // TX_WRITE_CALIB_DATA_PTR_ST : 
-                //     if (!out_awfull)
-                //         if (write_cmd_word_cnt == 4'h1) 
-                //             current_state <= TX_READ_CALIB_DATA_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // CHECK_INTR_DEASSERT: 
+    //             //     if (ADXL_INTERRUPT) 
+    //             //         current_state <= TX_WRITE_INT_SOURCE_PTR_ST;
+    //             //         // current_state <= INT_PROCESSING_ST;
+    //             //     else 
+    //             //         current_state <= IDLE_ST;
 
-                // TX_READ_CALIB_DATA_ST: 
-                //     if (!out_awfull) 
-                //         current_state <= RX_CALIB_DATA_ST;
-                //     else 
-                //         current_state <= current_state;
 
-                // RX_CALIB_DATA_ST : 
-                //     if (S_AXIS_TVALID & S_AXIS_TLAST)  
-                //         current_state <= ADD_CALIB_CALC_ST;
-                //     else 
-                //         current_state <= current_state;
+    //             // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+    //             //     if (!out_awfull) 
+    //             //         if (write_cmd_word_cnt == 4'h4)
+    //             //             current_state <= AWAIT_CALIB_TIMER_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // ADD_CALIB_CALC_ST : 
-                //     if (calibration_count == calibration_count_limit_reg)
-                //         current_state <= AVG_CALIB_CALC_ST;
-                //     else 
-                //         current_state <= AWAIT_CALIB_TIMER_ST;
+    //             // AWAIT_CALIB_TIMER_ST : 
+    //             //     if (calibration_timer < opt_request_interval) 
+    //             //         current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= TX_WRITE_CALIB_DATA_PTR_ST;
 
-                // AVG_CALIB_CALC_ST : 
-                //     current_state <= OFFSET_CALIB_CALC_ST;
+    //             // TX_WRITE_CALIB_DATA_PTR_ST : 
+    //             //     if (!out_awfull)
+    //             //         if (write_cmd_word_cnt == 4'h1) 
+    //             //             current_state <= TX_READ_CALIB_DATA_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // OFFSET_CALIB_CALC_ST : 
-                //     current_state <= OFFSET_LSB_CALIB_CALC_ST;
+    //             // TX_READ_CALIB_DATA_ST: 
+    //             //     if (!out_awfull) 
+    //             //         current_state <= RX_CALIB_DATA_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // OFFSET_LSB_CALIB_CALC_ST : 
-                //     current_state <= TX_WRITE_CALIB_OFS_ST;
+    //             // RX_CALIB_DATA_ST : 
+    //             //     if (S_AXIS_TVALID & S_AXIS_TLAST)  
+    //             //         current_state <= ADD_CALIB_CALC_ST;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                // TX_WRITE_CALIB_OFS_ST : 
-                //     if (!out_awfull) 
-                //         if (write_cmd_word_cnt == 4'h4)
-                //             current_state <= IDLE_ST;
-                //         else 
-                //             current_state <= current_state;
-                //     else 
-                //         current_state <= current_state;
+    //             // ADD_CALIB_CALC_ST : 
+    //             //     if (calibration_count == calibration_count_limit_reg)
+    //             //         current_state <= AVG_CALIB_CALC_ST;
+    //             //     else 
+    //             //         current_state <= AWAIT_CALIB_TIMER_ST;
 
-                default : 
-                    current_state <= current_state;
+    //             // AVG_CALIB_CALC_ST : 
+    //             //     current_state <= OFFSET_CALIB_CALC_ST;
 
-            endcase // current_state
+    //             // OFFSET_CALIB_CALC_ST : 
+    //             //     current_state <= OFFSET_LSB_CALIB_CALC_ST;
 
-    end
+    //             // OFFSET_LSB_CALIB_CALC_ST : 
+    //             //     current_state <= TX_WRITE_CALIB_OFS_ST;
 
-    always_ff @(posedge CLK) begin : address_proc 
-        if (~RESETN) 
-            address  <= '{default:0};
-        else 
-            case (current_state)
+    //             // TX_WRITE_CALIB_OFS_ST : 
+    //             //     if (!out_awfull) 
+    //             //         if (write_cmd_word_cnt == 4'h4)
+    //             //             current_state <= IDLE_ST;
+    //             //         else 
+    //             //             current_state <= current_state;
+    //             //     else 
+    //             //         current_state <= current_state;
 
-                IDLE_ST : 
-                    address <= '{default:0};
+    //             default : 
+    //                 current_state <= current_state;
 
-                // INC_ADDR_ST : 
-                //     address <= address + 1;
+    //         endcase // current_state
 
-                AWAIT_RECEIVE_DATA_ST : 
-                    if (S_AXIS_TVALID)
-                        address <= address + 1;
+    // end
 
-                // TX_READ_INT_SOURCE_ST : 
-                //     address <= 8'h30;
+    // always_ff @(posedge CLK) begin : address_proc 
+    //     if (~RESETN) 
+    //         address  <= '{default:0};
+    //     else 
+    //         case (current_state)
 
-                // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-                //     address <= 8'h2B;   
+    //             IDLE_ST : 
+    //                 address <= '{default:0};
 
-                // TX_WRITE_INTR_DATA_PTR_ST: 
-                //     address <= 8'h32;
+    //             // INC_ADDR_ST : 
+    //             //     address <= address + 1;
 
-                // TX_WRITE_WM_FIFO_STS_PTR_ST:
-                //     address <= 8'h39;
+    //             AWAIT_RECEIVE_DATA_ST : 
+    //                 if (S_AXIS_TVALID)
+    //                     address <= address + 1;
 
-                // RX_INTR_DATA_ST: 
-                //     if (S_AXIS_TVALID)
-                //         address <= address + 1;
+    //             // TX_READ_INT_SOURCE_ST : 
+    //             //     address <= 8'h30;
 
-                // TX_WRITE_WM_DATA_PTR_ST: 
-                //     address <= 8'h32;
+    //             // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+    //             //     address <= 8'h2B;   
 
-                // RX_WM_DATA_ST: 
-                //     if (S_AXIS_TVALID)
-                //         address <= address + 1;
+    //             // TX_WRITE_INTR_DATA_PTR_ST: 
+    //             //     address <= 8'h32;
+
+    //             // TX_WRITE_WM_FIFO_STS_PTR_ST:
+    //             //     address <= 8'h39;
+
+    //             // RX_INTR_DATA_ST: 
+    //             //     if (S_AXIS_TVALID)
+    //             //         address <= address + 1;
+
+    //             // TX_WRITE_WM_DATA_PTR_ST: 
+    //             //     address <= 8'h32;
+
+    //             // RX_WM_DATA_ST: 
+    //             //     if (S_AXIS_TVALID)
+    //             //         address <= address + 1;
                 
-                // TX_WRITE_CALIB_DATA_PTR_ST : 
-                //     address <= 8'h32;
+    //             // TX_WRITE_CALIB_DATA_PTR_ST : 
+    //             //     address <= 8'h32;
 
-                // RX_CALIB_DATA_ST : 
-                //     if (S_AXIS_TVALID)
-                //         address <= address + 1;
+    //             // RX_CALIB_DATA_ST : 
+    //             //     if (S_AXIS_TVALID)
+    //             //         address <= address + 1;
 
-                default : 
-                    address <= address;
+    //             default : 
+    //                 address <= address;
 
-            endcase // current_state
-    end 
+    //         endcase // current_state
+    // end 
 
     // always_ff @(posedge CLK) begin : update_request_proc
     //     if (~RESETN | reset)
@@ -1094,422 +1100,422 @@ module axi_adxl345 #(
         .M_AXIS_TREADY(M_AXIS_TREADY              )
     );
 
-    always_comb begin 
-        out_din_keep <= 1'b1;
-    end 
+    // always_comb begin 
+    //     out_din_keep <= 1'b1;
+    // end 
 
-    always_ff @(posedge CLK) begin : out_din_data_proc
-        case (current_state)
-            // SEND_WRITE_CMD_ST : 
-            //     case(write_cmd_word_cnt)
-            //         4'h0 : 
-            //             out_din_data <= 8'h02;
+    // always_ff @(posedge CLK) begin : out_din_data_proc
+    //     case (current_state)
+    //         // SEND_WRITE_CMD_ST : 
+    //         //     case(write_cmd_word_cnt)
+    //         //         4'h0 : 
+    //         //             out_din_data <= 8'h02;
 
-            //         4'h1 : 
-            //             out_din_data <= {2'b00, address};
+    //         //         4'h1 : 
+    //         //             out_din_data <= {2'b00, address};
 
-            //         4'h2 : 
-            //             out_din_data <= register[address[5:2]][address[1:0]];
+    //         //         4'h2 : 
+    //         //             out_din_data <= register[address[5:2]][address[1:0]];
 
-            //         default : 
-            //             out_din_data <= out_din_data;
+    //         //         default : 
+    //         //             out_din_data <= out_din_data;
 
-            //     endcase // write_cmd_word_cnt
+    //         //     endcase // write_cmd_word_cnt
 
-            TX_SEND_ADDR_PTR : 
-                case (write_cmd_word_cnt)
-                    4'h0   : out_din_data <= 8'h01;
-                    4'h1   : out_din_data <= 8'h00;
-                    default : out_din_data <= out_din_data;
-                endcase // write_cmd_word_cnt
+    //         TX_SEND_ADDR_PTR : 
+    //             case (write_cmd_word_cnt)
+    //                 4'h0   : out_din_data <= 8'h01;
+    //                 4'h1   : out_din_data <= 8'h00;
+    //                 default : out_din_data <= out_din_data;
+    //             endcase // write_cmd_word_cnt
 
-            TX_READ_REQUEST_ST : 
-                out_din_data <= ADDRESS_LIMIT;
+    //         TX_READ_REQUEST_ST : 
+    //             out_din_data <= ADDRESS_LIMIT;
 
-            // TX_WRITE_INT_SOURCE_PTR_ST:
-            //     case (write_cmd_word_cnt)
-            //         4'h0 : out_din_data <= 8'h01;
-            //         4'h1 : out_din_data <= 8'h30;
-            //         default : out_din_data <= out_din_data;
-            //     endcase // write_cmd_word_cnt
+    //         // TX_WRITE_INT_SOURCE_PTR_ST:
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h0 : out_din_data <= 8'h01;
+    //         //         4'h1 : out_din_data <= 8'h30;
+    //         //         default : out_din_data <= out_din_data;
+    //         //     endcase // write_cmd_word_cnt
 
-            // TX_READ_INT_SOURCE_ST: 
-            //     out_din_data <= 8'h01;
+    //         // TX_READ_INT_SOURCE_ST: 
+    //         //     out_din_data <= 8'h01;
 
 
 
 
-            // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h0 : out_din_data <= 8'h01;
-            //         4'h1 : out_din_data <= 8'h2B;
-            //         default : out_din_data <= out_din_data;
-            //     endcase // write_cmd_word_cnt
+    //         // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h0 : out_din_data <= 8'h01;
+    //         //         4'h1 : out_din_data <= 8'h2B;
+    //         //         default : out_din_data <= out_din_data;
+    //         //     endcase // write_cmd_word_cnt
 
-            // TX_READ_ACT_TAP_STATUS_ST: 
-            //     out_din_data <= 8'h01;
+    //         // TX_READ_ACT_TAP_STATUS_ST: 
+    //         //     out_din_data <= 8'h01;
 
-            // TX_WRITE_INTR_DATA_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h0 : out_din_data <= 8'h01;
-            //         4'h1 : out_din_data <= 8'h32;
-            //         default : out_din_data <= out_din_data;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_INTR_DATA_ST: 
-            //     out_din_data <= 8'h06;
+    //         // TX_WRITE_INTR_DATA_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h0 : out_din_data <= 8'h01;
+    //         //         4'h1 : out_din_data <= 8'h32;
+    //         //         default : out_din_data <= out_din_data;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_INTR_DATA_ST: 
+    //         //     out_din_data <= 8'h06;
 
-
-            // TX_WRITE_WM_FIFO_STS_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h0 : out_din_data <= 8'h01;
-            //         4'h1 : out_din_data <= 8'h39;
-            //         default : out_din_data <= out_din_data;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_WM_FIFO_STS_ST: 
-            //     out_din_data <= 8'h01;
-
-
-            // TX_WRITE_WM_DATA_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h0 : out_din_data <= 8'h01;
-            //         4'h1 : out_din_data <= 8'h32;
-            //         default : out_din_data <= out_din_data;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_WM_DATA_ST: 
-            //     out_din_data <= 8'h06;
-
-
-
-            // TX_WRITE_CALIB_DATA_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h0 : out_din_data <= 8'h01;
-            //         4'h1 : out_din_data <= 8'h32;
-            //         default : out_din_data <= out_din_data;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_CALIB_DATA_ST: 
-            //     out_din_data <= 8'h06;
-
-
-            // TX_WRITE_CALIB_OFS_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h0 : out_din_data <= 8'h04;
-            //         4'h1 : out_din_data <= 8'h1E;
-            //         4'h2 : out_din_data <= offset_lsb_x;
-            //         4'h3 : out_din_data <= offset_lsb_y;
-            //         4'h4 : out_din_data <= offset_lsb_z;
-            //         default : out_din_data <= out_din_data;
-            //     endcase // write_cmd_word_cnt
-
-
-            // TX_WRITE_CALIB_OFS_CLEAR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h0 : out_din_data <= 8'h04;
-            //         4'h1 : out_din_data <= 8'h1E;
-            //         4'h2 : out_din_data <= 8'h00;
-            //         4'h3 : out_din_data <= 8'h00;
-            //         4'h4 : out_din_data <= 8'h00;
-            //         default : out_din_data <= out_din_data;
-            //     endcase // write_cmd_word_cnt
-
-
-
-
-            default : 
-                out_din_data <= out_din_data;
-
-        endcase // current_state
-    end 
-
-    always_ff @(posedge CLK) begin : out_wren_proc
-        case (current_state)
-            // SEND_WRITE_CMD_ST : 
-            //     if (!out_awfull) 
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            TX_READ_REQUEST_ST: 
-                if (!out_awfull) 
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
-
-            TX_SEND_ADDR_PTR : 
-                if (!out_awfull)
-                    out_wren <= 1'b1;
-                else 
-                    out_wren <= 1'b0;
-
-            // TX_WRITE_INT_SOURCE_PTR_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_READ_INT_SOURCE_ST:
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_READ_ACT_TAP_STATUS_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_WRITE_INTR_DATA_PTR_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_READ_INTR_DATA_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_WRITE_WM_FIFO_STS_PTR_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_READ_WM_FIFO_STS_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_WRITE_WM_DATA_PTR_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_READ_WM_DATA_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_WRITE_CALIB_DATA_PTR_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_READ_CALIB_DATA_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_WRITE_CALIB_OFS_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            // TX_WRITE_CALIB_OFS_CLEAR_ST: 
-            //     if (!out_awfull)
-            //         out_wren <= 1'b1;
-            //     else 
-            //         out_wren <= 1'b0;
-
-            default : 
-                out_wren <= 1'b0;
-
-        endcase // current_state
-    end 
-
-    always_ff @(posedge CLK) begin : out_din_user_proc
-        case (current_state)
-            // SEND_WRITE_CMD_ST : 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            TX_READ_REQUEST_ST : 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
-
-            TX_SEND_ADDR_PTR : 
-                out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            // TX_WRITE_INT_SOURCE_PTR_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            // TX_READ_INT_SOURCE_ST : 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
-
-            // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            // TX_READ_ACT_TAP_STATUS_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
-
-            // TX_WRITE_INTR_DATA_PTR_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            // TX_READ_INTR_DATA_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
-
-            // TX_WRITE_WM_FIFO_STS_PTR_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            // TX_READ_WM_FIFO_STS_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
-
-            // TX_WRITE_WM_DATA_PTR_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            // TX_READ_WM_DATA_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
-
-            // TX_WRITE_CALIB_DATA_PTR_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            // TX_READ_CALIB_DATA_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
-
-            // TX_WRITE_CALIB_OFS_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-            // TX_WRITE_CALIB_OFS_CLEAR_ST: 
-            //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
-
-
-            default : 
-                out_din_user <= '{default:0};
-        endcase // current_state
-    end 
-
-    always_ff @(posedge CLK) begin 
-        case (current_state)
-            // SEND_WRITE_CMD_ST : 
-            //     case (write_cmd_word_cnt) 
-            //         4'h2 :
-            //             out_din_last <= 1'b1;
-
-            //         default: 
-            //             out_din_last <= 1'b0;
-
-            //     endcase // write_cmd_word_cnt
-
-            TX_READ_REQUEST_ST : 
-                out_din_last <= 1'b1;
-
-            TX_SEND_ADDR_PTR : 
-                case (write_cmd_word_cnt)
-                    4'h1 : 
-                        out_din_last <= 1'b1;
-                    default : 
-                        out_din_last <= 1'b0;
-                endcase // write_cmd_word_cnt
-
-            // TX_WRITE_INT_SOURCE_PTR_ST : 
-            //     case (write_cmd_word_cnt)
-            //         4'h1 : 
-            //             out_din_last <= 1'b1;
-            //         default : 
-            //             out_din_last <= 1'b0;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_INT_SOURCE_ST : 
-            //     out_din_last <= 1'b1;
-
-            // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h1 : 
-            //             out_din_last <= 1'b1;
-            //         default : 
-            //             out_din_last <= 1'b0;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_ACT_TAP_STATUS_ST: 
-            //     out_din_last <= 1'b1;
-
-            // TX_WRITE_INTR_DATA_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h1 : 
-            //             out_din_last <= 1'b1;
-            //         default : 
-            //             out_din_last <= 1'b0;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_INTR_DATA_ST: 
-            //     out_din_last <= 1'b1;
-
-
-
-            // TX_WRITE_WM_FIFO_STS_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h1 : 
-            //             out_din_last <= 1'b1;
-            //         default : 
-            //             out_din_last <= 1'b0;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_WM_FIFO_STS_ST: 
-            //     out_din_last <= 1'b1;
-
-            // TX_WRITE_WM_DATA_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h1 : 
-            //             out_din_last <= 1'b1;
-            //         default : 
-            //             out_din_last <= 1'b0;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_WM_DATA_ST: 
-            //     out_din_last <= 1'b1;
-
-
-
-
-            // TX_WRITE_CALIB_DATA_PTR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h1 : 
-            //             out_din_last <= 1'b1;
-            //         default : 
-            //             out_din_last <= 1'b0;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_READ_CALIB_DATA_ST: 
-            //     out_din_last <= 1'b1;
-
-
-            // TX_WRITE_CALIB_OFS_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h4 : 
-            //             out_din_last <= 1'b1;
-            //         default : 
-            //             out_din_last <= 1'b0;
-            //     endcase // write_cmd_word_cnt
-
-            // TX_WRITE_CALIB_OFS_CLEAR_ST: 
-            //     case (write_cmd_word_cnt)
-            //         4'h4 : 
-            //             out_din_last <= 1'b1;
-            //         default : 
-            //             out_din_last <= 1'b0;
-            //     endcase // write_cmd_word_cnt
-
-
-            default : 
-                out_din_last <= 1'b0;
-
-        endcase // current_state
-    end 
+
+    //         // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h0 : out_din_data <= 8'h01;
+    //         //         4'h1 : out_din_data <= 8'h39;
+    //         //         default : out_din_data <= out_din_data;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_WM_FIFO_STS_ST: 
+    //         //     out_din_data <= 8'h01;
+
+
+    //         // TX_WRITE_WM_DATA_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h0 : out_din_data <= 8'h01;
+    //         //         4'h1 : out_din_data <= 8'h32;
+    //         //         default : out_din_data <= out_din_data;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_WM_DATA_ST: 
+    //         //     out_din_data <= 8'h06;
+
+
+
+    //         // TX_WRITE_CALIB_DATA_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h0 : out_din_data <= 8'h01;
+    //         //         4'h1 : out_din_data <= 8'h32;
+    //         //         default : out_din_data <= out_din_data;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_CALIB_DATA_ST: 
+    //         //     out_din_data <= 8'h06;
+
+
+    //         // TX_WRITE_CALIB_OFS_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h0 : out_din_data <= 8'h04;
+    //         //         4'h1 : out_din_data <= 8'h1E;
+    //         //         4'h2 : out_din_data <= offset_lsb_x;
+    //         //         4'h3 : out_din_data <= offset_lsb_y;
+    //         //         4'h4 : out_din_data <= offset_lsb_z;
+    //         //         default : out_din_data <= out_din_data;
+    //         //     endcase // write_cmd_word_cnt
+
+
+    //         // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h0 : out_din_data <= 8'h04;
+    //         //         4'h1 : out_din_data <= 8'h1E;
+    //         //         4'h2 : out_din_data <= 8'h00;
+    //         //         4'h3 : out_din_data <= 8'h00;
+    //         //         4'h4 : out_din_data <= 8'h00;
+    //         //         default : out_din_data <= out_din_data;
+    //         //     endcase // write_cmd_word_cnt
+
+
+
+
+    //         default : 
+    //             out_din_data <= out_din_data;
+
+    //     endcase // current_state
+    // end 
+
+    // always_ff @(posedge CLK) begin : out_wren_proc
+    //     case (current_state)
+    //         // SEND_WRITE_CMD_ST : 
+    //         //     if (!out_awfull) 
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         TX_READ_REQUEST_ST: 
+    //             if (!out_awfull) 
+    //                 out_wren <= 1'b1;
+    //             else 
+    //                 out_wren <= 1'b0;
+
+    //         TX_SEND_ADDR_PTR : 
+    //             if (!out_awfull)
+    //                 out_wren <= 1'b1;
+    //             else 
+    //                 out_wren <= 1'b0;
+
+    //         // TX_WRITE_INT_SOURCE_PTR_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_READ_INT_SOURCE_ST:
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_READ_ACT_TAP_STATUS_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_WRITE_INTR_DATA_PTR_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_READ_INTR_DATA_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_READ_WM_FIFO_STS_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_WRITE_WM_DATA_PTR_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_READ_WM_DATA_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_WRITE_CALIB_DATA_PTR_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_READ_CALIB_DATA_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_WRITE_CALIB_OFS_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+    //         //     if (!out_awfull)
+    //         //         out_wren <= 1'b1;
+    //         //     else 
+    //         //         out_wren <= 1'b0;
+
+    //         default : 
+    //             out_wren <= 1'b0;
+
+    //     endcase // current_state
+    // end 
+
+    // always_ff @(posedge CLK) begin : out_din_user_proc
+    //     case (current_state)
+    //         // SEND_WRITE_CMD_ST : 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         TX_READ_REQUEST_ST : 
+    //             out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+    //         TX_SEND_ADDR_PTR : 
+    //             out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         // TX_WRITE_INT_SOURCE_PTR_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         // TX_READ_INT_SOURCE_ST : 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+    //         // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         // TX_READ_ACT_TAP_STATUS_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+    //         // TX_WRITE_INTR_DATA_PTR_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         // TX_READ_INTR_DATA_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+    //         // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         // TX_READ_WM_FIFO_STS_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+    //         // TX_WRITE_WM_DATA_PTR_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         // TX_READ_WM_DATA_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+    //         // TX_WRITE_CALIB_DATA_PTR_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         // TX_READ_CALIB_DATA_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b1};
+
+    //         // TX_WRITE_CALIB_OFS_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+    //         // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+    //         //     out_din_user <= {DEFAULT_DEVICE_ADDRESS, 1'b0};
+
+
+    //         default : 
+    //             out_din_user <= '{default:0};
+    //     endcase // current_state
+    // end 
+
+    // always_ff @(posedge CLK) begin 
+    //     case (current_state)
+    //         // SEND_WRITE_CMD_ST : 
+    //         //     case (write_cmd_word_cnt) 
+    //         //         4'h2 :
+    //         //             out_din_last <= 1'b1;
+
+    //         //         default: 
+    //         //             out_din_last <= 1'b0;
+
+    //         //     endcase // write_cmd_word_cnt
+
+    //         TX_READ_REQUEST_ST : 
+    //             out_din_last <= 1'b1;
+
+    //         TX_SEND_ADDR_PTR : 
+    //             case (write_cmd_word_cnt)
+    //                 4'h1 : 
+    //                     out_din_last <= 1'b1;
+    //                 default : 
+    //                     out_din_last <= 1'b0;
+    //             endcase // write_cmd_word_cnt
+
+    //         // TX_WRITE_INT_SOURCE_PTR_ST : 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h1 : 
+    //         //             out_din_last <= 1'b1;
+    //         //         default : 
+    //         //             out_din_last <= 1'b0;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_INT_SOURCE_ST : 
+    //         //     out_din_last <= 1'b1;
+
+    //         // TX_WRITE_ACT_TAP_STATUS_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h1 : 
+    //         //             out_din_last <= 1'b1;
+    //         //         default : 
+    //         //             out_din_last <= 1'b0;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_ACT_TAP_STATUS_ST: 
+    //         //     out_din_last <= 1'b1;
+
+    //         // TX_WRITE_INTR_DATA_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h1 : 
+    //         //             out_din_last <= 1'b1;
+    //         //         default : 
+    //         //             out_din_last <= 1'b0;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_INTR_DATA_ST: 
+    //         //     out_din_last <= 1'b1;
+
+
+
+    //         // TX_WRITE_WM_FIFO_STS_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h1 : 
+    //         //             out_din_last <= 1'b1;
+    //         //         default : 
+    //         //             out_din_last <= 1'b0;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_WM_FIFO_STS_ST: 
+    //         //     out_din_last <= 1'b1;
+
+    //         // TX_WRITE_WM_DATA_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h1 : 
+    //         //             out_din_last <= 1'b1;
+    //         //         default : 
+    //         //             out_din_last <= 1'b0;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_WM_DATA_ST: 
+    //         //     out_din_last <= 1'b1;
+
+
+
+
+    //         // TX_WRITE_CALIB_DATA_PTR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h1 : 
+    //         //             out_din_last <= 1'b1;
+    //         //         default : 
+    //         //             out_din_last <= 1'b0;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_READ_CALIB_DATA_ST: 
+    //         //     out_din_last <= 1'b1;
+
+
+    //         // TX_WRITE_CALIB_OFS_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h4 : 
+    //         //             out_din_last <= 1'b1;
+    //         //         default : 
+    //         //             out_din_last <= 1'b0;
+    //         //     endcase // write_cmd_word_cnt
+
+    //         // TX_WRITE_CALIB_OFS_CLEAR_ST: 
+    //         //     case (write_cmd_word_cnt)
+    //         //         4'h4 : 
+    //         //             out_din_last <= 1'b1;
+    //         //         default : 
+    //         //             out_din_last <= 1'b0;
+    //         //     endcase // write_cmd_word_cnt
+
+
+    //         default : 
+    //             out_din_last <= 1'b0;
+
+    //     endcase // current_state
+    // end 
 
     // always_ff @(posedge CLK) begin : request_timer_proc
     //     case (current_state)
@@ -1821,30 +1827,21 @@ module axi_adxl345 #(
     //     end 
     // end 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset)
-            i2c_address <= DEFAULT_DEVICE_ADDRESS;
-        else 
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                        if ( S_AXI_LITE_CFG_WSTRB[1] == 1 )
-                            i2c_address <= S_AXI_LITE_CFG_WDATA[14:8];
-    end 
 
-    always_ff @(posedge CLK) begin 
-        case (current_state)
-            IDLE_ST : 
-                if (~enable)
-                    on_work <= 1'b0;
-                else 
-                    on_work <= 1'b1;
+    // always_ff @(posedge CLK) begin 
+    //     case (current_state)
+    //         IDLE_ST : 
+    //             if (~enable)
+    //                 on_work <= 1'b0;
+    //             else 
+    //                 on_work <= 1'b1;
             
-            default : 
-                on_work <= 1'b1;
+    //         default : 
+    //             on_work <= 1'b1;
 
-        endcase
+    //     endcase
 
-    end
+    // end
 
     // always_ff @(posedge CLK) begin 
     //     if (~RESETN | reset) begin 
@@ -1886,42 +1883,45 @@ module axi_adxl345 #(
     //                     allow_irq <= S_AXI_LITE_CFG_WDATA[2];
     // end 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset) 
-            perform_request_flaq <= 1'b0;
-        else 
-            if (slv_reg_wren_cfg)
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                    if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
-                        perform_request_flaq <= S_AXI_LITE_CFG_WDATA[3];
-                    else
-                        perform_request_flaq <= perform_request_flaq;
-                else 
-                    perform_request_flaq <= perform_request_flaq;
-            else 
-                case (current_state)
-                    AWAIT_RECEIVE_DATA_ST : 
-                        if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
-                            if (perform_request_flaq) begin 
-                                perform_request_flaq <= 1'b0;
-                            end else begin 
-                                perform_request_flaq <= perform_request_flaq;
-                            end 
-                        end else begin  
-                            perform_request_flaq <= perform_request_flaq;
-                        end 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN | reset) 
+    //         perform_request_flaq <= 1'b0;
+    //     else 
+    //         if (slv_reg_wren_cfg)
+    //             if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+    //                 if ( S_AXI_LITE_CFG_WSTRB[0] == 1 )
+    //                     perform_request_flaq <= S_AXI_LITE_CFG_WDATA[3];
+    //                 else
+    //                     perform_request_flaq <= perform_request_flaq;
+    //             else 
+    //                 perform_request_flaq <= perform_request_flaq;
+    //         else 
+    //             case (current_state)
+    //                 AWAIT_RECEIVE_DATA_ST : 
+    //                     if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
+    //                         if (perform_request_flaq) begin 
+    //                             perform_request_flaq <= 1'b0;
+    //                         end else begin 
+    //                             perform_request_flaq <= perform_request_flaq;
+    //                         end 
+    //                     end else begin  
+    //                         perform_request_flaq <= perform_request_flaq;
+    //                     end 
                     
-                    // TX_WRITE_CALIB_OFS_ST : 
-                    //     if (~out_awfull)
-                    //         if (write_cmd_word_cnt == 4'h4)
-                    //             perform_request_flaq <= 1'b1;
+    //                 // TX_WRITE_CALIB_OFS_ST : 
+    //                 //     if (~out_awfull)
+    //                 //         if (write_cmd_word_cnt == 4'h4)
+    //                 //             perform_request_flaq <= 1'b1;
 
 
-                    default : 
-                        perform_request_flaq <= perform_request_flaq;
+    //                 default : 
+    //                     perform_request_flaq <= perform_request_flaq;
 
-                endcase // current_state
-    end 
+    //             endcase // current_state
+    // end 
+
+
+
 
     // always_ff @(posedge CLK) begin 
     //     if (~RESETN | reset) begin 
@@ -2075,25 +2075,25 @@ module axi_adxl345 #(
     end 
 
 
-    always_ff @(posedge CLK) begin 
-        if (~RESETN | reset | intr_ack) begin 
-            ADXL_IRQ <= 1'b0;
-        end else begin
-            if (allow_irq) 
-                case (current_state) 
+    // always_ff @(posedge CLK) begin 
+    //     if (~RESETN | reset | intr_ack) begin 
+    //         ADXL_IRQ <= 1'b0;
+    //     end else begin
+    //         if (allow_irq) 
+    //             case (current_state) 
 
-                    CHECK_INTR_DEASSERT: 
-                        if (ADXL_INTERRUPT) 
-                            ADXL_IRQ <= 1'b0;
-                        else 
-                            ADXL_IRQ <= 1'b1;
+    //                 CHECK_INTR_DEASSERT: 
+    //                     if (ADXL_INTERRUPT) 
+    //                         ADXL_IRQ <= 1'b0;
+    //                     else 
+    //                         ADXL_IRQ <= 1'b1;
 
-                default : 
-                    ADXL_IRQ <= ADXL_IRQ;
+    //             default : 
+    //                 ADXL_IRQ <= ADXL_IRQ;
 
-                endcase // current_state
-        end 
-    end 
+    //             endcase // current_state
+    //     end 
+    // end 
 
 
     // always_ff @(posedge CLK) begin 
@@ -2422,14 +2422,75 @@ module axi_adxl345 #(
     // end 
 
 
+
+    // logic for perform single request
+    always_ff @(posedge CLK) begin 
+        if (~RESETN | reset | single_request_complete) begin 
+            single_request <= 1'b0;
+        end else begin 
+            if (slv_reg_wren_cfg) begin 
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0) begin 
+                    if ( S_AXI_LITE_CFG_WSTRB[0] == 1 & S_AXI_LITE_CFG_WDATA[3]) begin 
+                        single_request <= 1'b1;
+                    end else begin 
+                        single_request <= single_request;
+                    end 
+                end else begin 
+                    single_request <= single_request;
+                end 
+            end else begin 
+                single_request <= single_request;
+            end 
+        end 
+    end 
+
+
+    // i2c address holding 
+    always_ff @(posedge CLK) begin 
+        if (~RESETN | reset) begin 
+            i2c_address <= DEFAULT_DEVICE_ADDRESS;
+        end else begin  
+            if (slv_reg_wren_cfg) begin 
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0) begin 
+                    if ( S_AXI_LITE_CFG_WSTRB[1] == 1 ) begin 
+                        i2c_address <= S_AXI_LITE_CFG_WDATA[14:8];
+                    end else begin 
+                        i2c_address <= i2c_address;
+                    end  
+                end else begin 
+                    i2c_address <= i2c_address;
+                end 
+            end 
+        end 
+    end 
+
+
     adxl345_functional adxl345_functional_inst (
-        .CLK   (CLK                 ),
-        .RESET (reset               ),
-        .WDATA (S_AXI_LITE_DEV_WDATA),
-        .WSTRB (S_AXI_LITE_DEV_WSTRB),
-        .WADDR (axi_dev_awaddr[5:2] ),
-        .RDATA (                    ),
-        .WVALID(slv_reg_wren        )
+        .CLK                    (CLK                    ),
+        .RESET                  (reset                  ),
+        .WDATA                  (S_AXI_LITE_DEV_WDATA   ),
+        .WSTRB                  (S_AXI_LITE_DEV_WSTRB   ),
+        .WADDR                  (axi_dev_awaddr[5:2]    ),
+        .RDATA                  (                       ),
+        .WVALID                 (slv_reg_wren           ),
+        
+        .SINGLE_REQUEST         (single_request         ),
+        .SINGLE_REQUEST_COMPLETE(single_request_complete),
+        .I2C_ADDRESS            (i2c_address            ),
+        
+        .M_AXIS_TDATA           (                       ),
+        .M_AXIS_TKEEP           (                       ),
+        .M_AXIS_TUSER           (                       ),
+        .M_AXIS_TVALID          (                       ),
+        .M_AXIS_TLAST           (                       ),
+        .M_AXIS_TREADY          (1'b1                   ),
+        // data from device
+        .S_AXIS_TDATA           (S_AXIS_TDATA           ),
+        .S_AXIS_TKEEP           (S_AXIS_TKEEP           ),
+        .S_AXIS_TUSER           (S_AXIS_TUSER           ),
+        .S_AXIS_TVALID          (S_AXIS_TVALID          ),
+        .S_AXIS_TLAST           (S_AXIS_TLAST           ),
+        .S_AXIS_TREADY          (S_AXIS_TREADY          )
     );
 
 endmodule

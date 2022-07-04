@@ -2,31 +2,35 @@
 
 
 module adxl345_functional (
-    input  logic        CLK           ,
-    input  logic        RESET         ,
+    input  logic        CLK                    ,
+    input  logic        RESET                  ,
     // signal from AXI_DEV interface
-    input  logic [31:0] WDATA         ,
-    input  logic [ 3:0] WSTRB         ,
-    input  logic [ 3:0] WADDR         ,
-    input  logic        WVALID        ,
-    output logic [31:0] RDATA         ,
-    // control 
-    input  logic        SINGLE_REQUEST,
+    input  logic [31:0] WDATA                  ,
+    input  logic [ 3:0] WSTRB                  ,
+    input  logic [ 3:0] WADDR                  ,
+    input  logic        WVALID                 ,
+    output logic [31:0] RDATA                  ,
+    // control
+    input  logic [ 6:0] I2C_ADDRESS            ,
+    input  logic        SINGLE_REQUEST         ,
+    output logic        SINGLE_REQUEST_COMPLETE,
     // data to device
-    output logic [ 7:0] M_AXIS_TDATA  ,
-    output logic [ 0:0] M_AXIS_TKEEP  ,
-    output logic [ 7:0] M_AXIS_TUSER  ,
-    output logic        M_AXIS_TVALID ,
-    output logic        M_AXIS_TLAST  ,
-    input  logic        M_AXIS_TREADY ,
+    output logic [ 7:0] M_AXIS_TDATA           ,
+    output logic [ 0:0] M_AXIS_TKEEP           ,
+    output logic [ 7:0] M_AXIS_TUSER           ,
+    output logic        M_AXIS_TVALID          ,
+    output logic        M_AXIS_TLAST           ,
+    input  logic        M_AXIS_TREADY          ,
     // data from device
-    input  logic [ 7:0] S_AXIS_TDATA  ,
-    input  logic [ 0:0] S_AXIS_TKEEP  ,
-    input  logic [ 7:0] S_AXIS_TUSER  ,
-    input  logic        S_AXIS_TVALID ,
-    input  logic        S_AXIS_TLAST  ,
-    output logic        S_AXIS_TREADY ,
+    input  logic [ 7:0] S_AXIS_TDATA           ,
+    input  logic [ 0:0] S_AXIS_TKEEP           ,
+    input  logic [ 7:0] S_AXIS_TUSER           ,
+    input  logic        S_AXIS_TVALID          ,
+    input  logic        S_AXIS_TLAST           ,
+    output logic        S_AXIS_TREADY
 );
+
+    localparam [7:0] ADDRESS_LIMIT = 8'h3A;
 
     logic [ 7:0] doutb               ;
     logic [ 5:0] addrb = '{default:0};
@@ -79,26 +83,26 @@ module adxl345_functional (
         IDLE_ST             , // await new action
         REQ_TX_ADDR_PTR_ST  , // send address pointer 
         REQ_TX_READ_DATA_ST , // send read request for reading 0x39 data bytes 
-        REQ_RX_READ_DATA_ST   // await data from start to tlast signal 
+        REQ_RX_READ_DATA_ST , // await data from start to tlast signal 
+        WAIT_ST              
     } fsm;
 
     fsm current_state = IDLE_ST;
 
 
+    logic request_flaq = 'b0;
 
     logic [7:0] out_din_data = '{default:0};
     logic [0:0] out_din_keep = '{default:0};
-    logic [7:0] out_din_user = '{default:0};
+    logic [7:0] out_din_user               ;
     logic       out_din_last = 1'b0        ;
     logic       out_wren     = 1'b0        ;
     logic       out_full                   ;
     logic       out_awfull                 ;
 
     logic [3:0] word_counter = '{default:0};
+    logic [7:0] address_ptr  = '{default:0};
 
-    logic request_flaq = 'b0;
-
-    logic [7:0] address_register = '{default:0};
 
     generate
     
@@ -137,12 +141,9 @@ module adxl345_functional (
         end 
     end 
 
+    // if needed request, AND for this register
     always_ff @(posedge CLK) begin 
         request_flaq <= SINGLE_REQUEST;
-    end 
-
-    always_ff @(posedge CLK) begin 
-        case (current_state)
     end 
 
     xpm_memory_tdpram #(
@@ -181,7 +182,7 @@ module adxl345_functional (
     ) xpm_memory_tdpram_inst (
         .dbiterra      (     ), // 1-bit output: Status signal to indicate double bit error occurrence
         .dbiterrb      (     ), // 1-bit output: Status signal to indicate double bit error occurrence
-        .douta         (DOUTA), // READ_DATA_WIDTH_A-bit output: Data output for port A read operations.
+        .douta         (RDATA), // READ_DATA_WIDTH_A-bit output: Data output for port A read operations.
         .doutb         (doutb), // READ_DATA_WIDTH_B-bit output: Data output for port B read operations.
         .sbiterra      (     ), // 1-bit output: Status signal to indicate single bit error occurrence
         .sbiterrb      (     ), // 1-bit output: Status signal to indicate single bit error occurrence
@@ -207,6 +208,49 @@ module adxl345_functional (
     );
 
 
+    // address : sets before receive data, implies on MEM
+    always_ff @(posedge CLK) begin 
+        case (current_state)
+            REQ_TX_READ_DATA_ST : 
+                addrb <= address_ptr;
+
+            REQ_RX_READ_DATA_ST : 
+                if (web) begin 
+                    addrb <= addrb + 1;
+                end else begin 
+                    addrb <= addrb;
+                end 
+
+            default : 
+                addrb <= addrb;
+
+        endcase
+    end 
+
+
+    // readed data from interface S_AXIS_ to portb
+    always_ff @(posedge CLK) begin 
+        case (current_state)
+            REQ_RX_READ_DATA_ST : 
+                web <= S_AXIS_TVALID;
+
+            default : 
+                web <= 1'b0;
+        endcase // current_state
+    end 
+
+    
+    
+    always_ff @(posedge CLK) begin 
+        case (current_state)
+            REQ_RX_READ_DATA_ST : 
+                dinb <= S_AXIS_TDATA;
+
+            default 
+                dinb <= dinb;
+        endcase // current_state
+    end 
+
     fifo_out_sync_tuser_xpm #(
         .DATA_WIDTH(8      ),
         .USER_WIDTH(8      ),
@@ -214,7 +258,7 @@ module adxl345_functional (
         .DEPTH     (16     )
     ) fifo_out_sync_tuser_xpm_inst (
         .CLK          (CLK          ),
-        .RESET        (reset        ),
+        .RESET        (RESET        ),
         .OUT_DIN_DATA (out_din_data ),
         .OUT_DIN_KEEP (out_din_keep ),
         .OUT_DIN_USER (out_din_user ),
@@ -230,8 +274,90 @@ module adxl345_functional (
         .M_AXIS_TREADY(M_AXIS_TREADY)
     );
 
+    always_comb begin 
+        out_din_user[7:1] = I2C_ADDRESS;
+    end 
+
+
+    // operation : 
+    // 0 - write
+    // 1 - read
     always_ff @(posedge CLK) begin 
-        if (reset) begin 
+        case (current_state) 
+            REQ_TX_ADDR_PTR_ST : 
+                out_din_user[0] <= 1'b0; // is writing data to dev
+
+            REQ_TX_READ_DATA_ST : 
+                out_din_user[0] <= 1'b1; // cmd for reading data from dev
+
+            default : 
+                out_din_user[0] <= out_din_user[0];
+        endcase // current_state
+    end 
+
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state) 
+            REQ_TX_ADDR_PTR_ST : 
+                case (word_counter) 
+                    4'h0    : out_din_data <= 8'h01; // how many bytes write
+                    4'h1    : out_din_data <= address_ptr; // address pointer
+                    default : out_din_data <= out_din_data;
+                endcase // word_counter
+
+            REQ_TX_READ_DATA_ST : 
+                out_din_data <= ADDRESS_LIMIT;
+
+            default : 
+                out_din_data <= out_din_data;
+        endcase // current_state
+    end 
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state) 
+            REQ_TX_ADDR_PTR_ST : 
+                case (word_counter) 
+                    4'h0    : out_din_last <= 1'b0;
+                    4'h1    : out_din_last <= 1'b1;
+                    default : out_din_last <= out_din_last;
+                endcase // word_counter
+
+            default : 
+                out_din_last <= out_din_last;
+
+        endcase // current_state
+    end 
+
+
+
+    always_ff @(posedge CLK) begin 
+        case (current_state) 
+            REQ_TX_ADDR_PTR_ST : 
+                if (!out_awfull) begin 
+                    out_wren <= 1'b1;
+                end else begin 
+                    out_wren <= 1'b0;
+                end 
+
+            REQ_TX_READ_DATA_ST : 
+                if (!out_awfull) begin 
+                    out_wren <= 1'b1; 
+                end else begin 
+                    out_wren <= 1'b1;
+                end 
+
+            default : 
+                out_wren <= 1'b0;
+
+        endcase // current_state
+    end 
+
+
+
+    always_ff @(posedge CLK) begin 
+        if (RESET) begin 
             current_state <= IDLE_ST;
         end else begin 
             case (current_state) 
@@ -274,6 +400,20 @@ module adxl345_functional (
     end 
 
 
+    always_ff @(posedge CLK) begin 
+        case (current_state) 
+            IDLE_ST :
+                if (request_flaq) begin 
+                    address_ptr <= 8'h00;
+                end else begin 
+                    address_ptr <= address_ptr;
+                end 
+
+            default : 
+                address_ptr <= address_ptr;
+        endcase // current_state
+    end 
+
 
     always_ff @(posedge CLK) begin 
         case (current_state)
@@ -289,9 +429,20 @@ module adxl345_functional (
         endcase // current_state
     end 
 
+
+    always_ff @(posedge CLK) begin 
+        case (current_state) 
+            REQ_TX_READ_DATA_ST : 
+                if (!out_awfull) begin 
+                    SINGLE_REQUEST_COMPLETE <= 1'b1;
+                end else begin 
+                    SINGLE_REQUEST_COMPLETE <= SINGLE_REQUEST_COMPLETE;
+                end 
+
+            default : 
+                SINGLE_REQUEST_COMPLETE <= 1'b0;
+
+        endcase // current_state
+    end 
+
 endmodule
-
-
-
-
-
