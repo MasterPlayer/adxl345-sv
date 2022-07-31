@@ -2,31 +2,33 @@
 
 
 module adxl345_functional (
-    input  logic        CLK                    ,
-    input  logic        RESET                  ,
+    input  logic        CLK                       ,
+    input  logic        RESET                     ,
     // signal from AXI_DEV interface
-    input  logic [31:0] WDATA                  ,
-    input  logic [ 3:0] WSTRB                  ,
-    input  logic [ 3:0] WADDR                  ,
-    input  logic        WVALID                 ,
-    output logic [31:0] RDATA                  ,
+    input  logic [31:0] WDATA                     ,
+    input  logic [ 3:0] WSTRB                     ,
+    input  logic [ 3:0] WADDR                     ,
+    input  logic        WVALID                    ,
+    output logic [31:0] RDATA                     ,
     // control
-    input  logic [ 6:0] I2C_ADDRESS            ,
-    input  logic        SINGLE_REQUEST         ,
-    output logic        SINGLE_REQUEST_COMPLETE,
+    input  logic [ 6:0] I2C_ADDRESS               ,
+    input  logic        ENABLE_INTERVAL_REQUESTION,
+    input  logic [31:0] REQUESTION_INTERVAL       ,
+    input  logic        SINGLE_REQUEST            ,
+    output logic        SINGLE_REQUEST_COMPLETE   ,
     // data to device
-    output logic [ 7:0] M_AXIS_TDATA           ,
-    output logic [ 0:0] M_AXIS_TKEEP           ,
-    output logic [ 7:0] M_AXIS_TUSER           ,
-    output logic        M_AXIS_TVALID          ,
-    output logic        M_AXIS_TLAST           ,
-    input  logic        M_AXIS_TREADY          ,
+    output logic [ 7:0] M_AXIS_TDATA              ,
+    output logic [ 0:0] M_AXIS_TKEEP              ,
+    output logic [ 7:0] M_AXIS_TUSER              ,
+    output logic        M_AXIS_TVALID             ,
+    output logic        M_AXIS_TLAST              ,
+    input  logic        M_AXIS_TREADY             ,
     // data from device
-    input  logic [ 7:0] S_AXIS_TDATA           ,
-    input  logic [ 0:0] S_AXIS_TKEEP           ,
-    input  logic [ 7:0] S_AXIS_TUSER           ,
-    input  logic        S_AXIS_TVALID          ,
-    input  logic        S_AXIS_TLAST           ,
+    input  logic [ 7:0] S_AXIS_TDATA              ,
+    input  logic [ 0:0] S_AXIS_TKEEP              ,
+    input  logic [ 7:0] S_AXIS_TUSER              ,
+    input  logic        S_AXIS_TVALID             ,
+    input  logic        S_AXIS_TLAST              ,
     output logic        S_AXIS_TREADY
 );
 
@@ -92,6 +94,10 @@ module adxl345_functional (
 
     logic request_flaq = 'b0;
 
+    // periodic requesting data for interval time
+    logic [31:0] requestion_interval_counter  = '{default:0};
+    logic        requestion_interval_assigned = 1'b0        ;
+
     logic [7:0] out_din_data = '{default:0};
     logic [0:0] out_din_keep = '{default:0};
     logic [7:0] out_din_user               ;
@@ -102,6 +108,7 @@ module adxl345_functional (
 
     logic [3:0] word_counter = '{default:0};
     logic [7:0] address_ptr  = '{default:0};
+
 
 
     generate
@@ -120,9 +127,13 @@ module adxl345_functional (
 
     endgenerate
 
+
+
     always_ff @(posedge CLK) begin 
         wea <= {4{WVALID}} & write_mask_register[WADDR] & WSTRB;
     end 
+
+
 
     always_ff @(posedge CLK) begin 
         if (WVALID) begin 
@@ -131,6 +142,8 @@ module adxl345_functional (
             dina <= dina;
         end     
     end 
+
+
 
     always_ff @(posedge CLK) begin 
         if (|wea) begin 
@@ -141,10 +154,54 @@ module adxl345_functional (
         end 
     end 
 
-    // if needed request, AND for this register
-    always_ff @(posedge CLK) begin 
-        request_flaq <= SINGLE_REQUEST;
+
+
+    // if needed request, OR for this register
+    always_ff @(posedge CLK) begin : request_flaq_processing 
+        request_flaq <= SINGLE_REQUEST | requestion_interval_assigned;
     end 
+
+
+
+    always_ff @(posedge CLK) begin : requestion_interval_counter_processing 
+        case (current_state) 
+            IDLE_ST : 
+                if (ENABLE_INTERVAL_REQUESTION) begin 
+                    if (requestion_interval_counter == 0) begin 
+                        requestion_interval_counter <= requestion_interval_counter;
+                    end else begin 
+                        requestion_interval_counter <= requestion_interval_counter - 1;
+                    end 
+                end else begin 
+                    requestion_interval_counter <= REQUESTION_INTERVAL;
+                end 
+
+            default : 
+                requestion_interval_counter <= REQUESTION_INTERVAL;
+
+        endcase
+    end 
+
+
+    always_ff @(posedge CLK) begin : requestion_interval_assigned_processing 
+        case (current_state) 
+            IDLE_ST : 
+                if (ENABLE_INTERVAL_REQUESTION) begin 
+                    if (requestion_interval_counter == 0) begin 
+                        requestion_interval_assigned <= 1'b1;
+                    end else begin 
+                        requestion_interval_assigned <= 1'b0; 
+                    end 
+                end else begin 
+                    requestion_interval_assigned <= 1'b0;
+                end 
+
+            default : 
+                requestion_interval_assigned <= 1'b0;
+
+        endcase // current_state
+    end 
+
 
     xpm_memory_tdpram #(
         .ADDR_WIDTH_A           (4              ), // DECIMAL
@@ -434,7 +491,7 @@ module adxl345_functional (
         case (current_state) 
             REQ_TX_READ_DATA_ST : 
                 if (!out_awfull) begin 
-                    SINGLE_REQUEST_COMPLETE <= 1'b1;
+                    SINGLE_REQUEST_COMPLETE <= SINGLE_REQUEST;
                 end else begin 
                     SINGLE_REQUEST_COMPLETE <= SINGLE_REQUEST_COMPLETE;
                 end 

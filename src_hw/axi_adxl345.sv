@@ -3,15 +3,15 @@
 
 
 module axi_adxl345 #(
-    parameter integer       S_AXI_LITE_DEV_DATA_WIDTH = 32       ,
-    parameter integer       S_AXI_LITE_DEV_ADDR_WIDTH = 32       ,
-    parameter         [6:0] DEFAULT_DEVICE_ADDRESS    = 7'h53    ,
-    parameter integer       DEFAULT_REQUEST_INTERVAL  = 1000     ,
-    parameter integer       DEFAULT_CALIBRATION_LIMIT = 8        ,
-    parameter integer       S_AXI_LITE_CFG_DATA_WIDTH = 32       ,
-    parameter integer       S_AXI_LITE_CFG_ADDR_WIDTH = 32        ,
-    parameter integer       CLK_PERIOD                = 100000000,
-    parameter integer       RESET_DURATION            = 1000
+    parameter integer       S_AXI_LITE_DEV_DATA_WIDTH   = 32       ,
+    parameter integer       S_AXI_LITE_DEV_ADDR_WIDTH   = 32       ,
+    parameter         [6:0] DEFAULT_DEVICE_ADDRESS      = 7'h53    ,
+    parameter integer       DEFAULT_REQUESTION_INTERVAL = 1000     ,
+    parameter integer       DEFAULT_CALIBRATION_LIMIT   = 8        ,
+    parameter integer       S_AXI_LITE_CFG_DATA_WIDTH   = 32       ,
+    parameter integer       S_AXI_LITE_CFG_ADDR_WIDTH   = 32       ,
+    parameter integer       CLK_PERIOD                  = 100000000,
+    parameter integer       RESET_DURATION              = 1000
 ) (
     input  logic                                     CLK                   ,
     input  logic                                     RESETN                ,
@@ -69,18 +69,18 @@ module axi_adxl345 #(
     input  logic                                     S_AXIS_TVALID         ,
     input  logic                                     S_AXIS_TLAST          ,
     output logic                                     S_AXIS_TREADY         ,
-    // interrupt signals to component/from component            
-(* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_INTERRUPT INTERRUPT" *)
-(* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
-    input logic                                      ADXL_INTERRUPT        ,
-(* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_IRQ INTERRUPT" *)
-(* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
+    // interrupt signals to component/from component
+    (* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_INTERRUPT INTERRUPT" *)
+    (* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
+    input  logic                                     ADXL_INTERRUPT        ,
+    (* X_INTERFACE_INFO = "xilinx.com:signal:interrupt:1.0 ADXL_IRQ INTERRUPT" *)
+    (* X_INTERFACE_PARAMETER = "SENSITIVITY EDGE_RISING" *)
     output logic                                     ADXL_IRQ
 );
 
 
-    localparam integer OPT_REQ_INTERVAL = (CLK_PERIOD/3200);
-    logic [31:0] opt_request_interval = '{default:0};
+    // localparam integer OPT_REQ_INTERVAL = (CLK_PERIOD/3200);
+    // logic [31:0] opt_request_interval = '{default:0};
 
     logic [S_AXI_LITE_CFG_ADDR_WIDTH-1:0] axi_awaddr_cfg ;
     logic                                 axi_awready_cfg;
@@ -110,46 +110,46 @@ module axi_adxl345 #(
     localparam integer OPT_MEM_ADDR_BITS_DEV = 3                                 ;
     localparam integer DATA_WIDTH            = 8                                 ;
     localparam integer USER_WIDTH            = 8                                 ;
-    localparam integer ADDRESS_LIMIT         = 'h3A                              ;
+    // localparam integer ADDRESS_LIMIT         = 'h3A                              ;
 
     // logic [0:15][(S_AXI_LITE_DEV_DATA_WIDTH/8)-1:0][7:0] register = '{default:'{default:'{default:0}}}   ;
-    logic [0:15][3:0] need_update_reg = '{
-        '{0, 0, 0, 0}, // 0x00
-        '{0, 0, 0, 0}, // 0x04
-        '{0, 0, 0, 0}, // 0x08
-        '{0, 0, 0, 0}, // 0x0C
-        '{0, 0, 0, 0}, // 0x10
-        '{0, 0, 0, 0}, // 0x14
-        '{0, 0, 0, 0}, // 0x18
-        '{0, 0, 0, 0}, // 0x1C
-        '{0, 0, 0, 0}, // 0x20
-        '{0, 0, 0, 0}, // 0x24
-        '{0, 0, 0, 0}, // 0x28
-        '{0, 0, 0, 0}, // 0x2C
-        '{0, 0, 0, 0}, // 0x30
-        '{0, 0, 0, 0}, // 0x34
-        '{0, 0, 0, 0}, // 0x38
-        '{0, 0, 0, 0}  // 0x3C
-        };
+    // logic [0:15][3:0] need_update_reg = '{
+    //     '{0, 0, 0, 0}, // 0x00
+    //     '{0, 0, 0, 0}, // 0x04
+    //     '{0, 0, 0, 0}, // 0x08
+    //     '{0, 0, 0, 0}, // 0x0C
+    //     '{0, 0, 0, 0}, // 0x10
+    //     '{0, 0, 0, 0}, // 0x14
+    //     '{0, 0, 0, 0}, // 0x18
+    //     '{0, 0, 0, 0}, // 0x1C
+    //     '{0, 0, 0, 0}, // 0x20
+    //     '{0, 0, 0, 0}, // 0x24
+    //     '{0, 0, 0, 0}, // 0x28
+    //     '{0, 0, 0, 0}, // 0x2C
+    //     '{0, 0, 0, 0}, // 0x30
+    //     '{0, 0, 0, 0}, // 0x34
+    //     '{0, 0, 0, 0}, // 0x38
+    //     '{0, 0, 0, 0}  // 0x3C
+    //     };
 
-    logic [0:15][3:0] write_mask_register = '{
-        '{0, 0, 0, 0}, // 0x00
-        '{0, 0, 0, 0}, // 0x04
-        '{0, 0, 0, 0}, // 0x08
-        '{0, 0, 0, 0}, // 0x0C
-        '{0, 0, 0, 0}, // 0x10
-        '{0, 0, 0, 0}, // 0x14
-        '{0, 0, 0, 0}, // 0x18
-        '{1, 1, 1, 0}, // 0x1C
-        '{1, 1, 1, 1}, // 0x20
-        '{1, 1, 1, 1}, // 0x24
-        '{0, 1, 1, 1}, // 0x28
-        '{1, 1, 1, 1}, // 0x2C
-        '{0, 0, 1, 0}, // 0x30
-        '{0, 0, 0, 0}, // 0x34
-        '{0, 0, 0, 1}, // 0x38
-        '{0, 0, 0, 0}  // 0x3C
-        };
+    // logic [0:15][3:0] write_mask_register = '{
+    //     '{0, 0, 0, 0}, // 0x00
+    //     '{0, 0, 0, 0}, // 0x04
+    //     '{0, 0, 0, 0}, // 0x08
+    //     '{0, 0, 0, 0}, // 0x0C
+    //     '{0, 0, 0, 0}, // 0x10
+    //     '{0, 0, 0, 0}, // 0x14
+    //     '{0, 0, 0, 0}, // 0x18
+    //     '{1, 1, 1, 0}, // 0x1C
+    //     '{1, 1, 1, 1}, // 0x20
+    //     '{1, 1, 1, 1}, // 0x24
+    //     '{0, 1, 1, 1}, // 0x28
+    //     '{1, 1, 1, 1}, // 0x2C
+    //     '{0, 0, 1, 0}, // 0x30
+    //     '{0, 0, 0, 0}, // 0x34
+    //     '{0, 0, 0, 1}, // 0x38
+    //     '{0, 0, 0, 0}  // 0x3C
+    //     };
 
 
     logic                                 slv_reg_rden;
@@ -157,7 +157,7 @@ module axi_adxl345 #(
     logic [S_AXI_LITE_DEV_DATA_WIDTH-1:0] reg_data_out;
     logic                                 aw_en       ;
 
-    logic update_request = 1'b0;
+    // logic update_request = 1'b0;
 
     logic [                         15:0][S_AXI_LITE_CFG_DATA_WIDTH-1:0] register_cfg     = '{default:'{default:0}};
     logic [                        191:0][                          7:0] register_samples = '{default:'{default:0}};
@@ -167,137 +167,145 @@ module axi_adxl345 #(
     logic [S_AXI_LITE_CFG_DATA_WIDTH-1:0]                                reg_data_out_cfg                          ;
     logic                                                                aw_en_cfg                                 ;
 
-    integer byte_index_cfg;
+    // integer byte_index_cfg;
 
 
-    typedef enum {
-        IDLE_ST                         ,
-        CHK_UPD_NEEDED_ST               ,
-        SEND_WRITE_CMD_ST               ,
+    // typedef enum {
+    //     IDLE_ST                         ,
+    //     CHK_UPD_NEEDED_ST               ,
+    //     SEND_WRITE_CMD_ST               ,
 
-        INC_ADDR_ST                     ,
+    //     INC_ADDR_ST                     ,
         
-        TX_SEND_ADDR_PTR                ,
-        TX_READ_REQUEST_ST              ,
-        AWAIT_RECEIVE_DATA_ST           ,
+    //     TX_SEND_ADDR_PTR                ,
+    //     TX_READ_REQUEST_ST              ,
+    //     AWAIT_RECEIVE_DATA_ST           ,
 
-        TX_WRITE_INT_SOURCE_PTR_ST      ,
-        TX_READ_INT_SOURCE_ST           ,
-        RX_INT_SOURCE_ST                ,
-        INT_PROCESSING_ST               ,
+    //     TX_WRITE_INT_SOURCE_PTR_ST      ,
+    //     TX_READ_INT_SOURCE_ST           ,
+    //     RX_INT_SOURCE_ST                ,
+    //     INT_PROCESSING_ST               ,
 
-        TX_WRITE_ACT_TAP_STATUS_PTR_ST  , 
-        TX_READ_ACT_TAP_STATUS_ST       , 
-        RX_ACT_TAP_STATUS_ST            , 
+    //     TX_WRITE_ACT_TAP_STATUS_PTR_ST  , 
+    //     TX_READ_ACT_TAP_STATUS_ST       , 
+    //     RX_ACT_TAP_STATUS_ST            , 
 
-        TX_WRITE_INTR_DATA_PTR_ST       ,
-        TX_READ_INTR_DATA_ST            ,
-        RX_INTR_DATA_ST                 ,
+    //     TX_WRITE_INTR_DATA_PTR_ST       ,
+    //     TX_READ_INTR_DATA_ST            ,
+    //     RX_INTR_DATA_ST                 ,
 
-        TX_WRITE_WM_FIFO_STS_PTR_ST     , 
-        TX_READ_WM_FIFO_STS_ST          ,
-        RX_WM_FIFO_STS_ST               ,
-        TX_WRITE_WM_DATA_PTR_ST         , 
-        TX_READ_WM_DATA_ST              ,
-        RX_WM_DATA_ST                   ,
+    //     TX_WRITE_WM_FIFO_STS_PTR_ST     , 
+    //     TX_READ_WM_FIFO_STS_ST          ,
+    //     RX_WM_FIFO_STS_ST               ,
+    //     TX_WRITE_WM_DATA_PTR_ST         , 
+    //     TX_READ_WM_DATA_ST              ,
+    //     RX_WM_DATA_ST                   ,
 
-        CHECK_INTR_DEASSERT             ,  // 
+    //     CHECK_INTR_DEASSERT             ,  // 
 
-        TX_WRITE_CALIB_OFS_CLEAR_ST     ,
-        AWAIT_CALIB_TIMER_ST            ,
-        TX_WRITE_CALIB_DATA_PTR_ST      , 
-        TX_READ_CALIB_DATA_ST           , 
-        RX_CALIB_DATA_ST                , 
-        ADD_CALIB_CALC_ST               ,
-        AVG_CALIB_CALC_ST               , 
-        OFFSET_CALIB_CALC_ST            ,
-        OFFSET_LSB_CALIB_CALC_ST        ,
-        TX_WRITE_CALIB_OFS_ST            
+    //     TX_WRITE_CALIB_OFS_CLEAR_ST     ,
+    //     AWAIT_CALIB_TIMER_ST            ,
+    //     TX_WRITE_CALIB_DATA_PTR_ST      , 
+    //     TX_READ_CALIB_DATA_ST           , 
+    //     RX_CALIB_DATA_ST                , 
+    //     ADD_CALIB_CALC_ST               ,
+    //     AVG_CALIB_CALC_ST               , 
+    //     OFFSET_CALIB_CALC_ST            ,
+    //     OFFSET_LSB_CALIB_CALC_ST        ,
+    //     TX_WRITE_CALIB_OFS_ST            
 
-    } fsm;
+    // } fsm;
 
-     (* dont_touch="true" *)logic [5:0] fsm_logic;
+     // (* dont_touch="true" *)logic [5:0] fsm_logic;
 
-     (* dont_touch="true" *)fsm         current_state      = IDLE_ST     ;
-    (* dont_touch="true" *)logic [5:0] address            = '{default:0};
-    (* dont_touch="true" *)logic [3:0] write_cmd_word_cnt = '{default:0};
+    //  (* dont_touch="true" *)fsm         current_state      = IDLE_ST     ;
+    // (* dont_touch="true" *)logic [5:0] address            = '{default:0};
+    // (* dont_touch="true" *)logic [3:0] write_cmd_word_cnt = '{default:0};
 
-    logic [31:0] request_timer = '{default:0};
+    // logic [31:0] request_timer = '{default:0};
 
-    logic [    DATA_WIDTH-1:0] out_din_data = '{default:0};
-    logic [(DATA_WIDTH/8)-1:0] out_din_keep = '{default:0};
-    logic [    USER_WIDTH-1:0] out_din_user = '{default:0};
-    logic                      out_din_last = 1'b0        ;
-    logic                      out_wren     = 1'b0        ;
-    logic                      out_full                   ;
-    logic                      out_awfull                 ;
+    // logic [    DATA_WIDTH-1:0] out_din_data = '{default:0};
+    // logic [(DATA_WIDTH/8)-1:0] out_din_keep = '{default:0};
+    // logic [    USER_WIDTH-1:0] out_din_user = '{default:0};
+    // logic                      out_din_last = 1'b0        ;
+    // logic                      out_wren     = 1'b0        ;
+    // logic                      out_full                   ;
+    // logic                      out_awfull                 ;
 
     logic [                         7:0] version_major        = 8'h02                   ; // read only,
     logic [                         7:0] version_minor        = 8'h00                   ; // read only,
-    logic [                         6:0] i2c_address          = DEFAULT_DEVICE_ADDRESS  ; // reg[0][14:8]
-    logic                                link_on              = 1'b0                    ;
-    logic                                calibration_flaq     = 1'b0                    ;
-    logic                                on_work              = 1'b0                    ; // reg[0][4]
-    logic                                perform_request_flaq = 1'b0                    ; // reg[0][3]
-    logic                                request_performed    = 1'b0                    ; // reg[0][6]
-    logic                                allow_irq            = 1'b0                    ; // reg[0][2]
-    logic                                enable               = 1'b0                    ; // reg[0][1]
-    logic [($clog2(RESET_DURATION)-1):0] reset_logic_timer    = 1'b0                    ; // reg[0][0]
-    logic                                reset                = 1'b0                    ;
+    // logic                                link_on              = 1'b0                    ;
+    // logic                                calibration_flaq     = 1'b0                    ;
+    // logic                                on_work              = 1'b0                    ; // reg[0][4]
+    // logic                                perform_request_flaq = 1'b0                    ; // reg[0][3]
+    // logic                                request_performed    = 1'b0                    ; // reg[0][6]
+    // logic                                allow_irq            = 1'b0                    ; // reg[0][2]
+    // logic                                enable               = 1'b0                    ; // reg[0][1]
+    // logic [($clog2(RESET_DURATION)-1):0] reset_logic_timer    = 1'b0                    ; // reg[0][0]
 
-    logic [                        31:0] request_interval     = DEFAULT_REQUEST_INTERVAL;
-    logic [                        31:0] read_valid_count     = '{default:0}            ;
-    logic [                        31:0] read_valid_reg       = '{default:0}            ;
-    logic [                        31:0] write_valid_count    = '{default:0}            ;
-    logic [                        31:0] write_valid_reg      = '{default:0}            ;
-    logic [                        31:0] write_transactions   = '{default:0}            ;
-    logic [                        31:0] read_transactions    = '{default:0}            ;
-    logic [                        31:0] transactions_timer   = '{default:0}            ;
+    // logic [                        31:0] request_interval     = DEFAULT_REQUEST_INTERVAL;
+    // logic [                        31:0] read_valid_count     = '{default:0}            ;
+    // logic [                        31:0] read_valid_reg       = '{default:0}            ;
+    // logic [                        31:0] write_valid_count    = '{default:0}            ;
+    // logic [                        31:0] write_valid_reg      = '{default:0}            ;
+    // logic [                        31:0] write_transactions   = '{default:0}            ;
+    // logic [                        31:0] read_transactions    = '{default:0}            ;
+    // logic [                        31:0] transactions_timer   = '{default:0}            ;
 
-    // Calibration data 
-    logic [31:0] calibration_timer           = '{default:0};
-    logic [31:0] calibration_count_limit_reg = '{default:0};
-    logic [31:0] calibration_count           = '{default:0};
-    logic [31:0] sum_x                       = '{default:0};
-    logic [31:0] sum_y                       = '{default:0};
-    logic [31:0] sum_z                       = '{default:0};
-    logic [15:0] avg_x                       = '{default:0};
-    logic [15:0] avg_y                       = '{default:0};
-    logic [15:0] avg_z                       = '{default:0};
+    // // Calibration data 
+    // logic [31:0] calibration_timer           = '{default:0};
+    // logic [31:0] calibration_count_limit_reg = '{default:0};
+    // logic [31:0] calibration_count           = '{default:0};
+    // logic [31:0] sum_x                       = '{default:0};
+    // logic [31:0] sum_y                       = '{default:0};
+    // logic [31:0] sum_z                       = '{default:0};
+    // logic [15:0] avg_x                       = '{default:0};
+    // logic [15:0] avg_y                       = '{default:0};
+    // logic [15:0] avg_z                       = '{default:0};
 
-    logic [15:0] offset_x                    = '{default:0};
-    logic [15:0] offset_y                    = '{default:0};
-    logic [15:0] offset_z                    = '{default:0};
+    // logic [15:0] offset_x                    = '{default:0};
+    // logic [15:0] offset_y                    = '{default:0};
+    // logic [15:0] offset_z                    = '{default:0};
 
-    logic [7:0] offset_lsb_x = '{default:0};
-    logic [7:0] offset_lsb_y = '{default:0};
-    logic [7:0] offset_lsb_z = '{default:0};
+    // logic [7:0] offset_lsb_x = '{default:0};
+    // logic [7:0] offset_lsb_y = '{default:0};
+    // logic [7:0] offset_lsb_z = '{default:0};
 
-    logic refresh_after_calib_flaq = 1'b0;
-    // Interrupt data
-    logic [7:0] int_source_reg = '{default:0};
-    logic [7:0] int_enable_reg = '{default:0};
+    // logic refresh_after_calib_flaq = 1'b0;
+    // // Interrupt data
+    // logic [7:0] int_source_reg = '{default:0};
+    // logic [7:0] int_enable_reg = '{default:0};
 
-    logic intr_ack;
+    // logic intr_ack;
 
-    (* dont_touch="true" *)logic has_dataready_intr;
-    (* dont_touch="true" *)logic has_st_intr;
-    (* dont_touch="true" *)logic has_dt_intr;
-    (* dont_touch="true" *)logic has_act_intr;
-    (* dont_touch="true" *)logic has_inact_intr;
-    (* dont_touch="true" *)logic has_ff_intr;
-    (* dont_touch="true" *)logic has_wm_intr;
-    (* dont_touch="true" *)logic has_ovrrn_intr;
+    // (* dont_touch="true" *)logic has_dataready_intr;
+    // (* dont_touch="true" *)logic has_st_intr;
+    // (* dont_touch="true" *)logic has_dt_intr;
+    // (* dont_touch="true" *)logic has_act_intr;
+    // (* dont_touch="true" *)logic has_inact_intr;
+    // (* dont_touch="true" *)logic has_ff_intr;
+    // (* dont_touch="true" *)logic has_wm_intr;
+    // (* dont_touch="true" *)logic has_ovrrn_intr;
 
-    logic [5:0] entries = '{default:0};
+    // logic [5:0] entries = '{default:0};
 
-    logic [31:0] calibration_elapsed_time = '{default:0};
+    // logic [31:0] calibration_elapsed_time = '{default:0};
 
 
     // renew 
 
-    logic single_request          = 'b0;
-    logic single_request_complete = 'b0;
+    logic                              reset       = 1'b0        ;
+    logic [$clog2(RESET_DURATION)-1:0] reset_timer = '{default:0};
+
+    logic [6:0] i2c_address = DEFAULT_DEVICE_ADDRESS; // reg[0][14:8]
+
+    // single requesting data from device
+    logic single_request          = 1'b0;
+    logic single_request_complete = 1'b0;
+
+    // periodic requests for interval timer
+    logic            enable_interval_requestion = 1'b0        ;
+    logic [3:0][7:0] requestion_interval        = '{default:'{default:0}};
 
 
     ///
@@ -458,6 +466,8 @@ module axi_adxl345 #(
 
         slv_reg_wren = axi_dev_wready & S_AXI_LITE_DEV_WVALID & axi_dev_awready & S_AXI_LITE_DEV_AWVALID;
     end
+
+
 
     // generate 
 
@@ -1077,28 +1087,28 @@ module axi_adxl345 #(
     //         end 
     // end  
 
-    fifo_out_sync_tuser_xpm #(
-        .DATA_WIDTH(DATA_WIDTH),
-        .USER_WIDTH(USER_WIDTH),
-        .MEMTYPE   ("block"   ),
-        .DEPTH     (16        )
-    ) fifo_out_sync_tuser_xpm_inst (
-        .CLK          (CLK            ),
-        .RESET        (~RESETN | reset),
-        .OUT_DIN_DATA (out_din_data               ),
-        .OUT_DIN_KEEP (out_din_keep               ),
-        .OUT_DIN_USER (out_din_user               ),
-        .OUT_DIN_LAST (out_din_last               ),
-        .OUT_WREN     (out_wren                   ),
-        .OUT_FULL     (out_full                   ),
-        .OUT_AWFULL   (out_awfull                 ),
-        .M_AXIS_TDATA (M_AXIS_TDATA               ),
-        .M_AXIS_TKEEP (M_AXIS_TKEEP               ),
-        .M_AXIS_TUSER (M_AXIS_TUSER               ),
-        .M_AXIS_TVALID(M_AXIS_TVALID              ),
-        .M_AXIS_TLAST (M_AXIS_TLAST               ),
-        .M_AXIS_TREADY(M_AXIS_TREADY              )
-    );
+    // fifo_out_sync_tuser_xpm #(
+    //     .DATA_WIDTH(DATA_WIDTH),
+    //     .USER_WIDTH(USER_WIDTH),
+    //     .MEMTYPE   ("block"   ),
+    //     .DEPTH     (16        )
+    // ) fifo_out_sync_tuser_xpm_inst (
+    //     .CLK          (CLK            ),
+    //     .RESET        (~RESETN | reset),
+    //     .OUT_DIN_DATA (out_din_data               ),
+    //     .OUT_DIN_KEEP (out_din_keep               ),
+    //     .OUT_DIN_USER (out_din_user               ),
+    //     .OUT_DIN_LAST (out_din_last               ),
+    //     .OUT_WREN     (out_wren                   ),
+    //     .OUT_FULL     (out_full                   ),
+    //     .OUT_AWFULL   (out_awfull                 ),
+    //     .M_AXIS_TDATA (M_AXIS_TDATA               ),
+    //     .M_AXIS_TKEEP (M_AXIS_TKEEP               ),
+    //     .M_AXIS_TUSER (M_AXIS_TUSER               ),
+    //     .M_AXIS_TVALID(M_AXIS_TVALID              ),
+    //     .M_AXIS_TLAST (M_AXIS_TLAST               ),
+    //     .M_AXIS_TREADY(M_AXIS_TREADY              )
+    // );
 
     // always_comb begin 
     //     out_din_keep <= 1'b1;
@@ -1698,31 +1708,31 @@ module axi_adxl345 #(
     always_ff @(posedge CLK) begin
         case ( axi_araddr_cfg[ADDR_LSB_CFG+OPT_MEM_ADDR_BITS_CFG:ADDR_LSB_CFG] )
             8'h00 : reg_data_out_cfg <= {
-                version_major,
-                version_minor,
-                link_on,
+                1'b0, //version_major,
+                1'b0, //version_minor,
+                1'b0, // link_on,
                 i2c_address, // register_cfg[ 0][14:8],
-                on_work,
-                request_performed,
-                calibration_flaq,
-                ADXL_IRQ,
+                1'b0, //on_work,
+                1'b0,  //request_performed,
+                1'b0,  //calibration_flaq,
+                1'b0,  // ADXL_IRQ,
                 1'b0,
-                allow_irq,
-                enable,
-                reset 
+                1'b0,  //allow_irq,
+                1'b0, //enable,
+                1'b0  // reset 
             };
 
-            8'h01    : reg_data_out_cfg <= request_interval;
-            8'h02    : reg_data_out_cfg <= DATA_WIDTH;
-            8'h03    : reg_data_out_cfg <= read_valid_reg;
-            8'h04    : reg_data_out_cfg <= write_valid_reg;
-            8'h05    : reg_data_out_cfg <= write_transactions;
-            8'h06    : reg_data_out_cfg <= read_transactions;
-            8'h07    : reg_data_out_cfg <= CLK_PERIOD;
-            8'h08    : reg_data_out_cfg <= {23'h0, has_ovrrn_intr, sample_address};
-            8'h09    : reg_data_out_cfg <= opt_request_interval;
-            8'h0a    : reg_data_out_cfg <= calibration_count_limit_reg;
-            8'h0b    : reg_data_out_cfg <= calibration_elapsed_time;
+            8'h01    : reg_data_out_cfg <= requestion_interval;
+            8'h02    : reg_data_out_cfg <= 'b0; //DATA_WIDTH;
+            8'h03    : reg_data_out_cfg <= 'b0; //read_valid_reg;
+            8'h04    : reg_data_out_cfg <= 'b0; //write_valid_reg;
+            8'h05    : reg_data_out_cfg <= 'b0; //write_transactions;
+            8'h06    : reg_data_out_cfg <= 'b0; //read_transactions;
+            8'h07    : reg_data_out_cfg <= 'b0; //CLK_PERIOD;
+            8'h08    : reg_data_out_cfg <= 'b0; //{23'h0, has_ovrrn_intr, sample_address};
+            8'h09    : reg_data_out_cfg <= 'b0; //opt_request_interval;
+            8'h0a    : reg_data_out_cfg <= 'b0; //calibration_count_limit_reg;
+            8'h0b    : reg_data_out_cfg <= 'b0; //calibration_elapsed_time;
             8'h0c    : reg_data_out_cfg <= '{default:0}; // reserved
             8'h0d    : reg_data_out_cfg <= '{default:0}; // reserved
             8'h0e    : reg_data_out_cfg <= '{default:0}; // reserved
@@ -1791,20 +1801,20 @@ module axi_adxl345 #(
 
 
     
-    always_ff @(posedge CLK) begin : slv_reg_cfg 
-        if (~RESETN | reset)
-            link_on <= 1'b0;
-        else
-            if (S_AXIS_TVALID)
-                if (!address) begin 
-                    if (S_AXIS_TDATA == 8'hE5) begin 
-                        link_on <= 1'b1;
-                    end else begin 
-                        link_on <= 1'b0;
-                    end 
-                end 
+    // always_ff @(posedge CLK) begin : slv_reg_cfg 
+    //     if (~RESETN | reset)
+    //         link_on <= 1'b0;
+    //     else
+    //         if (S_AXIS_TVALID)
+    //             if (!address) begin 
+    //                 if (S_AXIS_TDATA == 8'hE5) begin 
+    //                     link_on <= 1'b1;
+    //                 end else begin 
+    //                     link_on <= 1'b0;
+    //                 end 
+    //             end 
 
-    end    
+    // end    
 
     // always_ff @(posedge CLK) begin : calibration_flaq_processing 
     //     if (~RESETN | reset | (current_state == TX_WRITE_CALIB_OFS_ST)) begin 
@@ -2048,31 +2058,31 @@ module axi_adxl345 #(
 
 
 
-    always_ff @(posedge CLK) begin : reset_logic_timer_proc 
-        if (~RESETN)
-            reset_logic_timer <= '{default:0};
-        else
-            if (reset_logic_timer < RESET_DURATION) begin 
-                reset_logic_timer <= reset_logic_timer + 1;
-            end else begin 
-                if (slv_reg_wren_cfg)
-                    if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-                        if ( S_AXI_LITE_CFG_WSTRB[0] & S_AXI_LITE_CFG_WDATA[0])
-                            reset_logic_timer <= '{default:0};
-            end     
-    end 
+    // always_ff @(posedge CLK) begin : reset_logic_timer_proc 
+    //     if (~RESETN)
+    //         reset_logic_timer <= '{default:0};
+    //     else
+    //         if (reset_logic_timer < RESET_DURATION) begin 
+    //             reset_logic_timer <= reset_logic_timer + 1;
+    //         end else begin 
+    //             if (slv_reg_wren_cfg)
+    //                 if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+    //                     if ( S_AXI_LITE_CFG_WSTRB[0] & S_AXI_LITE_CFG_WDATA[0])
+    //                         reset_logic_timer <= '{default:0};
+    //         end     
+    // end 
 
 
 
-    always_ff @(posedge CLK) begin : reset_proc 
-        if (~RESETN)
-            reset <= 1'b1;
-        else
-            if (reset_logic_timer < RESET_DURATION)
-                reset <= 1'b1;
-            else 
-                reset <= 1'b0;
-    end 
+    // always_ff @(posedge CLK) begin : reset_proc 
+    //     if (~RESETN)
+    //         reset <= 1'b1;
+    //     else
+    //         if (reset_logic_timer < RESET_DURATION)
+    //             reset <= 1'b1;
+    //         else 
+    //             reset <= 1'b0;
+    // end 
 
 
     // always_ff @(posedge CLK) begin 
@@ -2423,14 +2433,72 @@ module axi_adxl345 #(
 
 
 
+
+
+    // always_ff @(posedge CLK) begin : reset_logic_timer_proc 
+    //     if (~RESETN)
+    //         reset_logic_timer <= '{default:0};
+    //     else
+    //         if (reset_logic_timer < RESET_DURATION) begin 
+    //             reset_logic_timer <= reset_logic_timer + 1;
+    //         end else begin 
+    //             if (slv_reg_wren_cfg)
+    //                 if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
+    //                     if ( S_AXI_LITE_CFG_WSTRB[0] & S_AXI_LITE_CFG_WDATA[0])
+    //                         reset_logic_timer <= '{default:0};
+    //         end     
+    // end 
+
+
+
+    always_ff @(posedge CLK) begin : reset_timer_processing 
+        if (~RESETN) begin 
+            reset_timer <= '{default:0};
+        end else begin 
+            if (reset_timer < RESET_DURATION-1) begin 
+                reset_timer <= reset_timer + 1;
+            end else begin 
+                if (slv_reg_wren_cfg) begin 
+                    if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0) begin 
+                        if (S_AXI_LITE_CFG_WSTRB[0] & S_AXI_LITE_CFG_WDATA[0]) begin 
+                            reset_timer <= '{default:0};
+                        end else begin 
+                            reset_timer <= reset_timer;
+                        end 
+                    end else begin 
+                        reset_timer <= reset_timer;
+                    end 
+                end else begin 
+                    reset_timer <= reset_timer;
+                end     
+            end 
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : reset_processing  
+        if (~RESETN) begin 
+            reset <= 1'b1;
+        end else begin 
+            if (reset_timer < (RESET_DURATION-1)) begin 
+                reset <= 1'b1;
+            end else begin  
+                reset <= 1'b0;
+            end 
+        end 
+    end 
+
+
+
     // logic for perform single request
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : single_request_processing 
         if (~RESETN | reset | single_request_complete) begin 
             single_request <= 1'b0;
         end else begin 
             if (slv_reg_wren_cfg) begin 
                 if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0) begin 
-                    if ( S_AXI_LITE_CFG_WSTRB[0] == 1 & S_AXI_LITE_CFG_WDATA[3]) begin 
+                    if ( S_AXI_LITE_CFG_WSTRB[0] & S_AXI_LITE_CFG_WDATA[3]) begin 
                         single_request <= 1'b1;
                     end else begin 
                         single_request <= single_request;
@@ -2445,14 +2513,15 @@ module axi_adxl345 #(
     end 
 
 
+
     // i2c address holding 
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : i2c_address_processing 
         if (~RESETN | reset) begin 
             i2c_address <= DEFAULT_DEVICE_ADDRESS;
         end else begin  
             if (slv_reg_wren_cfg) begin 
                 if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0) begin 
-                    if ( S_AXI_LITE_CFG_WSTRB[1] == 1 ) begin 
+                    if ( S_AXI_LITE_CFG_WSTRB[1]) begin 
                         i2c_address <= S_AXI_LITE_CFG_WDATA[14:8];
                     end else begin 
                         i2c_address <= i2c_address;
@@ -2465,32 +2534,88 @@ module axi_adxl345 #(
     end 
 
 
+    // periodic requesting of register from device 
+    always_ff @(posedge CLK) begin : enable_interval_requestion_processing 
+        if (~RESETN | reset) begin 
+            enable_interval_requestion <= 1'b0;
+        end else begin 
+            if (slv_reg_wren_cfg) begin 
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0) begin 
+                    if ( S_AXI_LITE_CFG_WSTRB[0]) begin 
+                        enable_interval_requestion <= S_AXI_LITE_CFG_WDATA[1];
+                    end else begin 
+                        enable_interval_requestion <= enable_interval_requestion;
+                    end  
+                end else begin 
+                    enable_interval_requestion <= enable_interval_requestion;
+                end 
+            end else begin 
+                enable_interval_requestion <= enable_interval_requestion;
+            end 
+        end 
+    end 
+
+
+
+    generate 
+
+        for (genvar index = 0; index < 4; index++) begin : GEN_REQUESTION_INTERVAL_BYTE_INDEX 
+
+            always_ff @(posedge CLK) begin : requestion_interval_processing
+                if (~RESETN | reset) begin
+                    requestion_interval[index] <= DEFAULT_REQUESTION_INTERVAL[ (((index+1)*8)-1):(index*8)];
+                end else begin
+                    if (slv_reg_wren_cfg) begin
+                        if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 1) begin
+                            if ( S_AXI_LITE_CFG_WSTRB[index]) begin
+                                requestion_interval[index] <= S_AXI_LITE_CFG_WDATA[ (((index+1)*8)-1):(index*8)];
+                            end else begin
+                                requestion_interval[index] <= requestion_interval[index];
+                            end
+                        end else begin
+                            requestion_interval[index] <= requestion_interval[index];
+                        end
+                    end else begin
+                        requestion_interval[index] <= requestion_interval[index];
+                    end
+                end
+            end // requestion_interval_processing
+
+        end // GEN_REQUESTION_INTERVAL_BYTE_INDEX 
+    endgenerate
+
+
+
     adxl345_functional adxl345_functional_inst (
-        .CLK                    (CLK                    ),
-        .RESET                  (reset                  ),
-        .WDATA                  (S_AXI_LITE_DEV_WDATA   ),
-        .WSTRB                  (S_AXI_LITE_DEV_WSTRB   ),
-        .WADDR                  (axi_dev_awaddr[5:2]    ),
-        .RDATA                  (                       ),
-        .WVALID                 (slv_reg_wren           ),
+        .CLK                       (CLK                       ),
+        .RESET                     (reset                     ),
+        .WDATA                     (S_AXI_LITE_DEV_WDATA      ),
+        .WSTRB                     (S_AXI_LITE_DEV_WSTRB      ),
+        .WADDR                     (axi_dev_awaddr[5:2]       ),
+        .RDATA                     (                          ),
+        .WVALID                    (slv_reg_wren              ),
         
-        .SINGLE_REQUEST         (single_request         ),
-        .SINGLE_REQUEST_COMPLETE(single_request_complete),
-        .I2C_ADDRESS            (i2c_address            ),
+        .SINGLE_REQUEST            (single_request            ),
+        .SINGLE_REQUEST_COMPLETE   (single_request_complete   ),
         
-        .M_AXIS_TDATA           (                       ),
-        .M_AXIS_TKEEP           (                       ),
-        .M_AXIS_TUSER           (                       ),
-        .M_AXIS_TVALID          (                       ),
-        .M_AXIS_TLAST           (                       ),
-        .M_AXIS_TREADY          (1'b1                   ),
+        .ENABLE_INTERVAL_REQUESTION(enable_interval_requestion),
+        .REQUESTION_INTERVAL       (requestion_interval       ),
+        
+        .I2C_ADDRESS               (i2c_address               ),
+        
+        .M_AXIS_TDATA              (M_AXIS_TDATA              ),
+        .M_AXIS_TKEEP              (M_AXIS_TKEEP              ),
+        .M_AXIS_TUSER              (M_AXIS_TUSER              ),
+        .M_AXIS_TVALID             (M_AXIS_TVALID             ),
+        .M_AXIS_TLAST              (M_AXIS_TLAST              ),
+        .M_AXIS_TREADY             (M_AXIS_TREADY             ),
         // data from device
-        .S_AXIS_TDATA           (S_AXIS_TDATA           ),
-        .S_AXIS_TKEEP           (S_AXIS_TKEEP           ),
-        .S_AXIS_TUSER           (S_AXIS_TUSER           ),
-        .S_AXIS_TVALID          (S_AXIS_TVALID          ),
-        .S_AXIS_TLAST           (S_AXIS_TLAST           ),
-        .S_AXIS_TREADY          (S_AXIS_TREADY          )
+        .S_AXIS_TDATA              (S_AXIS_TDATA              ),
+        .S_AXIS_TKEEP              (S_AXIS_TKEEP              ),
+        .S_AXIS_TUSER              (S_AXIS_TUSER              ),
+        .S_AXIS_TVALID             (S_AXIS_TVALID             ),
+        .S_AXIS_TLAST              (S_AXIS_TLAST              ),
+        .S_AXIS_TREADY             (S_AXIS_TREADY             )
     );
 
 endmodule
