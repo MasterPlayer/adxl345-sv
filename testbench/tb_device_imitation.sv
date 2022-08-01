@@ -3,10 +3,10 @@
 
 
 module tb_device_imitation (
-    input  IIC_SCL_I,
-    input  IIC_SDA_I,
-    output IIC_SCL_O,
-    output IIC_SDA_O,
+    input  logic IIC_SCL_I,
+    input  logic IIC_SDA_I,
+    output logic IIC_SCL_O,
+    output logic IIC_SDA_O,
     output IRQ
 );
 
@@ -22,11 +22,35 @@ module tb_device_imitation (
         reset = 1'b0;
     end 
 
+
+    logic [0:57][0:7] register_file = '{
+        8'hE5, 8'h00, 8'h01, 8'h02, // 0
+        8'h03, 8'h04, 8'h05, 8'h06, // 1
+        8'h07, 8'h08, 8'h09, 8'h0A, // 2
+        8'h0B, 8'h0C, 8'h0D, 8'h0E, // 3
+        8'h0F, 8'h00, 8'h00, 8'h00, // 4
+        8'h00, 8'h00, 8'h00, 8'h00, // 5
+        8'h00, 8'h00, 8'h00, 8'h00, // 6
+        8'h00, 8'h00, 8'h00, 8'h00, // 7
+        8'h00, 8'h00, 8'h00, 8'h00, // 8
+        8'h00, 8'h00, 8'h00, 8'h00, // 9
+        8'h00, 8'h00, 8'h00, 8'h00, // 10
+        8'h0F, 8'h08, 8'h00, 8'h00, // 11
+        8'h00, 8'h08, 8'h00, 8'h00, // 12
+        8'h00, 8'h00, 8'h00, 8'h00, // 13
+        8'h00, 8'h00                // 14
+    };
+
     logic d_iic_scl = 1'b1;
     logic scl = 1'b0;
 
+    logic write_operation = 1'b0;
+    logic read_operation = 1'b0;
+
     typedef enum {
-        AWAIT_CMD 
+        AWAIT_CMD,
+        READ_OP ,
+        READ_ACK
 
 
     } fsm;
@@ -139,14 +163,104 @@ module tb_device_imitation (
 
     always_ff @(posedge clk) begin 
         if (valid_event) begin 
-            if (register_counter == 1) begin 
-                ptr <= shift_register;
+            if (write_operation) begin 
+                if (register_counter == 1) begin 
+                    ptr <= shift_register;
+                end else begin 
+                    ptr <= ptr;
+                end 
             end else begin 
-                ptr <= ptr;
+                case (current_state) 
+                    READ_OP : 
+                        if (valid_event) begin 
+                            ptr <= ptr + 1;
+                        end else begin 
+                            ptr <= ptr;
+                        end 
+
+                    default : 
+                        ptr <= ptr;
+                endcase // current_state
             end 
-        end else begin 
+        end else begin             
             ptr <= ptr;
         end 
+    end 
+
+    always_ff @(posedge clk) begin 
+        if (valid_event) begin 
+            if (register_counter == 0) begin 
+                write_operation <= ~shift_register[0];
+            end else begin 
+                write_operation <= write_operation;
+            end 
+        end else begin 
+            write_operation <= write_operation;
+        end 
+    end 
+
+    always_ff @(posedge clk) begin 
+        if (valid_event) begin 
+            if (register_counter == 0) begin 
+                read_operation <= shift_register[0];
+            end else begin 
+                read_operation <= read_operation;
+            end 
+        end else begin 
+            read_operation <= read_operation;
+        end 
+    end 
+
+    always_ff @(posedge clk) begin 
+        if (reset | finalize_transmission) begin 
+            current_state <= AWAIT_CMD;
+        end else begin 
+
+            case (current_state)
+                AWAIT_CMD : 
+                    if (read_operation & register_counter == 1) begin 
+                        current_state <= READ_ACK;
+                    end else begin 
+                        current_state <= current_state;
+                    end 
+
+                READ_ACK : 
+                    if (scl & (bit_counter == 0)) begin 
+                        current_state <= READ_OP;
+                    end else begin  
+                        current_state <= current_state;
+                    end 
+
+                READ_OP : 
+                    current_state <= current_state;
+
+                default : 
+                    current_state <= current_state;
+            endcase // current_state
+
+        end 
+    end 
+
+
+    always_comb begin 
+        case (current_state) 
+            READ_OP : 
+                if (bit_counter != 0) begin 
+                    IIC_SDA_O = register_file[ptr][(bit_counter-1)];
+                end else begin 
+                    IIC_SDA_O = 1'b0;
+                end 
+
+            default : 
+                IIC_SDA_O = 1'b0;
+
+        endcase // current_state
+    end 
+
+
+
+    always_comb begin 
+        IIC_SCL_O = d_iic_scl;
     end 
 
 
