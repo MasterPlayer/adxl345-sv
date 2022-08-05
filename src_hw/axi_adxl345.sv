@@ -110,6 +110,7 @@ module axi_adxl345 #(
     localparam integer OPT_MEM_ADDR_BITS_DEV = 3                                 ;
     localparam integer DATA_WIDTH            = 8                                 ;
     localparam integer USER_WIDTH            = 8                                 ;
+
     // localparam integer ADDRESS_LIMIT         = 'h3A                              ;
 
     // logic [0:15][(S_AXI_LITE_DEV_DATA_WIDTH/8)-1:0][7:0] register = '{default:'{default:'{default:0}}}   ;
@@ -395,6 +396,7 @@ module axi_adxl345 #(
         S_AXI_LITE_DEV_ARREADY = axi_dev_arready;
         S_AXI_LITE_DEV_RDATA   = axi_dev_rdata;
         S_AXI_LITE_DEV_RRESP   = axi_dev_rresp;
+
         S_AXIS_TREADY          = 1'b1;
 
     end 
@@ -414,8 +416,12 @@ module axi_adxl345 #(
         S_AXI_LITE_CFG_RVALID <= axi_rvalid_cfg;
     end 
 
-    always_ff @( posedge CLK ) begin : S_AXI_LITE_DEV_RVALID_proc
-        S_AXI_LITE_DEV_RVALID <= axi_dev_rvalid;
+    // always_ff @( posedge CLK ) begin : S_AXI_LITE_DEV_RVALID_proc
+    //     S_AXI_LITE_DEV_RVALID <= axi_dev_rvalid;
+    // end 
+
+    always_comb begin : S_AXI_LITE_DEV_RVALID_proc
+        S_AXI_LITE_DEV_RVALID = axi_dev_rvalid;
     end 
 
 
@@ -463,125 +469,127 @@ module axi_adxl345 #(
     end       
 
     always_comb begin 
-
         slv_reg_wren = axi_dev_wready & S_AXI_LITE_DEV_WVALID & axi_dev_awready & S_AXI_LITE_DEV_AWVALID;
     end
 
 
+    /* 
 
-    // generate 
+     generate 
 
-    //     for (genvar reg_index = 0; reg_index < 15; reg_index++) begin : GEN_REGISTER_INDEX
-    //         for (genvar byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index++ ) begin : GEN_BYTE_INDEX
+        for (genvar reg_index = 0; reg_index < 15; reg_index++) begin : GEN_REGISTER_INDEX
+            for (genvar byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index++ ) begin : GEN_BYTE_INDEX
     
-    //             // always_ff @(posedge CLK) begin : register_proc
-    //             //     if (~RESETN | reset)
-    //             //         register[reg_index] <= '{default:0};
-    //             //     else
-    //             //         if (slv_reg_wren) begin 
-    //             //             if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin 
-    //             //                 if ( S_AXI_LITE_DEV_WSTRB[byte_index] == 1 & write_mask_register[reg_index][byte_index]) begin 
-    //             //                     register[reg_index][byte_index] <= S_AXI_LITE_DEV_WDATA[(byte_index*8) +: 8];
-    //             //                 end 
-    //             //             end 
-    //             //         end else begin 
-    //             //         //     case (current_state) 
-    //             //         //         AWAIT_RECEIVE_DATA_ST : 
-    //             //                     if (S_AXIS_TVALID) begin 
-    //             //                         if (address[5:2] == reg_index) begin 
-    //             //                             if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index])) begin
-    //             //                                 register[reg_index][byte_index] <= S_AXIS_TDATA;
-    //             //                             end
-    //             //                         end 
-    //             //                     end 
+                always_ff @(posedge CLK) begin : register_proc
+                    if (~RESETN | reset)
+                        register[reg_index] <= '{default:0};
+                    else
+                        if (slv_reg_wren) begin 
+                            if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin 
+                                if ( S_AXI_LITE_DEV_WSTRB[byte_index] == 1 & write_mask_register[reg_index][byte_index]) begin 
+                                    register[reg_index][byte_index] <= S_AXI_LITE_DEV_WDATA[(byte_index*8) +: 8];
+                                end 
+                            end 
+                        end else begin 
+                        //     case (current_state) 
+                        //         AWAIT_RECEIVE_DATA_ST : 
+                                    if (S_AXIS_TVALID) begin 
+                                        if (address[5:2] == reg_index) begin 
+                                            if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index])) begin
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                            end
+                                        end 
+                                    end 
                                 
                             
-    //                         // RX_INT_SOURCE_ST : 
-    //                         //     if (S_AXIS_TVALID) 
-    //                         //         if (address[5:2] == reg_index)
-    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-    //                         //                 if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index]))
-    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-    //                         //             end 
+                            RX_INT_SOURCE_ST : 
+                                if (S_AXIS_TVALID) 
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0] & (~need_update_reg[reg_index][byte_index]))
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
 
-    //                         // RX_ACT_TAP_STATUS_ST: 
-    //                         //     if (S_AXIS_TVALID)
-    //                         //         if (address[5:2] == reg_index)
-    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-    //                         //                 if (byte_index == address[1:0])
-    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-    //                         //             end 
+                            RX_ACT_TAP_STATUS_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
 
-    //                         // RX_INTR_DATA_ST: 
-    //                         //     if (S_AXIS_TVALID)
-    //                         //         if (address[5:2] == reg_index)
-    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-    //                         //                 if (byte_index == address[1:0])
-    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-    //                         //             end 
+                            RX_INTR_DATA_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
 
-    //                         // RX_WM_FIFO_STS_ST: 
-    //                         //     if (S_AXIS_TVALID)
-    //                         //         if (address[5:2] == reg_index)
-    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-    //                         //                 if (byte_index == address[1:0])
-    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-    //                         //             end 
+                            RX_WM_FIFO_STS_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
 
-    //                         // RX_WM_DATA_ST: 
-    //                         //     if (S_AXIS_TVALID)
-    //                         //         if (address[5:2] == reg_index)
-    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-    //                         //                 if (byte_index == address[1:0])
-    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-    //                         //             end 
+                            RX_WM_DATA_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
 
-    //                         // RX_CALIB_DATA_ST: 
-    //                         //     if (S_AXIS_TVALID)
-    //                         //         if (address[5:2] == reg_index)
-    //                         //             for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
-    //                         //                 if (byte_index == address[1:0])
-    //                         //                     register[reg_index][byte_index] <= S_AXIS_TDATA;
-    //                         //             end 
+                            RX_CALIB_DATA_ST: 
+                                if (S_AXIS_TVALID)
+                                    if (address[5:2] == reg_index)
+                                        for ( byte_index = 0; byte_index <= 3; byte_index = byte_index + 1 ) begin
+                                            if (byte_index == address[1:0])
+                                                register[reg_index][byte_index] <= S_AXIS_TDATA;
+                                        end 
 
 
-    //                     //     default: 
-    //                     //         register <= register;
+                            default: 
+                                register <= register;
 
-    //                     // endcase // current_state
-    //             //     end 
-    //             // end    
+                        endcase // current_state
+                    end 
+                end    
 
-    //             // always_ff @(posedge CLK) begin : need_update_reg_proc 
-    //             //     if (~RESETN | reset)
-    //             //         need_update_reg[reg_index] <= '{default:0};
-    //             //     else
-    //             //         if (slv_reg_wren) begin
-    //             //             if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin
-    //             //                 for (byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1) begin
-    //             //                     if (S_AXI_LITE_DEV_WSTRB[byte_index]) begin 
-    //             //                         need_update_reg[reg_index][byte_index] <= write_mask_register[reg_index][byte_index];
-    //             //                     end 
-    //             //                 end 
-    //             //             end 
-    //             //         end else begin 
-    //             //             case (current_state) 
-    //             //                 SEND_WRITE_CMD_ST  : 
-    //             //                     if (~out_awfull)
-    //             //                        if (write_cmd_word_cnt == 4'h2)
-    //             //                             if (address[5:2] == reg_index) 
-    //             //                                 need_update_reg[reg_index][address[1:0]] <= 1'b0;
-    //             //                 default : 
-    //             //                     need_update_reg[reg_index][address[1:0]] <= need_update_reg[reg_index][address[1:0]];
+                always_ff @(posedge CLK) begin : need_update_reg_proc 
+                    if (~RESETN | reset)
+                        need_update_reg[reg_index] <= '{default:0};
+                    else
+                        if (slv_reg_wren) begin
+                            if (axi_dev_awaddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] == reg_index) begin
+                                for (byte_index = 0; byte_index <= (S_AXI_LITE_DEV_DATA_WIDTH/8)-1; byte_index = byte_index + 1) begin
+                                    if (S_AXI_LITE_DEV_WSTRB[byte_index]) begin 
+                                        need_update_reg[reg_index][byte_index] <= write_mask_register[reg_index][byte_index];
+                                    end 
+                                end 
+                            end 
+                        end else begin 
+                            case (current_state) 
+                                SEND_WRITE_CMD_ST  : 
+                                    if (~out_awfull)
+                                       if (write_cmd_word_cnt == 4'h2)
+                                            if (address[5:2] == reg_index) 
+                                                need_update_reg[reg_index][address[1:0]] <= 1'b0;
+                                default : 
+                                    need_update_reg[reg_index][address[1:0]] <= need_update_reg[reg_index][address[1:0]];
 
-    //             //             endcase // current_state
-    //             //         end 
+                            endcase // current_state
+                        end 
 
-    //             end    
+                end    
 
-    //         end 
+            end 
 
-    // endgenerate
+    endgenerate
+
+    */
 
     always_ff @( posedge CLK ) begin : axi_dev_bvalid_proc
         if (~RESETN)
@@ -649,8 +657,8 @@ module axi_adxl345 #(
     end 
 
 
-    always_ff @(posedge CLK) begin
-        case ( axi_dev_araddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] )
+    // always_ff @(posedge CLK) begin
+            // case ( axi_dev_araddr[ADDR_LSB_DEV+OPT_MEM_ADDR_BITS_DEV:ADDR_LSB_DEV] )
             // 4'h0    : reg_data_out <= register[ 0];
             // 4'h1    : reg_data_out <= register[ 1];
             // 4'h2    : reg_data_out <= register[ 2];
@@ -667,13 +675,17 @@ module axi_adxl345 #(
             // 4'hD    : reg_data_out <= register[13];
             // 4'hE    : reg_data_out <= register[14];
             // 4'hF    : reg_data_out <= register[15];
-            default : reg_data_out <= '{default:0};
-        endcase
-    end
+            // default : reg_data_out <= '{default:0};
+        // endcase
+    // end
 
-    always_ff @( posedge CLK ) begin
-        if (slv_reg_rden) 
-            axi_dev_rdata <= reg_data_out;     // register read data
+    // always_ff @( posedge CLK ) begin
+    //     if (slv_reg_rden) 
+    //         axi_dev_rdata <= reg_data_out;     // register read data
+    // end    
+
+    always_comb begin
+        axi_dev_rdata = reg_data_out;     // register read data
     end    
 
 
@@ -2589,11 +2601,14 @@ module axi_adxl345 #(
     adxl345_functional adxl345_functional_inst (
         .CLK                       (CLK                       ),
         .RESET                     (reset                     ),
+        
         .WDATA                     (S_AXI_LITE_DEV_WDATA      ),
         .WSTRB                     (S_AXI_LITE_DEV_WSTRB      ),
         .WADDR                     (axi_dev_awaddr[5:2]       ),
-        .RDATA                     (                          ),
         .WVALID                    (slv_reg_wren              ),
+        
+        .RADDR                     (axi_dev_araddr[5:2]       ),
+        .RDATA                     (reg_data_out              ),
         
         .SINGLE_REQUEST            (single_request            ),
         .SINGLE_REQUEST_COMPLETE   (single_request_complete   ),

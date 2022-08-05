@@ -9,6 +9,8 @@ module adxl345_functional (
     input  logic [ 3:0] WSTRB                     ,
     input  logic [ 3:0] WADDR                     ,
     input  logic        WVALID                    ,
+
+    input  logic [ 3:0] RADDR                     ,
     output logic [31:0] RDATA                     ,
     // control
     input  logic [ 6:0] I2C_ADDRESS               ,
@@ -33,13 +35,6 @@ module adxl345_functional (
 );
 
     localparam [7:0] ADDRESS_LIMIT = 8'h3A;
-
-    logic [ 7:0] doutb               ;
-    logic [ 5:0] addrb = '{default:0};
-    logic [ 7:0] dinb                ;
-    logic        web   = 'b0         ;
-    logic [ 3:0] wea                 ;
-    logic [31:0] dina                ;
 
     logic [0:15][3:0] need_update_reg = '{
         '{0, 0, 0, 0}, // 0x00
@@ -100,7 +95,7 @@ module adxl345_functional (
 
     logic [7:0] out_din_data = '{default:0};
     logic [0:0] out_din_keep = '{default:0};
-    logic [7:0] out_din_user               ;
+    logic [7:0] out_din_user = '{default:0};
     logic       out_din_last = 1'b0        ;
     logic       out_wren     = 1'b0        ;
     logic       out_full                   ;
@@ -110,6 +105,24 @@ module adxl345_functional (
     logic [7:0] address_ptr  = '{default:0};
 
 
+    // write memory signal group : 32 bit input, 8 bit output;
+    logic [ 3:0] write_memory_addra = '{default:0};
+    logic [ 7:0] write_memory_doutb               ;
+    logic [ 5:0] write_memory_addrb = '{default:0};
+    logic [31:0] write_memory_dina  = '{default:0};
+    logic [ 3:0] write_memory_wea   = '{default:0};
+
+    // read memory signal group : 8 bit input 32 bit output;
+    logic [ 5:0] read_memory_addra = '{default:0};
+    logic [31:0] read_memory_doutb               ;
+    logic [ 3:0] read_memory_addrb = '{default:0};
+    logic [ 7:0] read_memory_dina  = '{default:0};
+    logic        read_memory_wea                 ;
+
+
+    always_comb begin 
+        RDATA = read_memory_doutb;
+    end 
 
     generate
     
@@ -129,24 +142,26 @@ module adxl345_functional (
 
 
 
-    always_ff @(posedge CLK) begin 
-        wea <= {4{WVALID}} & write_mask_register[WADDR] & WSTRB;
+    always_ff @(posedge CLK) begin : write_memory_wea_processing 
+        write_memory_wea <= {4{WVALID}} & write_mask_register[WADDR] & WSTRB;
     end 
 
 
 
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : write_memory_dina_processing  
         if (WVALID) begin 
-            dina <= WDATA;
+            write_memory_dina <= WDATA;
         end else begin 
-            dina <= dina;
+            write_memory_dina <= write_memory_dina;
         end     
     end 
 
-
+    always_comb begin 
+        write_memory_addra = WADDR;
+    end 
 
     always_ff @(posedge CLK) begin 
-        if (|wea) begin 
+        if (|write_memory_wea) begin 
             need_update_flaq <= 1'b1;
         end else begin 
             // to do : deassert according fsm
@@ -203,12 +218,12 @@ module adxl345_functional (
     end 
 
 
-    xpm_memory_tdpram #(
+
+    xpm_memory_sdpram #(
         .ADDR_WIDTH_A           (4              ), // DECIMAL
         .ADDR_WIDTH_B           (6              ), // DECIMAL
         .AUTO_SLEEP_TIME        (0              ), // DECIMAL
         .BYTE_WRITE_WIDTH_A     (8              ), // DECIMAL
-        .BYTE_WRITE_WIDTH_B     (8              ), // DECIMAL
         .CASCADE_HEIGHT         (0              ), // DECIMAL
         .CLOCKING_MODE          ("common_clock" ), // String
         .ECC_MODE               ("no_ecc"       ), // String
@@ -218,93 +233,127 @@ module adxl345_functional (
         .MEMORY_PRIMITIVE       ("auto"         ), // String
         .MEMORY_SIZE            (512            ), // DECIMAL
         .MESSAGE_CONTROL        (0              ), // DECIMAL
-        .READ_DATA_WIDTH_A      (32             ), // DECIMAL
         .READ_DATA_WIDTH_B      (8              ), // DECIMAL
-        .READ_LATENCY_A         (2              ), // DECIMAL
         .READ_LATENCY_B         (2              ), // DECIMAL
-        .READ_RESET_VALUE_A     ("0"            ), // String
         .READ_RESET_VALUE_B     ("0"            ), // String
         .RST_MODE_A             ("SYNC"         ), // String
         .RST_MODE_B             ("SYNC"         ), // String
         .SIM_ASSERT_CHK         (0              ), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
         .USE_EMBEDDED_CONSTRAINT(0              ), // DECIMAL
         .USE_MEM_INIT           (1              ), // DECIMAL
-        .USE_MEM_INIT_MMI       (0              ), // DECIMAL
         .WAKEUP_TIME            ("disable_sleep"), // String
         .WRITE_DATA_WIDTH_A     (32             ), // DECIMAL
-        .WRITE_DATA_WIDTH_B     (8              ), // DECIMAL
-        .WRITE_MODE_A           ("no_change"    ), // String
-        .WRITE_MODE_B           ("no_change"    ), // String
-        .WRITE_PROTECT          (1              )  // DECIMAL
-    ) xpm_memory_tdpram_inst (
-        .dbiterra      (     ), // 1-bit output: Status signal to indicate double bit error occurrence
-        .dbiterrb      (     ), // 1-bit output: Status signal to indicate double bit error occurrence
-        .douta         (RDATA), // READ_DATA_WIDTH_A-bit output: Data output for port A read operations.
-        .doutb         (doutb), // READ_DATA_WIDTH_B-bit output: Data output for port B read operations.
-        .sbiterra      (     ), // 1-bit output: Status signal to indicate single bit error occurrence
-        .sbiterrb      (     ), // 1-bit output: Status signal to indicate single bit error occurrence
-        .addra         (WADDR), // ADDR_WIDTH_A-bit input: Address for port A write and read operations.
-        .addrb         (addrb), // ADDR_WIDTH_B-bit input: Address for port B write and read operations.
-        .clka          (CLK  ), // 1-bit input: Clock signal for port A. Also clocks port B when
-        .clkb          (CLK  ), // 1-bit input: Clock signal for port B when parameter CLOCKING_MODE is
-        .dina          (dina ), // WRITE_DATA_WIDTH_A-bit input: Data input for port A write operations.
-        .dinb          (dinb ), // WRITE_DATA_WIDTH_B-bit input: Data input for port B write operations.
-        .ena           ('b1  ), // 1-bit input: Memory enable signal for port A. Must be high on clock
-        .enb           ('b1  ), // 1-bit input: Memory enable signal for port B. Must be high on clock
-        .injectdbiterra('b0  ), // 1-bit input: Controls double bit error injection on input data when
-        .injectdbiterrb('b0  ), // 1-bit input: Controls double bit error injection on input data when
-        .injectsbiterra('b0  ), // 1-bit input: Controls single bit error injection on input data when
-        .injectsbiterrb('b0  ), // 1-bit input: Controls single bit error injection on input data when
-        .regcea        ('b1  ), // 1-bit input: Clock Enable for the last register stage on the output
-        .regceb        ('b1  ), // 1-bit input: Clock Enable for the last register stage on the output
-        .rsta          (RESET), // 1-bit input: Reset signal for the final port A output register stage.
-        .rstb          (RESET), // 1-bit input: Reset signal for the final port B output register stage.
-        .sleep         ('b0  ), // 1-bit input: sleep signal to enable the dynamic power saving feature.
-        .wea           (wea  ), // WRITE_DATA_WIDTH_A/BYTE_WRITE_WIDTH_A-bit input: Write enable vector
-        .web           (web  )  // WRITE_DATA_WIDTH_B/BYTE_WRITE_WIDTH_B-bit input: Write enable vector
+        .WRITE_MODE_B           ("no_change"    )  // String
+    ) xpm_memory_sdpram_write_inst (
+        .dbiterrb      (                  ), // 1-bit output: Status signal to indicate double bit error occurrence
+        .sbiterrb      (                  ), // 1-bit output: Status signal to indicate single bit error occurrence
+        .doutb         (write_memory_doutb), // READ_DATA_WIDTH_B-bit output: Data output for port B read operations.
+        .addra         (write_memory_addra), // ADDR_WIDTH_A-bit input: Address for port A write operations.
+        .addrb         (write_memory_addrb), // ADDR_WIDTH_B-bit input: Address for port B read operations.
+        .clka          (CLK               ), // 1-bit input: Clock signal for port A. Also clocks port B when
+        .clkb          (CLK               ), // 1-bit input: Clock signal for port B when parameter CLOCKING_MODE is
+        .dina          (write_memory_dina ), // WRITE_DATA_WIDTH_A-bit input: Data input for port A write operations.
+        .ena           (1'b1              ), // 1-bit input: Memory enable signal for port A. Must be high on clock
+        .enb           (1'b1              ), // 1-bit input: Memory enable signal for port B. Must be high on clock
+        .injectdbiterra(1'b0              ), // 1-bit input: Controls double bit error injection on input data when
+        .injectsbiterra(1'b0              ), // 1-bit input: Controls single bit error injection on input data when
+        .regceb        (1'b1              ), // 1-bit input: Clock Enable for the last register stage on the output
+        .rstb          (RESET             ), // 1-bit input: Reset signal for the final port B output register stage.
+        .sleep         (1'b0              ), // 1-bit input: sleep signal to enable the dynamic power saving feature.
+        .wea           (write_memory_wea  )  // WRITE_DATA_WIDTH_A/BYTE_WRITE_WIDTH_A-bit input: Write enable vector
     );
 
 
+
+    xpm_memory_sdpram #(
+        .ADDR_WIDTH_A           (6              ), // DECIMAL
+        .ADDR_WIDTH_B           (4              ), // DECIMAL
+        .AUTO_SLEEP_TIME        (0              ), // DECIMAL
+        .BYTE_WRITE_WIDTH_A     (8              ), // DECIMAL
+        .CASCADE_HEIGHT         (0              ), // DECIMAL
+        .CLOCKING_MODE          ("common_clock" ), // String
+        .ECC_MODE               ("no_ecc"       ), // String
+        .MEMORY_INIT_FILE       ("none"         ), // String
+        .MEMORY_INIT_PARAM      ("0"            ), // String
+        .MEMORY_OPTIMIZATION    ("true"         ), // String
+        .MEMORY_PRIMITIVE       ("auto"         ), // String
+        .MEMORY_SIZE            (512            ), // DECIMAL
+        .MESSAGE_CONTROL        (0              ), // DECIMAL
+        .READ_DATA_WIDTH_B      (32             ), // DECIMAL
+        .READ_LATENCY_B         (1              ), // DECIMAL
+        .READ_RESET_VALUE_B     ("0"            ), // String
+        .RST_MODE_A             ("SYNC"         ), // String
+        .RST_MODE_B             ("SYNC"         ), // String
+        .SIM_ASSERT_CHK         (0              ), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_EMBEDDED_CONSTRAINT(0              ), // DECIMAL
+        .USE_MEM_INIT           (1              ), // DECIMAL
+        .WAKEUP_TIME            ("disable_sleep"), // String
+        .WRITE_DATA_WIDTH_A     (8              ), // DECIMAL
+        .WRITE_MODE_B           ("no_change"    )  // String
+    ) xpm_memory_sdpram_read_inst (
+        .dbiterrb      (                 ), // 1-bit output: Status signal to indicate double bit error occurrence
+        .sbiterrb      (                 ), // 1-bit output: Status signal to indicate single bit error occurrence
+        .doutb         (read_memory_doutb), // READ_DATA_WIDTH_B-bit output: Data output for port B read operations.
+        .addra         (read_memory_addra), // ADDR_WIDTH_A-bit input: Address for port A write operations.
+        .addrb         (read_memory_addrb), // ADDR_WIDTH_B-bit input: Address for port B read operations.
+        .clka          (CLK              ), // 1-bit input: Clock signal for port A. Also clocks port B when
+        .clkb          (CLK              ), // 1-bit input: Clock signal for port B when parameter CLOCKING_MODE is
+        .dina          (read_memory_dina ), // WRITE_DATA_WIDTH_A-bit input: Data input for port A write operations.
+        .ena           (1'b1             ), // 1-bit input: Memory enable signal for port A. Must be high on clock
+        .enb           (1'b1             ), // 1-bit input: Memory enable signal for port B. Must be high on clock
+        .injectdbiterra(1'b0             ), // 1-bit input: Controls double bit error injection on input data when
+        .injectsbiterra(1'b0             ), // 1-bit input: Controls single bit error injection on input data when
+        .regceb        (1'b1             ), // 1-bit input: Clock Enable for the last register stage on the output
+        .rstb          (RESET            ), // 1-bit input: Reset signal for the final port B output register stage.
+        .sleep         (1'b0             ), // 1-bit input: sleep signal to enable the dynamic power saving feature.
+        .wea           (read_memory_wea  )  // WRITE_DATA_WIDTH_A/BYTE_WRITE_WIDTH_A-bit input: Write enable vector
+    );
+
+
+    always_comb begin 
+        read_memory_addrb = RADDR;
+    end 
+
     // address : sets before receive data, implies on MEM
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : read_memory_addra_processing 
         case (current_state)
             REQ_TX_READ_DATA_ST : 
-                addrb <= address_ptr;
+                read_memory_addra <= address_ptr;
 
             REQ_RX_READ_DATA_ST : 
-                if (web) begin 
-                    addrb <= addrb + 1;
+                if (read_memory_wea) begin 
+                    read_memory_addra <= read_memory_addra + 1;
                 end else begin 
-                    addrb <= addrb;
+                    read_memory_addra <= read_memory_addra;
                 end 
 
             default : 
-                addrb <= addrb;
+                read_memory_addra <= read_memory_addra;
 
         endcase
     end 
 
 
-    // readed data from interface S_AXIS_ to portb
-    always_ff @(posedge CLK) begin 
+    // readed data from interface S_AXIS_ to porta for readmemory
+    always_ff @(posedge CLK) begin : read_memory_wea_processing
         case (current_state)
             REQ_RX_READ_DATA_ST : 
-                web <= S_AXIS_TVALID;
+                read_memory_wea <= S_AXIS_TVALID;
 
             default : 
-                web <= 1'b0;
+                read_memory_wea <= 1'b0;
         endcase // current_state
     end 
 
     
     
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : read_memory_dina_processing 
         case (current_state)
             REQ_RX_READ_DATA_ST : 
-                dinb <= S_AXIS_TDATA;
+                read_memory_dina <= S_AXIS_TDATA;
 
             default 
-                dinb <= dinb;
+                read_memory_dina <= read_memory_dina;
         endcase // current_state
     end 
 

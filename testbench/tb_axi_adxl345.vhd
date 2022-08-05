@@ -20,7 +20,7 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
     constant   S_AXI_LITE_DEV_DATA_WIDTH  : integer                         := 32                           ;
     constant   S_AXI_LITE_DEV_ADDR_WIDTH  : integer                         := 8                            ;
     constant   DEFAULT_DEVICE_ADDRESS     : std_logic_Vector ( 6 downto 0 ) := "1010011"                    ;
-    constant   DEFAULT_REQUESTION_INTERVAL   : integer                         := 1000                         ;
+    constant   DEFAULT_REQUESTION_INTERVAL: integer                         := 1000                         ;
     constant   DEFAULT_CALIBRATION_LIMIT  : integer                         := 8                            ;
     constant   S_AXI_LITE_CFG_DATA_WIDTH  : integer                         := 32                           ;
     constant   S_AXI_LITE_CFG_ADDR_WIDTH  : integer                         := 8                            ;
@@ -118,25 +118,25 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
     signal  cfg_rresp                   :           std_logic_vector (                               1 downto 0 )                      ;
     signal  cfg_rvalid                  :           std_logic                                                                          ;
     signal  cfg_rready                  :           std_logic                                                     := '0'               ;
-    signal  dev_awaddr                  :           std_logic_vector (     S_AXI_LITE_DEV_ADDR_WIDTH-1 downto 0 ) := (others => '0')   ;
-    signal  dev_awprot                  :           std_logic_vector (                               2 downto 0 ) := (others => '0')   ;
-    signal  dev_awvalid                 :           std_logic                                                     := '0'               ;
-    signal  dev_awready                 :           std_logic                                                                          ;
-    signal  dev_wdata                   :           std_logic_vector (     S_AXI_LITE_DEV_DATA_WIDTH-1 downto 0 ) := (others => '0')   ;
-    signal  dev_wstrb                   :           std_logic_vector ( (S_AXI_LITE_DEV_DATA_WIDTH/8)-1 downto 0 ) := (others => '0')   ;
-    signal  dev_wvalid                  :           std_logic                                                     := '0'               ;
-    signal  dev_wready                  :           std_logic                                                                          ;
-    signal  dev_bresp                   :           std_logic_vector (                               1 downto 0 )                      ;
-    signal  dev_bvalid                  :           std_logic                                                                          ;
-    signal  dev_bready                  :           std_logic                                                     := '0'               ;
-    signal  dev_araddr                  :           std_logic_vector (     S_AXI_LITE_DEV_ADDR_WIDTH-1 downto 0 ) := (others => '0')   ;
-    signal  dev_arprot                  :           std_logic_vector (                               2 downto 0 ) := (others => '0')   ;
-    signal  dev_arvalid                 :           std_logic                                                     := '0'               ;
-    signal  dev_arready                 :           std_logic                                                                          ;
-    signal  dev_rdata                   :           std_logic_vector (     S_AXI_LITE_DEV_DATA_WIDTH-1 downto 0 )                      ;
-    signal  dev_rresp                   :           std_logic_vector (                               1 downto 0 )                      ;
-    signal  dev_rvalid                  :           std_logic                                                                          ;
-    signal  dev_rready                  :           std_logic                                                     := '0'               ;
+    signal  DEV_AWADDR                  :           std_logic_vector (     S_AXI_LITE_DEV_ADDR_WIDTH-1 downto 0 ) := (others => '0')   ;
+    signal  DEV_AWPROT                  :           std_logic_vector (                               2 downto 0 ) := (others => '0')   ;
+    signal  DEV_AWVALID                 :           std_logic                                                     := '0'               ;
+    signal  DEV_AWREADY                 :           std_logic                                                                          ;
+    signal  DEV_WDATA                   :           std_logic_vector (     S_AXI_LITE_DEV_DATA_WIDTH-1 downto 0 ) := (others => '0')   ;
+    signal  DEV_WSTRB                   :           std_logic_vector ( (S_AXI_LITE_DEV_DATA_WIDTH/8)-1 downto 0 ) := (others => '0')   ;
+    signal  DEV_WVALID                  :           std_logic                                                     := '0'               ;
+    signal  DEV_WREADY                  :           std_logic                                                                          ;
+    signal  DEV_BRESP                   :           std_logic_vector (                               1 downto 0 )                      ;
+    signal  DEV_BVALID                  :           std_logic                                                                          ;
+    signal  DEV_BREADY                  :           std_logic                                                     := '0'               ;
+    signal  DEV_ARADDR                  :           std_logic_vector (     S_AXI_LITE_DEV_ADDR_WIDTH-1 downto 0 ) := (others => '0')   ;
+    signal  DEV_ARPROT                  :           std_logic_vector (                               2 downto 0 ) := (others => '0')   ;
+    signal  DEV_ARVALID                 :           std_logic                                                     := '0'               ;
+    signal  DEV_ARREADY                 :           std_logic                                                                          ;
+    signal  DEV_RDATA                   :           std_logic_vector (     S_AXI_LITE_DEV_DATA_WIDTH-1 downto 0 )                      ;
+    signal  DEV_RRESP                   :           std_logic_vector (                               1 downto 0 )                      ;
+    signal  DEV_RVALID                  :           std_logic                                                                          ;
+    signal  DEV_RREADY                  :           std_logic                                                     := '0'               ;
     signal  m_axis_tdata                :           std_logic_vector (                               7 downto 0 )                      ;
     signal  m_axis_tkeep                :           std_logic_vector (                               0 downto 0 )                      ;
     signal  m_axis_tuser                :           std_logic_vector (                               7 downto 0 )                      ;
@@ -359,12 +359,6 @@ begin
                 when 914228    => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF00"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
                 when 914229    => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF00"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
-
-                --when   2300     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                --when   2301     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                --when   2302     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '0'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-
                 when others     => cfg_awaddr <= cfg_awaddr; cfg_awprot <= cfg_awprot; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
             end case;
         end if;
@@ -373,21 +367,24 @@ begin
 
 
 
-    --devoce_write_processing : process(CLK)
-    --begin
-    --    if CLK'event AND CLK = '1' then 
-    --        case i is 
+    device_write_processing : process(CLK)
+    begin
+        if CLK'event AND CLK = '1' then 
+            case i is 
 
-    --            when   500000     => dev_awaddr <= x"00"; dev_awvalid <= '1'; dev_wdata <= x"000000F0"; dev_wstrb <= x"1"; dev_wvalid <= '1'; dev_bready <= '1';
-    --            when   500001     => dev_awaddr <= x"00"; dev_awvalid <= '1'; dev_wdata <= x"000000F0"; dev_wstrb <= x"1"; dev_wvalid <= '1'; dev_bready <= '1';
-    --            when   500002     => dev_awaddr <= x"00"; dev_awvalid <= '0'; dev_wdata <= x"000000F0"; dev_wstrb <= x"1"; dev_wvalid <= '0'; dev_bready <= '1';
+                when  1000000   => DEV_AWADDR <= x"00"; DEV_AWVALID <= '1'; DEV_WDATA <= x"000000F0"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  1000001   => DEV_AWADDR <= x"00"; DEV_AWVALID <= '1'; DEV_WDATA <= x"000000F0"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  1000002   => DEV_AWADDR <= x"00"; DEV_AWVALID <= '0'; DEV_WDATA <= x"000000F0"; DEV_WSTRB <= x"1"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+
+                when  1000010   => DEV_AWADDR <= x"1C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFEFDFC"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  1000011   => DEV_AWADDR <= x"1C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFEFDFC"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  1000012   => DEV_AWADDR <= x"1C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FFFEFDFC"; DEV_WSTRB <= x"F"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
 
-
-    --            when others     => dev_awaddr <= dev_awaddr; dev_awvalid <= '0'; dev_wdata <= (others => '0'); dev_wstrb <= dev_wstrb; dev_wvalid <= '0'; dev_bready <= '0';
-    --        end case;
-    --    end if;
-    --end process;
+                when others     => DEV_AWADDR <= DEV_AWADDR; DEV_AWVALID <= '0'; DEV_WDATA <= (others => '0'); DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
+            end case;
+        end if;
+    end process;
 
 
 
@@ -400,6 +397,10 @@ begin
                 when 500000   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
                 when 500001   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
                 when 500002   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '0'; DEV_RREADY <= '1';
+
+                when 500010   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
+                when 500011   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
+                when 500012   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '0'; DEV_RREADY <= '1';
 
                 when others => DEV_ARADDR <= DEV_ARADDR; DEV_ARPROT <= DEV_ARPROT; DEV_ARVALID <= '0'; DEV_RREADY <= '0';
             end case;
