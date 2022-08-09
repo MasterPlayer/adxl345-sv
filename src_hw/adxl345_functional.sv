@@ -34,7 +34,9 @@ module adxl345_functional (
     output logic        S_AXIS_TREADY
 );
 
-    localparam [7:0] ADDRESS_LIMIT = 8'h3A;
+    localparam [7:0] ADDRESS_LIMIT       = 8'h3A;
+    localparam [7:0] ADDRESS_WRITE_BEGIN = 8'h1D;
+    localparam [7:0] ADDRESS_WRITE_END   = 8'h38;
 
     logic [0:15][3:0] need_update_reg = '{
         '{0, 0, 0, 0}, // 0x00
@@ -78,9 +80,15 @@ module adxl345_functional (
 
     typedef enum {
         IDLE_ST             , // await new action
+        // if request data flaq
         REQ_TX_ADDR_PTR_ST  , // send address pointer 
         REQ_TX_READ_DATA_ST , // send read request for reading 0x39 data bytes 
         REQ_RX_READ_DATA_ST , // await data from start to tlast signal 
+        // if need update flaq asserted
+        UPD_CHK_FLAQ_ST         ,
+        UPD_TX_DATA_ST          , 
+        UPD_INCREMENT_ADDR_ST   ,
+
         WAIT_ST              
     } fsm;
 
@@ -119,16 +127,26 @@ module adxl345_functional (
     logic [ 7:0] read_memory_dina  = '{default:0};
     logic        read_memory_wea                 ;
 
+    logic [3:0] write_memory_hi;
+    logic [1:0] write_memory_lo;
 
-    always_comb begin 
+    always_comb begin : RDATA_processing 
         RDATA = read_memory_doutb;
+    end 
+
+    always_comb begin : write_memory_hi_processing 
+        write_memory_hi = write_memory_addrb[5:2];
+    end 
+
+    always_comb begin : write_memory_lo_processing 
+        write_memory_lo = write_memory_addrb[1:0];
     end 
 
     generate
     
         for (genvar index = 0; index < 4; index++) begin
             
-            always_ff @(posedge CLK) begin
+            always_ff @(posedge CLK) begin : need_update_reg_processing
                 if (WVALID & WSTRB[index]) begin
                     need_update_reg[WADDR][index] <= write_mask_register[WADDR][index];
                 end else begin
@@ -156,7 +174,7 @@ module adxl345_functional (
         end     
     end 
 
-    always_comb begin 
+    always_comb begin : write_memory_addra_processing
         write_memory_addra = WADDR;
     end 
 
@@ -165,7 +183,13 @@ module adxl345_functional (
             need_update_flaq <= 1'b1;
         end else begin 
             // to do : deassert according fsm
-            need_update_flaq <= need_update_flaq;
+            case (current_state)
+                UPD_CHK_FLAQ_ST : 
+                    need_update_flaq <= 1'b0;
+
+                default : 
+                    need_update_flaq <= need_update_flaq;
+            endcase // current_state
         end 
     end 
 
@@ -176,6 +200,19 @@ module adxl345_functional (
         request_flaq <= SINGLE_REQUEST | requestion_interval_assigned;
     end 
 
+
+    always_ff @(posedge CLK) begin : write_memory_addrb_processing 
+        case (current_state)
+            IDLE_ST : 
+                write_memory_addrb <= ADDRESS_WRITE_BEGIN;
+
+            UPD_INCREMENT_ADDR_ST : 
+                write_memory_addrb <= write_memory_addrb + 1;
+
+            default : 
+                write_memory_addrb <= write_memory_addrb;
+        endcase // current_state
+    end 
 
 
     always_ff @(posedge CLK) begin : requestion_interval_counter_processing 
@@ -396,6 +433,9 @@ module adxl345_functional (
             REQ_TX_READ_DATA_ST : 
                 out_din_user[0] <= 1'b1; // cmd for reading data from dev
 
+            UPD_TX_DATA_ST : 
+                out_din_user[0] <= 1'b0;
+
             default : 
                 out_din_user[0] <= out_din_user[0];
         endcase // current_state
@@ -415,6 +455,14 @@ module adxl345_functional (
             REQ_TX_READ_DATA_ST : 
                 out_din_data <= ADDRESS_LIMIT;
 
+            UPD_TX_DATA_ST : 
+                case (word_counter)
+                    4'h0 : out_din_data <= 8'h01;
+                    4'h1 : out_din_data <= write_memory_addrb;
+                    4'h2 : out_din_data <= write_memory_doutb;
+                    default : out_din_data <= out_din_data;
+                endcase // word_counter
+
             default : 
                 out_din_data <= out_din_data;
         endcase // current_state
@@ -427,6 +475,14 @@ module adxl345_functional (
                 case (word_counter) 
                     4'h0    : out_din_last <= 1'b0;
                     4'h1    : out_din_last <= 1'b1;
+                    default : out_din_last <= out_din_last;
+                endcase // word_counter
+
+            UPD_TX_DATA_ST : 
+                case (word_counter) 
+                    4'h0    : out_din_last <= 1'b0;
+                    4'h1    : out_din_last <= 1'b0;
+                    4'h2    : out_din_last <= 1'b1;
                     default : out_din_last <= out_din_last;
                 endcase // word_counter
 
@@ -454,6 +510,13 @@ module adxl345_functional (
                     out_wren <= 1'b1;
                 end 
 
+            UPD_TX_DATA_ST: 
+                if (!out_awfull) begin 
+                    out_wren <= 1'b1;
+                end else begin 
+                    out_wren <= 1'b0;
+                end 
+
             default : 
                 out_wren <= 1'b0;
 
@@ -467,11 +530,15 @@ module adxl345_functional (
             current_state <= IDLE_ST;
         end else begin 
             case (current_state) 
-                IDLE_ST             :  
-                    if (request_flaq) begin 
-                        current_state <= REQ_TX_ADDR_PTR_ST;
+                IDLE_ST             :
+                    if (need_update_reg) begin 
+                        current_state <= UPD_CHK_FLAQ_ST;
                     end else begin 
-                        current_state <= current_state;
+                        if (request_flaq) begin 
+                            current_state <= REQ_TX_ADDR_PTR_ST;
+                        end else begin 
+                            current_state <= current_state;
+                        end 
                     end 
 
                 REQ_TX_ADDR_PTR_ST  :
@@ -499,6 +566,31 @@ module adxl345_functional (
                         current_state <= current_state;
                     end 
 
+                UPD_CHK_FLAQ_ST : 
+                    if (need_update_reg[write_memory_hi][write_memory_lo]) begin 
+                        current_state <= UPD_TX_DATA_ST;
+                    end else begin 
+                        current_state <= UPD_INCREMENT_ADDR_ST;
+                    end 
+
+                UPD_TX_DATA_ST :
+                    if (!out_awfull) begin 
+                        if (word_counter == 4'h2) begin 
+                            current_state <= UPD_INCREMENT_ADDR_ST;
+                        end else begin 
+                            current_state <= current_state;
+                        end 
+                    end else begin 
+                        current_state <= current_state;
+                    end 
+
+                UPD_INCREMENT_ADDR_ST : 
+                    if (write_memory_addrb == ADDRESS_WRITE_END) begin 
+                        current_state <= IDLE_ST;
+                    end else begin 
+                        current_state <= UPD_CHK_FLAQ_ST;
+                    end 
+
                 default             : 
                     current_state <= current_state;
             endcase // current_state
@@ -524,6 +616,13 @@ module adxl345_functional (
     always_ff @(posedge CLK) begin 
         case (current_state)
             REQ_TX_ADDR_PTR_ST : 
+                if (!out_awfull) begin 
+                    word_counter <= word_counter + 1;
+                end else begin 
+                    word_counter <= word_counter;
+                end 
+
+            UPD_TX_DATA_ST : 
                 if (!out_awfull) begin 
                     word_counter <= word_counter + 1;
                 end else begin 
