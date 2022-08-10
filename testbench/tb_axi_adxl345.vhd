@@ -343,21 +343,9 @@ begin
         if CLK'event AND CLK = '1' then 
             case i is 
 
-                when    300     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF02"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when    301     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF02"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when    302     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF02"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-                when  10000     => cfg_awaddr <= x"04"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"00010000"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when  10001     => cfg_awaddr <= x"04"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"00010000"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when  10002     => cfg_awaddr <= x"04"; cfg_awprot <= "000"; cfg_awvalid <= '0'; cfg_wdata <= x"00010000"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-                when 148000     => cfg_awaddr <= x"04"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"00000000"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when 148001     => cfg_awaddr <= x"04"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"00000000"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when 148002     => cfg_awaddr <= x"04"; cfg_awprot <= "000"; cfg_awvalid <= '0'; cfg_wdata <= x"00000000"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-                when 914227    => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF00"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when 914228    => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF00"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when 914229    => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF00"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                when    300     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF0C"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                when    301     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF0C"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                when    302     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF0C"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
                 when others     => cfg_awaddr <= cfg_awaddr; cfg_awprot <= cfg_awprot; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
             end case;
@@ -372,14 +360,9 @@ begin
         if CLK'event AND CLK = '1' then 
             case i is 
 
-                when  1000000   => DEV_AWADDR <= x"00"; DEV_AWVALID <= '1'; DEV_WDATA <= x"000000F0"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  1000001   => DEV_AWADDR <= x"00"; DEV_AWVALID <= '1'; DEV_WDATA <= x"000000F0"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  1000002   => DEV_AWADDR <= x"00"; DEV_AWVALID <= '0'; DEV_WDATA <= x"000000F0"; DEV_WSTRB <= x"1"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
-
-                when  1000010   => DEV_AWADDR <= x"1C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFEFDFC"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  1000011   => DEV_AWADDR <= x"1C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FFFEFDFC"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  1000012   => DEV_AWADDR <= x"1C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FFFEFDFC"; DEV_WSTRB <= x"F"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
-
+                when  1009   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  1010   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  1011   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
                 when others     => DEV_AWADDR <= DEV_AWADDR; DEV_AWVALID <= '0'; DEV_WDATA <= (others => '0'); DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
             end case;
@@ -389,23 +372,23 @@ begin
 
 
 
-    read_processing : process(CLK)
-    begin
-        if CLK'event AND CLK = '1' then 
-            case i is 
+    --read_processing : process(CLK)
+    --begin
+    --    if CLK'event AND CLK = '1' then 
+    --        case i is 
 
-                when 500000   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
-                when 500001   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
-                when 500002   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '0'; DEV_RREADY <= '1';
+    --            when 500000   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
+    --            when 500001   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
+    --            when 500002   => DEV_ARADDR <= x"00"; DEV_ARPROT <= "000"; DEV_ARVALID <= '0'; DEV_RREADY <= '1';
 
-                when 500010   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
-                when 500011   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
-                when 500012   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '0'; DEV_RREADY <= '1';
+    --            when 500010   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
+    --            when 500011   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '1'; DEV_RREADY <= '1';
+    --            when 500012   => DEV_ARADDR <= x"04"; DEV_ARPROT <= "000"; DEV_ARVALID <= '0'; DEV_RREADY <= '1';
 
-                when others => DEV_ARADDR <= DEV_ARADDR; DEV_ARPROT <= DEV_ARPROT; DEV_ARVALID <= '0'; DEV_RREADY <= '0';
-            end case;
-        end if;
-    end process;
+    --            when others => DEV_ARADDR <= DEV_ARADDR; DEV_ARPROT <= DEV_ARPROT; DEV_ARVALID <= '0'; DEV_RREADY <= '0';
+    --        end case;
+    --    end if;
+    --end process;
 
 
 

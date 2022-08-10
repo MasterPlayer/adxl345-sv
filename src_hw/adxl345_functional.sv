@@ -14,10 +14,18 @@ module adxl345_functional (
     output logic [31:0] RDATA                     ,
     // control
     input  logic [ 6:0] I2C_ADDRESS               ,
+    
     input  logic        ENABLE_INTERVAL_REQUESTION,
     input  logic [31:0] REQUESTION_INTERVAL       ,
+
     input  logic        SINGLE_REQUEST            ,
     output logic        SINGLE_REQUEST_COMPLETE   ,
+    
+    input  logic        ALLOW_IRQ                 ,
+
+    output logic        LINK_ON                   ,
+
+    input  logic        ADXL_INTERRUPT            ,
     // data to device
     output logic [ 7:0] M_AXIS_TDATA              ,
     output logic [ 0:0] M_AXIS_TKEEP              ,
@@ -38,6 +46,12 @@ module adxl345_functional (
     localparam [7:0] ADDRESS_WRITE_BEGIN = 8'h1D;
     localparam [7:0] ADDRESS_WRITE_END   = 8'h38;
 
+    // constant parameters for comparison
+    localparam [5:0] DEVICE_ID_ADDR      = 6'h00;
+    localparam [5:0] INT_SOURCE_ADDR     = 6'h30;
+
+    localparam [7:0] DEVICE_ID           = 8'hE5;
+
     logic [0:15][3:0] need_update_reg = '{
         '{0, 0, 0, 0}, // 0x00
         '{0, 0, 0, 0}, // 0x04
@@ -55,7 +69,7 @@ module adxl345_functional (
         '{0, 0, 0, 0}, // 0x34
         '{0, 0, 0, 0}, // 0x38
         '{0, 0, 0, 0}  // 0x3C
-        };
+    };
 
     logic [0:15][3:0] write_mask_register = '{
         '{0, 0, 0, 0}, // 0x00
@@ -74,16 +88,17 @@ module adxl345_functional (
         '{0, 0, 0, 0}, // 0x34
         '{0, 0, 0, 1}, // 0x38
         '{0, 0, 0, 0}  // 0x3C
-        };
+    };
 
     logic need_update_flaq = 'b0;
 
     typedef enum {
-        IDLE_ST             , // await new action
+        IDLE_CHK_REQ_ST         , // await new action
+        IDLE_CHK_UPD_ST         , // await new action
         // if request data flaq
-        REQ_TX_ADDR_PTR_ST  , // send address pointer 
-        REQ_TX_READ_DATA_ST , // send read request for reading 0x39 data bytes 
-        REQ_RX_READ_DATA_ST , // await data from start to tlast signal 
+        REQ_TX_ADDR_PTR_ST      , // send address pointer 
+        REQ_TX_READ_DATA_ST     , // send read request for reading 0x39 data bytes 
+        REQ_RX_READ_DATA_ST     , // await data from start to tlast signal 
         // if need update flaq asserted
         UPD_CHK_FLAQ_ST         ,
         UPD_TX_DATA_ST          , 
@@ -92,7 +107,7 @@ module adxl345_functional (
         WAIT_ST              
     } fsm;
 
-    fsm current_state = IDLE_ST;
+    fsm current_state = IDLE_CHK_REQ_ST;
 
 
     logic request_flaq = 'b0;
@@ -130,16 +145,30 @@ module adxl345_functional (
     logic [3:0] write_memory_hi;
     logic [1:0] write_memory_lo;
 
+    logic interrupt = 1'b0;
+
     always_comb begin : RDATA_processing 
         RDATA = read_memory_doutb;
     end 
+
+
 
     always_comb begin : write_memory_hi_processing 
         write_memory_hi = write_memory_addrb[5:2];
     end 
 
+
+
     always_comb begin : write_memory_lo_processing 
         write_memory_lo = write_memory_addrb[1:0];
+    end 
+
+    always_ff @(posedge CLK) begin : interrupt_processing 
+        if (ADXL_INTERRUPT & ALLOW_IRQ) begin 
+            interrupt <= 1'b1;
+        end else begin 
+            interrupt <= 1'b0;
+        end 
     end 
 
     generate
@@ -182,9 +211,13 @@ module adxl345_functional (
         end     
     end 
 
+
+
     always_comb begin : write_memory_addra_processing
         write_memory_addra = WADDR;
     end 
+
+
 
     always_ff @(posedge CLK) begin 
         if (|write_memory_wea) begin 
@@ -192,8 +225,12 @@ module adxl345_functional (
         end else begin 
             // to do : deassert according fsm
             case (current_state)
-                UPD_CHK_FLAQ_ST : 
-                    need_update_flaq <= 1'b0;
+                IDLE_CHK_UPD_ST : 
+                    if (need_update_flaq) begin 
+                        need_update_flaq <= 1'b0;
+                    end else begin 
+                        need_update_flaq <= need_update_flaq;
+                    end 
 
                 default : 
                     need_update_flaq <= need_update_flaq;
@@ -205,13 +242,14 @@ module adxl345_functional (
 
     // if needed request, OR for this register
     always_ff @(posedge CLK) begin : request_flaq_processing 
-        request_flaq <= SINGLE_REQUEST | requestion_interval_assigned;
+        request_flaq <= SINGLE_REQUEST | requestion_interval_assigned | interrupt;
     end 
+
 
 
     always_ff @(posedge CLK) begin : write_memory_addrb_processing 
         case (current_state)
-            IDLE_ST : 
+            IDLE_CHK_UPD_ST : 
                 write_memory_addrb <= ADDRESS_WRITE_BEGIN;
 
             UPD_INCREMENT_ADDR_ST : 
@@ -223,9 +261,14 @@ module adxl345_functional (
     end 
 
 
+
     always_ff @(posedge CLK) begin : requestion_interval_counter_processing 
         case (current_state) 
-            IDLE_ST : 
+
+            REQ_RX_READ_DATA_ST : 
+                requestion_interval_counter <= REQUESTION_INTERVAL;
+
+            default : 
                 if (ENABLE_INTERVAL_REQUESTION) begin 
                     if (requestion_interval_counter == 0) begin 
                         requestion_interval_counter <= requestion_interval_counter;
@@ -236,30 +279,21 @@ module adxl345_functional (
                     requestion_interval_counter <= REQUESTION_INTERVAL;
                 end 
 
-            default : 
-                requestion_interval_counter <= REQUESTION_INTERVAL;
-
         endcase
     end 
 
 
+
     always_ff @(posedge CLK) begin : requestion_interval_assigned_processing 
-        case (current_state) 
-            IDLE_ST : 
-                if (ENABLE_INTERVAL_REQUESTION) begin 
-                    if (requestion_interval_counter == 0) begin 
-                        requestion_interval_assigned <= 1'b1;
-                    end else begin 
-                        requestion_interval_assigned <= 1'b0; 
-                    end 
-                end else begin 
-                    requestion_interval_assigned <= 1'b0;
-                end 
-
-            default : 
-                requestion_interval_assigned <= 1'b0;
-
-        endcase // current_state
+        if (ENABLE_INTERVAL_REQUESTION) begin 
+            if (requestion_interval_counter == 0) begin 
+                requestion_interval_assigned <= 1'b1;
+            end else begin 
+                requestion_interval_assigned <= 1'b0; 
+            end 
+        end else begin 
+            requestion_interval_assigned <= 1'b0;
+        end 
     end 
 
 
@@ -309,51 +343,6 @@ module adxl345_functional (
     );
 
 
-    xpm_fifo_sync #(
-        .CASCADE_HEIGHT     (0       ), // DECIMAL
-        .DOUT_RESET_VALUE   ("0"     ), // String
-        .ECC_MODE           ("no_ecc"), // String
-        .FIFO_MEMORY_TYPE   ("auto"  ), // String
-        .FIFO_READ_LATENCY  (1       ), // DECIMAL
-        .FIFO_WRITE_DEPTH   (2048    ), // DECIMAL
-        .FULL_RESET_VALUE   (0       ), // DECIMAL
-        .PROG_EMPTY_THRESH  (10      ), // DECIMAL
-        .PROG_FULL_THRESH   (10      ), // DECIMAL
-        .RD_DATA_COUNT_WIDTH(1       ), // DECIMAL
-        .READ_DATA_WIDTH    (32      ), // DECIMAL
-        .READ_MODE          ("std"   ), // String
-        .SIM_ASSERT_CHK     (0       ), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
-        .USE_ADV_FEATURES   ("0707"  ), // String
-        .WAKEUP_TIME        (0       ), // DECIMAL
-        .WRITE_DATA_WIDTH   (32      ), // DECIMAL
-        .WR_DATA_COUNT_WIDTH(1       )  // DECIMAL
-    ) xpm_fifo_sync_inst (
-        .almost_empty (almost_empty ), // 1-bit output: Almost Empty : When asserted, this signal indicates that
-        .almost_full  (almost_full  ), // 1-bit output: Almost Full: When asserted, this signal indicates that
-        .data_valid   (             ), // 1-bit output: Read Data Valid: When asserted, this signal indicates
-        .dbiterr      (             ), // 1-bit output: Double Bit Error: Indicates that the ECC decoder detected
-        .dout         (dout         ), // READ_DATA_WIDTH-bit output: Read Data: The output data bus is driven
-        .empty        (empty        ), // 1-bit output: Empty Flag: When asserted, this signal indicates that the
-        .full         (full         ), // 1-bit output: Full Flag: When asserted, this signal indicates that the
-        .overflow     (overflow     ), // 1-bit output: Overflow: This signal indicates that a write request
-        .prog_empty   (prog_empty   ), // 1-bit output: Programmable Empty: This signal is asserted when the
-        .prog_full    (prog_full    ), // 1-bit output: Programmable Full: This signal is asserted when the
-        .rd_data_count(rd_data_count), // RD_DATA_COUNT_WIDTH-bit output: Read Data Count: This bus indicates the
-        .rd_rst_busy  (rd_rst_busy  ), // 1-bit output: Read Reset Busy: Active-High indicator that the FIFO read
-        .sbiterr      (sbiterr      ), // 1-bit output: Single Bit Error: Indicates that the ECC decoder detected
-        .underflow    (underflow    ), // 1-bit output: Underflow: Indicates that the read request (rd_en) during
-        .wr_ack       (wr_ack       ), // 1-bit output: Write Acknowledge: This signal indicates that a write
-        .wr_data_count(wr_data_count), // WR_DATA_COUNT_WIDTH-bit output: Write Data Count: This bus indicates
-        .wr_rst_busy  (wr_rst_busy  ), // 1-bit output: Write Reset Busy: Active-High indicator that the FIFO
-        .din          (din          ), // WRITE_DATA_WIDTH-bit input: Write Data: The input data bus used when
-        .injectdbiterr(1'b0         ), // 1-bit input: Double Bit Error Injection: Injects a double bit error if
-        .injectsbiterr(1'b0         ), // 1-bit input: Single Bit Error Injection: Injects a single bit error if
-        .rd_en        (rd_en        ), // 1-bit input: Read Enable: If the FIFO is not empty, asserting this
-        .rst          (rst          ), // 1-bit input: Reset: Must be synchronous to wr_clk. The clock(s) can be
-        .sleep        (sleep        ), // 1-bit input: Dynamic power saving- If sleep is High, the memory/fifo
-        .wr_clk       (wr_clk       ), // 1-bit input: Write clock: Used for write operation. wr_clk must be a
-        .wr_en        (wr_en        )  // 1-bit input: Write Enable: If the FIFO is not full, asserting this
-    );
 
     xpm_memory_sdpram #(
         .ADDR_WIDTH_A           (6              ), // DECIMAL
@@ -400,9 +389,11 @@ module adxl345_functional (
     );
 
 
-    always_comb begin 
+    always_comb begin : read_memory_addrb_processing
         read_memory_addrb = RADDR;
     end 
+
+
 
     // address : sets before receive data, implies on MEM
     always_ff @(posedge CLK) begin : read_memory_addra_processing 
@@ -470,7 +461,7 @@ module adxl345_functional (
         .M_AXIS_TREADY(M_AXIS_TREADY)
     );
 
-    always_comb begin 
+    always_comb begin : out_din_user_processing 
         out_din_user[7:1] = I2C_ADDRESS;
     end 
 
@@ -478,7 +469,7 @@ module adxl345_functional (
     // operation : 
     // 0 - write
     // 1 - read
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : out_din_user_0_processing
         case (current_state) 
             REQ_TX_ADDR_PTR_ST : 
                 out_din_user[0] <= 1'b0; // is writing data to dev
@@ -496,7 +487,7 @@ module adxl345_functional (
 
 
 
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : out_din_data_processing 
         case (current_state) 
             REQ_TX_ADDR_PTR_ST : 
                 case (word_counter) 
@@ -506,11 +497,15 @@ module adxl345_functional (
                 endcase // word_counter
 
             REQ_TX_READ_DATA_ST : 
-                out_din_data <= ADDRESS_LIMIT;
+                if (interrupt) begin 
+                    out_din_data <= 8'h08;
+                end else begin 
+                    out_din_data <= ADDRESS_LIMIT;
+                end 
 
             UPD_TX_DATA_ST : 
                 case (word_counter)
-                    4'h0 : out_din_data <= 8'h01;
+                    4'h0 : out_din_data <= 8'h02;
                     4'h1 : out_din_data <= write_memory_addrb;
                     4'h2 : out_din_data <= write_memory_doutb;
                     default : out_din_data <= out_din_data;
@@ -522,7 +517,8 @@ module adxl345_functional (
     end 
 
 
-    always_ff @(posedge CLK) begin 
+
+    always_ff @(posedge CLK) begin : out_din_last_processing 
         case (current_state) 
             REQ_TX_ADDR_PTR_ST : 
                 case (word_counter) 
@@ -547,7 +543,7 @@ module adxl345_functional (
 
 
 
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : out_wren_processing 
         case (current_state) 
             REQ_TX_ADDR_PTR_ST : 
                 if (!out_awfull) begin 
@@ -578,20 +574,24 @@ module adxl345_functional (
 
 
 
-    always_ff @(posedge CLK) begin 
+    always_ff @(posedge CLK) begin : current_state_processing 
         if (RESET) begin 
-            current_state <= IDLE_ST;
+            current_state <= IDLE_CHK_REQ_ST;
         end else begin 
             case (current_state) 
-                IDLE_ST             :
-                    if (need_update_reg) begin 
+
+                IDLE_CHK_REQ_ST : 
+                    if (request_flaq) begin 
+                        current_state <= REQ_TX_ADDR_PTR_ST;
+                    end else begin 
+                        current_state <= IDLE_CHK_UPD_ST;
+                    end 
+
+                IDLE_CHK_UPD_ST : 
+                    if (need_update_flaq) begin 
                         current_state <= UPD_CHK_FLAQ_ST;
                     end else begin 
-                        if (request_flaq) begin 
-                            current_state <= REQ_TX_ADDR_PTR_ST;
-                        end else begin 
-                            current_state <= current_state;
-                        end 
+                        current_state <= IDLE_CHK_REQ_ST;
                     end 
 
                 REQ_TX_ADDR_PTR_ST  :
@@ -614,7 +614,7 @@ module adxl345_functional (
 
                 REQ_RX_READ_DATA_ST : 
                     if (S_AXIS_TVALID & S_AXIS_TLAST) begin 
-                        current_state <= IDLE_ST;
+                        current_state <= IDLE_CHK_UPD_ST;
                     end else begin 
                         current_state <= current_state;
                     end 
@@ -639,7 +639,7 @@ module adxl345_functional (
 
                 UPD_INCREMENT_ADDR_ST : 
                     if (write_memory_addrb == ADDRESS_WRITE_END) begin 
-                        current_state <= IDLE_ST;
+                        current_state <= IDLE_CHK_REQ_ST;
                     end else begin 
                         current_state <= UPD_CHK_FLAQ_ST;
                     end 
@@ -651,22 +651,25 @@ module adxl345_functional (
     end 
 
 
-    always_ff @(posedge CLK) begin 
-        case (current_state) 
-            IDLE_ST :
-                if (request_flaq) begin 
-                    address_ptr <= 8'h00;
-                end else begin 
-                    address_ptr <= address_ptr;
-                end 
 
+    always_ff @(posedge CLK) begin : address_ptr_processing 
+        case (current_state) 
+            
+            IDLE_CHK_REQ_ST : 
+                if (interrupt) begin 
+                    address_ptr <= INT_SOURCE_ADDR;
+                end else begin 
+                    address_ptr <= DEVICE_ID_ADDR;
+                end 
+            
             default : 
                 address_ptr <= address_ptr;
         endcase // current_state
     end 
 
 
-    always_ff @(posedge CLK) begin 
+
+    always_ff @(posedge CLK) begin : word_counter_processing 
         case (current_state)
             REQ_TX_ADDR_PTR_ST : 
                 if (!out_awfull) begin 
@@ -688,7 +691,8 @@ module adxl345_functional (
     end 
 
 
-    always_ff @(posedge CLK) begin 
+
+    always_ff @(posedge CLK) begin : SINGLE_REQUEST_COMPLETE_processing 
         case (current_state) 
             REQ_TX_READ_DATA_ST : 
                 if (!out_awfull) begin 
@@ -701,6 +705,31 @@ module adxl345_functional (
                 SINGLE_REQUEST_COMPLETE <= 1'b0;
 
         endcase // current_state
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : LINK_ON_processing 
+        if (RESET) begin 
+            LINK_ON <= 1'b0;
+        end else begin 
+            case (current_state)
+                REQ_RX_READ_DATA_ST : 
+                    if (read_memory_addra == DEVICE_ID_ADDR) begin 
+                        if (read_memory_dina == DEVICE_ID) begin 
+                            LINK_ON <= 1'b1;
+                        end else begin 
+                            LINK_ON <= 1'b0;
+                        end 
+                    end else begin 
+                        LINK_ON <= LINK_ON;
+                    end 
+
+                default : 
+                    LINK_ON <= LINK_ON;
+
+            endcase // word_counter
+        end 
     end 
 
 endmodule

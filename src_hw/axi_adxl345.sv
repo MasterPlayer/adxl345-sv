@@ -308,6 +308,11 @@ module axi_adxl345 #(
     logic            enable_interval_requestion = 1'b0        ;
     logic [3:0][7:0] requestion_interval        = '{default:'{default:0}};
 
+    // allow interrupt mech 
+    logic allow_irq_reg = 1'b0;
+
+    // link state
+    logic link_on;
 
     ///
 
@@ -1706,49 +1711,38 @@ module axi_adxl345 #(
         slv_reg_rden_cfg <= axi_arready_cfg & S_AXI_LITE_CFG_ARVALID & ~axi_rvalid_cfg;
     end 
 
-    // logic [47:0][31:0] register_file;
-
-    // generate 
-    //     for (genvar rf_idx = 0; rf_idx < 48; rf_idx++) begin 
-    //         always_comb begin 
-    //             register_file[rf_idx][31:0] = {register_samples[(rf_idx*4)+3], register_samples[(rf_idx*4)+2], register_samples[(rf_idx*4)+1], register_samples[rf_idx*4]};
-    //         end 
-    //     end   
-    // endgenerate
-
-
     always_ff @(posedge CLK) begin
         case ( axi_araddr_cfg[ADDR_LSB_CFG+OPT_MEM_ADDR_BITS_CFG:ADDR_LSB_CFG] )
             8'h00 : reg_data_out_cfg <= {
-                1'b0, //version_major,
-                1'b0, //version_minor,
-                1'b0, // link_on,
-                i2c_address, // register_cfg[ 0][14:8],
+                version_major               , //version_major,
+                version_minor               , //version_minor,
+                link_on                     , // link_on,
+                i2c_address                 , // register_cfg[ 0][14:8],
                 1'b0, //on_work,
-                1'b0,  //request_performed,
+                single_request_complete     , //request_performed,
                 1'b0,  //calibration_flaq,
                 1'b0,  // ADXL_IRQ,
                 1'b0,
-                1'b0,  //allow_irq,
-                1'b0, //enable,
-                1'b0  // reset 
+                allow_irq_reg               , //allow_irq,
+                enable_interval_requestion  , //enable,
+                reset                         // reset
             };
 
-            8'h01    : reg_data_out_cfg <= requestion_interval;
-            8'h02    : reg_data_out_cfg <= 'b0; //DATA_WIDTH;
-            8'h03    : reg_data_out_cfg <= 'b0; //read_valid_reg;
-            8'h04    : reg_data_out_cfg <= 'b0; //write_valid_reg;
-            8'h05    : reg_data_out_cfg <= 'b0; //write_transactions;
-            8'h06    : reg_data_out_cfg <= 'b0; //read_transactions;
-            8'h07    : reg_data_out_cfg <= 'b0; //CLK_PERIOD;
-            8'h08    : reg_data_out_cfg <= 'b0; //{23'h0, has_ovrrn_intr, sample_address};
-            8'h09    : reg_data_out_cfg <= 'b0; //opt_request_interval;
-            8'h0a    : reg_data_out_cfg <= 'b0; //calibration_count_limit_reg;
-            8'h0b    : reg_data_out_cfg <= 'b0; //calibration_elapsed_time;
-            8'h0c    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0d    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0e    : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0f    : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h01 : reg_data_out_cfg <= requestion_interval;
+            8'h02 : reg_data_out_cfg <= 'b0; //DATA_WIDTH;
+            8'h03 : reg_data_out_cfg <= 'b0; //read_valid_reg;
+            8'h04 : reg_data_out_cfg <= 'b0; //write_valid_reg;
+            8'h05 : reg_data_out_cfg <= 'b0; //write_transactions;
+            8'h06 : reg_data_out_cfg <= 'b0; //read_transactions;
+            8'h07 : reg_data_out_cfg <= 'b0; //CLK_PERIOD;
+            8'h08 : reg_data_out_cfg <= 'b0; //{23'h0, has_ovrrn_intr, sample_address};
+            8'h09 : reg_data_out_cfg <= 'b0; //opt_request_interval;
+            8'h0a : reg_data_out_cfg <= 'b0; //calibration_count_limit_reg;
+            8'h0b : reg_data_out_cfg <= 'b0; //calibration_elapsed_time;
+            8'h0c : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0d : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0e : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h0f : reg_data_out_cfg <= '{default:0}; // reserved
 
             // 8'h10    : reg_data_out_cfg <= register_file[0][31:0];
             // 8'h11    : reg_data_out_cfg <= register_file[1][31:0];
@@ -2065,10 +2059,7 @@ module axi_adxl345 #(
     //         if (S_AXIS_TVALID & S_AXIS_TREADY)
     //             if (S_AXIS_TLAST)
     //                 read_transactions <= read_transactions + 1;
-
     // end 
-
-
 
     // always_ff @(posedge CLK) begin : reset_logic_timer_proc 
     //     if (~RESETN)
@@ -2083,40 +2074,6 @@ module axi_adxl345 #(
     //                         reset_logic_timer <= '{default:0};
     //         end     
     // end 
-
-
-
-    // always_ff @(posedge CLK) begin : reset_proc 
-    //     if (~RESETN)
-    //         reset <= 1'b1;
-    //     else
-    //         if (reset_logic_timer < RESET_DURATION)
-    //             reset <= 1'b1;
-    //         else 
-    //             reset <= 1'b0;
-    // end 
-
-
-    // always_ff @(posedge CLK) begin 
-    //     if (~RESETN | reset | intr_ack) begin 
-    //         ADXL_IRQ <= 1'b0;
-    //     end else begin
-    //         if (allow_irq) 
-    //             case (current_state) 
-
-    //                 CHECK_INTR_DEASSERT: 
-    //                     if (ADXL_INTERRUPT) 
-    //                         ADXL_IRQ <= 1'b0;
-    //                     else 
-    //                         ADXL_IRQ <= 1'b1;
-
-    //             default : 
-    //                 ADXL_IRQ <= ADXL_IRQ;
-
-    //             endcase // current_state
-    //     end 
-    // end 
-
 
     // always_ff @(posedge CLK) begin 
     //     if (~RESETN | reset | intr_ack) begin 
@@ -2568,6 +2525,27 @@ module axi_adxl345 #(
     end 
 
 
+    always_ff @(posedge CLK) begin : allow_irq_reg_processing 
+        if (~RESETN | reset) begin 
+            allow_irq_reg <= 1'b0;
+        end else begin 
+            if (slv_reg_wren_cfg) begin 
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0) begin 
+                    if (S_AXI_LITE_CFG_WSTRB[0]) begin 
+                        allow_irq_reg <= S_AXI_LITE_CFG_WDATA[2];
+                    end else begin 
+                        allow_irq_reg <= allow_irq_reg;
+                    end 
+                end else begin 
+                    allow_irq_reg <= allow_irq_reg;
+                end 
+            end else begin 
+                allow_irq_reg <= allow_irq_reg;
+            end 
+
+        end 
+    end 
+
 
     generate 
 
@@ -2610,6 +2588,10 @@ module axi_adxl345 #(
         .RADDR                     (axi_dev_araddr[5:2]       ),
         .RDATA                     (reg_data_out              ),
         
+        .LINK_ON                   (link_on                   ),
+        
+        .ALLOW_IRQ                 (allow_irq_reg             ),
+        
         .SINGLE_REQUEST            (single_request            ),
         .SINGLE_REQUEST_COMPLETE   (single_request_complete   ),
         
@@ -2617,6 +2599,9 @@ module axi_adxl345 #(
         .REQUESTION_INTERVAL       (requestion_interval       ),
         
         .I2C_ADDRESS               (i2c_address               ),
+        
+        .ADXL_INTERRUPT            (ADXL_INTERRUPT            ),
+        
         
         .M_AXIS_TDATA              (M_AXIS_TDATA              ),
         .M_AXIS_TKEEP              (M_AXIS_TKEEP              ),

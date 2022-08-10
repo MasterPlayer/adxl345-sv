@@ -7,7 +7,7 @@ module tb_device_imitation (
     input  logic IIC_SDA_I,
     output logic IIC_SCL_O,
     output logic IIC_SDA_O,
-    output IRQ
+    output logic IRQ
 );
 
 
@@ -22,24 +22,26 @@ module tb_device_imitation (
         reset = 1'b0;
     end 
 
+    localparam integer INTERRUPT_INTERVAL = 300000;
 
     logic [0:59][0:7] register_file = '{
-        8'hE5, 8'h01, 8'h02, 8'h03, 
-        8'h04, 8'h05, 8'h06, 8'h07, 
-        8'h08, 8'h09, 8'h0A, 8'h0B, 
-        8'h0C, 8'h0D, 8'h0E, 8'h0F, 
-        8'h10, 8'h11, 8'h12, 8'h13, 
-        8'h14, 8'h15, 8'h16, 8'h17, 
-        8'h18, 8'h19, 8'h1A, 8'h1B, 
-        8'h1C, 8'h1D, 8'h1E, 8'h1F, 
-        8'h20, 8'h21, 8'h22, 8'h23, 
-        8'h24, 8'h25, 8'h26, 8'h27, 
-        8'h28, 8'h29, 8'h2A, 8'h2B, 
-        8'h2C, 8'h2D, 8'h2E, 8'h2F, 
-        8'h30, 8'h31, 8'h32, 8'h33, 
-        8'h34, 8'h35, 8'h36, 8'h37, 
-        8'h38, 8'h39, 8'h3A, 8'h3b 
+        8'hE5, 8'h01, 8'h02, 8'h03, // 0x00
+        8'h04, 8'h05, 8'h06, 8'h00, // 0x04
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x08
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x0C
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x10
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x14
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x18
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x1C
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x20
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x24
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x28
+        8'h00, 8'h00, 8'h00, 8'h00, // 0x2C
+        8'h80, 8'h31, 8'h32, 8'h33, // 0x30
+        8'h34, 8'h35, 8'h36, 8'h37, // 0x34
+        8'h00, 8'h00, 8'h00, 8'h00  // 0x38
     };
+
 
     logic d_iic_scl = 1'b1;
     logic scl = 1'b0;
@@ -47,12 +49,16 @@ module tb_device_imitation (
     logic write_operation = 1'b0;
     logic read_operation = 1'b0;
 
+    logic [7:0] interrupt_register;
+
+    logic has_readed_interrupt_register = 1'b0;
+
+
     typedef enum {
         AWAIT_CMD,
         READ_OP ,
-        READ_ACK
-
-
+        READ_ACK,
+        WRITE_OP 
     } fsm;
 
     fsm current_state = AWAIT_CMD;
@@ -63,8 +69,9 @@ module tb_device_imitation (
     logic       d_sda                                 ;
     logic       finalize_transmission = 1'b0          ;
 
-    logic [7:0] device_address = '{default:0};
-    logic [7:0] ptr            = '{default:0};
+    logic [7:0] device_address   = '{default:0};
+    logic [7:0] ptr              = '{default:0};
+    logic [7:0] data_for_writing = '{default:0};
 
     logic [7:0] register_counter = '{default:0};
 
@@ -149,6 +156,8 @@ module tb_device_imitation (
         end 
     end 
 
+
+
     always_ff @(posedge clk) begin 
         if (valid_event) begin 
             if (register_counter == 0) begin 
@@ -160,6 +169,8 @@ module tb_device_imitation (
             device_address <= device_address;
         end 
     end     
+
+
 
     always_ff @(posedge clk) begin 
         if (valid_event) begin 
@@ -178,6 +189,13 @@ module tb_device_imitation (
                             ptr <= ptr;
                         end 
 
+                    WRITE_OP : 
+                        if (valid_event) begin 
+                            ptr <= ptr + 1;
+                        end else begin 
+                            ptr <= ptr;
+                        end 
+
                     default : 
                         ptr <= ptr;
                 endcase // current_state
@@ -186,6 +204,26 @@ module tb_device_imitation (
             ptr <= ptr;
         end 
     end 
+
+
+
+    always_ff @(posedge clk) begin : data_for_writing_processing 
+        if (valid_event) begin 
+            if (write_operation) begin 
+                if (register_counter == 2) begin 
+                    data_for_writing <= shift_register;
+                end else begin 
+                    data_for_writing <= data_for_writing;
+                end 
+            end else begin 
+                data_for_writing <= data_for_writing;
+            end 
+        end else begin 
+            data_for_writing <= data_for_writing;
+        end 
+    end 
+
+
 
     always_ff @(posedge clk) begin 
         if (valid_event) begin 
@@ -199,6 +237,8 @@ module tb_device_imitation (
         end 
     end 
 
+
+
     always_ff @(posedge clk) begin 
         if (valid_event) begin 
             if (register_counter == 0) begin 
@@ -211,6 +251,8 @@ module tb_device_imitation (
         end 
     end 
 
+
+
     always_ff @(posedge clk) begin 
         if (reset | finalize_transmission) begin 
             current_state <= AWAIT_CMD;
@@ -221,7 +263,11 @@ module tb_device_imitation (
                     if (read_operation & register_counter == 1) begin 
                         current_state <= READ_ACK;
                     end else begin 
-                        current_state <= current_state;
+                        if (write_operation & register_counter == 1) begin 
+                            current_state <= WRITE_OP;
+                        end else begin 
+                            current_state <= current_state;
+                        end 
                     end 
 
                 READ_ACK : 
@@ -234,12 +280,16 @@ module tb_device_imitation (
                 READ_OP : 
                     current_state <= current_state;
 
+                WRITE_OP : 
+                    current_state <= current_state;
+
                 default : 
                     current_state <= current_state;
             endcase // current_state
 
         end 
     end 
+
 
 
     always_comb begin 
@@ -259,9 +309,77 @@ module tb_device_imitation (
 
 
 
+    always_ff @(posedge clk) begin 
+        case (current_state)
+            WRITE_OP : 
+                if (register_counter > 1) begin 
+                    if (valid_event) begin 
+                        register_file[ptr] <= shift_register;
+                    end else begin 
+                        register_file[ptr] <= register_file[ptr];
+                    end  
+                end else begin 
+                    register_file[ptr] <= register_file[ptr];
+                end 
+            default : 
+                register_file[ptr] <= register_file[ptr];
+
+        endcase
+    end 
+
+
+
     always_comb begin 
         IIC_SCL_O = d_iic_scl;
     end 
 
+    always_comb begin 
+        interrupt_register = register_file[46];
+    end 
+
+    always_ff @(posedge clk) begin 
+        case (current_state)
+            READ_OP : 
+                if (ptr == 8'h30) begin  
+                    if (valid_event) begin 
+                        has_readed_interrupt_register <= 1'b1;
+                    end else begin 
+                        has_readed_interrupt_register <= 1'b0;
+                    end 
+                end else begin 
+                    has_readed_interrupt_register <= 1'b0;
+                end 
+
+            default: 
+                has_readed_interrupt_register <= 1'b0;
+
+        endcase // current_state
+    end 
+
+    logic [31:0] interrupt_timer = '{default:0};
+
+    always_ff @(posedge clk) begin 
+        if (interrupt_register == 0) begin 
+            interrupt_timer <= INTERRUPT_INTERVAL;
+        end else begin 
+            if (interrupt_timer == 0) begin 
+                if (has_readed_interrupt_register) begin 
+                    interrupt_timer <= INTERRUPT_INTERVAL;
+                end else begin 
+                    interrupt_timer <= interrupt_timer;
+                end 
+            end else begin 
+                interrupt_timer <= interrupt_timer - 1;
+            end 
+        end 
+    end 
+
+    always_comb begin 
+        if (interrupt_timer == 0) begin 
+            IRQ <= 1'b1;
+        end else begin 
+            IRQ <= 1'b0; 
+        end 
+    end 
 
 endmodule
