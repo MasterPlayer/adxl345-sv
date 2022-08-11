@@ -32,11 +32,11 @@ module tb_device_imitation (
         8'h00, 8'h00, 8'h00, 8'h00, // 0x10
         8'h00, 8'h00, 8'h00, 8'h00, // 0x14
         8'h00, 8'h00, 8'h00, 8'h00, // 0x18
-        8'h00, 8'h00, 8'h00, 8'h00, // 0x1C
-        8'h00, 8'h00, 8'h00, 8'h00, // 0x20
+        8'h00, 8'h00, 8'h1E, 8'h1F, // 0x1C
+        8'h20, 8'h00, 8'h00, 8'h00, // 0x20
         8'h00, 8'h00, 8'h00, 8'h00, // 0x24
         8'h00, 8'h00, 8'h00, 8'h00, // 0x28
-        8'h00, 8'h00, 8'h00, 8'h00, // 0x2C
+        8'h0F, 8'h00, 8'h00, 8'h00, // 0x2C
         8'h80, 8'h31, 8'h32, 8'h33, // 0x30
         8'h34, 8'h35, 8'h36, 8'h37, // 0x34
         8'h00, 8'h00, 8'h00, 8'h00  // 0x38
@@ -178,7 +178,18 @@ module tb_device_imitation (
                 if (register_counter == 1) begin 
                     ptr <= shift_register;
                 end else begin 
-                    ptr <= ptr;
+                    case (current_state) 
+                        WRITE_OP : 
+                            if (valid_event) begin 
+                                ptr <= ptr + 1;
+                            end else begin 
+                                ptr <= ptr;
+                            end 
+
+                        default : 
+                            ptr <= ptr;
+
+                    endcase
                 end 
             end else begin 
                 case (current_state) 
@@ -189,12 +200,12 @@ module tb_device_imitation (
                             ptr <= ptr;
                         end 
 
-                    WRITE_OP : 
-                        if (valid_event) begin 
-                            ptr <= ptr + 1;
-                        end else begin 
-                            ptr <= ptr;
-                        end 
+                    // WRITE_OP : 
+                    //     if (valid_event) begin 
+                    //         ptr <= ptr + 1;
+                    //     end else begin 
+                    //         ptr <= ptr;
+                    //     end 
 
                     default : 
                         ptr <= ptr;

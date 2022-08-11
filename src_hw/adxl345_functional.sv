@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 
-module adxl345_functional (
+module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     input  logic        CLK                       ,
     input  logic        RESET                     ,
     // signal from AXI_DEV interface
@@ -9,23 +9,21 @@ module adxl345_functional (
     input  logic [ 3:0] WSTRB                     ,
     input  logic [ 3:0] WADDR                     ,
     input  logic        WVALID                    ,
-
     input  logic [ 3:0] RADDR                     ,
     output logic [31:0] RDATA                     ,
     // control
     input  logic [ 6:0] I2C_ADDRESS               ,
-    
     input  logic        ENABLE_INTERVAL_REQUESTION,
     input  logic [31:0] REQUESTION_INTERVAL       ,
-
     input  logic        SINGLE_REQUEST            ,
     output logic        SINGLE_REQUEST_COMPLETE   ,
-    
     input  logic        ALLOW_IRQ                 ,
-
     output logic        LINK_ON                   ,
-
     input  logic        ADXL_INTERRUPT            ,
+    output logic        ADXL_IRQ                  ,
+    input  logic        ADXL_IRQ_ACK              ,
+    input  logic        CALIBRATION               ,
+    input  logic [ 4:0] CALIBRATION_MODE          ,
     // data to device
     output logic [ 7:0] M_AXIS_TDATA              ,
     output logic [ 0:0] M_AXIS_TKEEP              ,
@@ -42,15 +40,34 @@ module adxl345_functional (
     output logic        S_AXIS_TREADY
 );
 
+    localparam [47:0] OPT_REQ_INTERVAL = (CLK_PERIOD/3200); // optimal requestion interval constant for data
+
     localparam [7:0] ADDRESS_LIMIT       = 8'h3A;
     localparam [7:0] ADDRESS_WRITE_BEGIN = 8'h1D;
     localparam [7:0] ADDRESS_WRITE_END   = 8'h38;
 
     // constant parameters for comparison
     localparam [5:0] DEVICE_ID_ADDR      = 6'h00;
+    localparam [5:0] OFSX_ADDR           = 6'h1E;
+    localparam [5:0] BW_RATE_ADDR        = 6'h2C;
     localparam [5:0] INT_SOURCE_ADDR     = 6'h30;
+    localparam [5:0] DATAX0_ADDR         = 6'h32;
 
     localparam [7:0] DEVICE_ID           = 8'hE5;
+
+    logic [0:31][31:0] calibration_count_limit_rom = '{
+        32'h00000001, 32'h00000002, 32'h00000004, 32'h00000008,
+        32'h00000010, 32'h00000020, 32'h00000040, 32'h00000080,
+        32'h00000100, 32'h00000200, 32'h00000400, 32'h00000800,
+        32'h00001000, 32'h00002000, 32'h00004000, 32'h00008000,
+        32'h00010000, 32'h00020000, 32'h00040000, 32'h00080000,
+        32'h00100000, 32'h00200000, 32'h00400000, 32'h00800000,
+        32'h01000000, 32'h02000000, 32'h04000000, 32'h08000000,
+        32'h10000000, 32'h20000000, 32'h40000000, 32'h80000000 
+    };
+
+    logic [31:0] calibration_count_limit = '{default:0};
+    logic [31:0] calibration_count       = '{default:0};
 
     logic [0:15][3:0] need_update_reg = '{
         '{0, 0, 0, 0}, // 0x00
@@ -95,6 +112,7 @@ module adxl345_functional (
     typedef enum {
         IDLE_CHK_REQ_ST         , // await new action
         IDLE_CHK_UPD_ST         , // await new action
+        IDLE_CHK_CAL_ST         , // checking calibration state
         // if request data flaq
         REQ_TX_ADDR_PTR_ST      , // send address pointer 
         REQ_TX_READ_DATA_ST     , // send read request for reading 0x39 data bytes 
@@ -103,6 +121,8 @@ module adxl345_functional (
         UPD_CHK_FLAQ_ST         ,
         UPD_TX_DATA_ST          , 
         UPD_INCREMENT_ADDR_ST   ,
+
+        CAL_TX_OFS_ZEROS_ST     , // sending zeros for reset OFSX, OFSY, OFSZ
 
         WAIT_ST              
     } fsm;
@@ -145,7 +165,19 @@ module adxl345_functional (
     logic [3:0] write_memory_hi;
     logic [1:0] write_memory_lo;
 
-    logic interrupt = 1'b0;
+    logic interrupt      = 1'b0;
+
+    logic calibration_flaq = 1'b0;
+
+
+    logic [47:0] cal_optimal_request_timer_limit        = '{default:0};
+    logic [47:0] cal_optimal_request_timer              = '{default:0};
+    logic [ 7:0] bw_rate_reg                            = '{default:0};
+    logic        allow_cal_optimal_request_timer        = 1'b0        ;
+    logic        has_cal_optimal_request_timer_exceeded = 1'b0        ;
+    logic        has_calibration_count_exceeded         = 1'b0        ;
+
+
 
     always_comb begin : RDATA_processing 
         RDATA = read_memory_doutb;
@@ -163,6 +195,8 @@ module adxl345_functional (
         write_memory_lo = write_memory_addrb[1:0];
     end 
 
+
+
     always_ff @(posedge CLK) begin : interrupt_processing 
         if (ADXL_INTERRUPT & ALLOW_IRQ) begin 
             interrupt <= 1'b1;
@@ -170,6 +204,21 @@ module adxl345_functional (
             interrupt <= 1'b0;
         end 
     end 
+
+
+
+    always_ff @(posedge CLK) begin : adxl_irq_processing 
+        if (ADXL_IRQ_ACK | RESET) begin 
+            ADXL_IRQ <= 1'b0;
+        end else begin 
+            if (!ADXL_INTERRUPT & ALLOW_IRQ & interrupt) begin 
+                ADXL_IRQ <= 1'b1;
+            end else begin 
+                ADXL_IRQ <= ADXL_IRQ;
+            end 
+        end 
+    end 
+
 
     generate
     
@@ -242,7 +291,7 @@ module adxl345_functional (
 
     // if needed request, OR for this register
     always_ff @(posedge CLK) begin : request_flaq_processing 
-        request_flaq <= SINGLE_REQUEST | requestion_interval_assigned | interrupt;
+        request_flaq <= SINGLE_REQUEST | requestion_interval_assigned | interrupt | has_cal_optimal_request_timer_exceeded;
     end 
 
 
@@ -287,7 +336,7 @@ module adxl345_functional (
     always_ff @(posedge CLK) begin : requestion_interval_assigned_processing 
         if (ENABLE_INTERVAL_REQUESTION) begin 
             if (requestion_interval_counter == 0) begin 
-                requestion_interval_assigned <= 1'b1;
+                requestion_interval_assigned <= ~ADXL_IRQ;
             end else begin 
                 requestion_interval_assigned <= 1'b0; 
             end 
@@ -389,6 +438,7 @@ module adxl345_functional (
     );
 
 
+
     always_comb begin : read_memory_addrb_processing
         read_memory_addrb = RADDR;
     end 
@@ -438,6 +488,22 @@ module adxl345_functional (
         endcase // current_state
     end 
 
+
+
+    always_ff @(posedge CLK) begin : bw_rate_reg_processing 
+        if (read_memory_addra == BW_RATE_ADDR) begin 
+            if (read_memory_wea) begin 
+                bw_rate_reg <= read_memory_dina;
+            end else begin 
+                bw_rate_reg <= bw_rate_reg;
+            end
+        end else begin 
+            bw_rate_reg <= bw_rate_reg;
+        end 
+    end 
+
+
+
     fifo_out_sync_tuser_xpm #(
         .DATA_WIDTH(8      ),
         .USER_WIDTH(8      ),
@@ -461,6 +527,8 @@ module adxl345_functional (
         .M_AXIS_TREADY(M_AXIS_TREADY)
     );
 
+
+
     always_comb begin : out_din_user_processing 
         out_din_user[7:1] = I2C_ADDRESS;
     end 
@@ -479,6 +547,9 @@ module adxl345_functional (
 
             UPD_TX_DATA_ST : 
                 out_din_user[0] <= 1'b0;
+
+            CAL_TX_OFS_ZEROS_ST : 
+                out_din_user[0] <= 1'b0; // writing operation for clear OFSX OFSY OFSZ
 
             default : 
                 out_din_user[0] <= out_din_user[0];
@@ -500,7 +571,11 @@ module adxl345_functional (
                 if (interrupt) begin 
                     out_din_data <= 8'h08;
                 end else begin 
-                    out_din_data <= ADDRESS_LIMIT;
+                    if (has_cal_optimal_request_timer_exceeded) begin 
+                        out_din_data <= 8'h06;
+                    end else begin 
+                        out_din_data <= ADDRESS_LIMIT;
+                    end 
                 end 
 
             UPD_TX_DATA_ST : 
@@ -509,6 +584,16 @@ module adxl345_functional (
                     4'h1 : out_din_data <= write_memory_addrb;
                     4'h2 : out_din_data <= write_memory_doutb;
                     default : out_din_data <= out_din_data;
+                endcase // word_counter
+
+            CAL_TX_OFS_ZEROS_ST : 
+                case (word_counter)
+                    4'h0 : out_din_data <= 8'h04;
+                    4'h1 : out_din_data <= address_ptr;
+                    4'h2 : out_din_data <= 8'h00;
+                    4'h3 : out_din_data <= 8'h00;
+                    4'h4 : out_din_data <= 8'h00;
+                    default out_din_data <= out_din_data;
                 endcase // word_counter
 
             default : 
@@ -534,6 +619,17 @@ module adxl345_functional (
                     4'h2    : out_din_last <= 1'b1;
                     default : out_din_last <= out_din_last;
                 endcase // word_counter
+
+            CAL_TX_OFS_ZEROS_ST : 
+                case (word_counter)
+                    4'h0 : out_din_last <= 1'b0;
+                    4'h1 : out_din_last <= 1'b0;
+                    4'h2 : out_din_last <= 1'b0;
+                    4'h3 : out_din_last <= 1'b0;
+                    4'h4 : out_din_last <= 1'b1;
+                    default out_din_last <= out_din_last;
+                endcase // word_counter
+
 
             default : 
                 out_din_last <= out_din_last;
@@ -566,10 +662,49 @@ module adxl345_functional (
                     out_wren <= 1'b0;
                 end 
 
+            CAL_TX_OFS_ZEROS_ST : 
+                if (!out_awfull) begin 
+                    out_wren <= 1'b1;
+                end else begin 
+                    out_wren <= 1'b0;
+                end 
+
             default : 
                 out_wren <= 1'b0;
 
         endcase // current_state
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : calibration_flaq_processing 
+        if (RESET) begin 
+            calibration_flaq <= 1'b0;
+        end else begin 
+            case (current_state) 
+        
+                CAL_TX_OFS_ZEROS_ST : 
+                    calibration_flaq <= 1'b0;
+
+                default : 
+                    if (CALIBRATION) begin 
+                        calibration_flaq <= 1'b1;
+                    end else begin 
+                        calibration_flaq <= calibration_flaq;
+                    end 
+
+            endcase // word_counter
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : calibration_count_limit_processing 
+        if (calibration_flaq) begin 
+            calibration_count_limit <= calibration_count_limit_rom[CALIBRATION_MODE];
+        end else begin 
+            calibration_count_limit <= calibration_count_limit;
+        end 
     end 
 
 
@@ -590,6 +725,13 @@ module adxl345_functional (
                 IDLE_CHK_UPD_ST : 
                     if (need_update_flaq) begin 
                         current_state <= UPD_CHK_FLAQ_ST;
+                    end else begin 
+                        current_state <= IDLE_CHK_CAL_ST;
+                    end 
+
+                IDLE_CHK_CAL_ST : 
+                    if (calibration_flaq) begin 
+                        current_state <= CAL_TX_OFS_ZEROS_ST;
                     end else begin 
                         current_state <= IDLE_CHK_REQ_ST;
                     end 
@@ -639,9 +781,20 @@ module adxl345_functional (
 
                 UPD_INCREMENT_ADDR_ST : 
                     if (write_memory_addrb == ADDRESS_WRITE_END) begin 
-                        current_state <= IDLE_CHK_REQ_ST;
+                        current_state <= IDLE_CHK_CAL_ST;
                     end else begin 
                         current_state <= UPD_CHK_FLAQ_ST;
+                    end 
+
+                CAL_TX_OFS_ZEROS_ST : 
+                    if (!out_awfull) begin 
+                        if (word_counter == 4'h4) begin 
+                            current_state <= IDLE_CHK_REQ_ST;
+                        end else begin 
+                            current_state <= current_state;
+                        end 
+                    end else begin 
+                        current_state <= current_state;
                     end 
 
                 default             : 
@@ -659,8 +812,15 @@ module adxl345_functional (
                 if (interrupt) begin 
                     address_ptr <= INT_SOURCE_ADDR;
                 end else begin 
-                    address_ptr <= DEVICE_ID_ADDR;
+                    if (has_cal_optimal_request_timer_exceeded) begin 
+                        address_ptr <= DATAX0_ADDR;
+                    end else begin 
+                        address_ptr <= DEVICE_ID_ADDR;
+                    end 
                 end 
+
+            IDLE_CHK_CAL_ST : 
+                address_ptr <= OFSX_ADDR;
             
             default : 
                 address_ptr <= address_ptr;
@@ -679,6 +839,13 @@ module adxl345_functional (
                 end 
 
             UPD_TX_DATA_ST : 
+                if (!out_awfull) begin 
+                    word_counter <= word_counter + 1;
+                end else begin 
+                    word_counter <= word_counter;
+                end 
+
+            CAL_TX_OFS_ZEROS_ST : 
                 if (!out_awfull) begin 
                     word_counter <= word_counter + 1;
                 end else begin 
@@ -730,6 +897,153 @@ module adxl345_functional (
 
             endcase // word_counter
         end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : cal_optimal_request_timer_limit_processing 
+        case (bw_rate_reg[3:0]) 
+            8'hF : 
+                cal_optimal_request_timer_limit <= OPT_REQ_INTERVAL;
+            8'hE :
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<1); 
+            8'hD :
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<2); 
+            8'hC : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<3);
+            8'hB : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<4);
+            8'hA : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<5);
+            8'h9 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<6);
+            8'h8 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<7);
+            8'h7 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<8);
+            8'h6 :
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<9);
+            8'h5 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<10);
+            8'h4 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<11);
+            8'h3 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<12);
+            8'h2 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<13);
+            8'h1 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<14);
+            8'h0 : 
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL<<15);
+            default :
+                cal_optimal_request_timer_limit <= (OPT_REQ_INTERVAL);
+        endcase // current_state
+    end 
+
+
+    always_ff @(posedge CLK) begin : allow_cal_optimal_request_timer_processing 
+        case (current_state)
+            CAL_TX_OFS_ZEROS_ST : 
+                if (!out_awfull) begin 
+                    if (word_counter == 4'h4) begin 
+                        allow_cal_optimal_request_timer <= 1'b1;
+                    end else begin 
+                        allow_cal_optimal_request_timer <= 1'b0;
+                    end 
+                end else begin 
+                    allow_cal_optimal_request_timer <= 1'b0;
+                end 
+
+            default : 
+                if (has_calibration_count_exceeded) begin 
+                    allow_cal_optimal_request_timer <= 1'b0;
+                end else begin 
+                    allow_cal_optimal_request_timer <= allow_cal_optimal_request_timer;
+                end 
+        endcase // current_state
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : cal_optimal_request_timer_processing 
+        if (RESET | !allow_cal_optimal_request_timer) begin 
+            cal_optimal_request_timer <= cal_optimal_request_timer_limit;
+        end else begin 
+            case (current_state)
+                REQ_RX_READ_DATA_ST : 
+                    if (S_AXIS_TVALID & S_AXIS_TREADY & S_AXIS_TLAST) begin 
+                        cal_optimal_request_timer <= cal_optimal_request_timer_limit;
+                    end else begin 
+                        cal_optimal_request_timer <= cal_optimal_request_timer;
+                    end 
+
+                default: 
+                    if (cal_optimal_request_timer == 0) begin 
+                        cal_optimal_request_timer <= cal_optimal_request_timer;
+                    end else begin 
+                        cal_optimal_request_timer <= cal_optimal_request_timer - 1;
+                    end 
+
+            endcase // word_counter
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : has_cal_optimal_request_timer_exceeded_processing 
+        if (RESET | !allow_cal_optimal_request_timer) begin 
+            has_cal_optimal_request_timer_exceeded <= 1'b0;
+        end else begin 
+            if (cal_optimal_request_timer == 0) begin 
+                has_cal_optimal_request_timer_exceeded <= 1'b1;
+            end else begin 
+                has_cal_optimal_request_timer_exceeded <= 1'b0;
+            end 
+        end 
+    end 
+
+
+    always_ff @(posedge CLK) begin : calibration_count_processing 
+        if (RESET | calibration_flaq) begin 
+            calibration_count <= calibration_count_limit;
+        end else begin 
+            case (current_state)
+                IDLE_CHK_REQ_ST : 
+                    if (request_flaq) begin 
+                        if (interrupt) begin 
+                            calibration_count <= calibration_count;
+                        end else begin 
+                            if (has_cal_optimal_request_timer_exceeded) begin 
+                                calibration_count <= calibration_count - 1;
+                            end else begin 
+                                calibration_count <= calibration_count;
+                            end 
+                        end
+                    end else begin 
+                        calibration_count <= calibration_count;
+                    end 
+
+                default : 
+                    calibration_count <= calibration_count;
+
+            endcase // current_state
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : has_calibration_count_exceeded_processing 
+
+        if (RESET | calibration_flaq) begin 
+            has_calibration_count_exceeded <= 1'b0;
+        end else begin 
+            if (calibration_count == 0) begin 
+                has_calibration_count_exceeded <= 1'b1;
+            end else begin 
+                has_calibration_count_exceeded <= 1'b0;
+            end 
+        end 
+
     end 
 
 endmodule

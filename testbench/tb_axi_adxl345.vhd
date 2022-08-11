@@ -20,8 +20,8 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
     constant   S_AXI_LITE_DEV_DATA_WIDTH  : integer                         := 32                           ;
     constant   S_AXI_LITE_DEV_ADDR_WIDTH  : integer                         := 8                            ;
     constant   DEFAULT_DEVICE_ADDRESS     : std_logic_Vector ( 6 downto 0 ) := "1010011"                    ;
-    constant   DEFAULT_REQUESTION_INTERVAL: integer                         := 1000                         ;
-    constant   DEFAULT_CALIBRATION_LIMIT  : integer                         := 8                            ;
+    constant   DEFAULT_REQUESTION_INTERVAL: integer                         := 10                           ;
+    constant   DEFAULT_CALIBRATION_MODE   : integer                         := 2                            ;
     constant   S_AXI_LITE_CFG_DATA_WIDTH  : integer                         := 32                           ;
     constant   S_AXI_LITE_CFG_ADDR_WIDTH  : integer                         := 8                            ;
     constant   CLK_PERIOD                 : integer                         := 100000000                    ;
@@ -33,7 +33,7 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
             S_AXI_LITE_DEV_ADDR_WIDTH   :           integer                         := 6                            ;
             DEFAULT_DEVICE_ADDRESS      :           std_logic_Vector ( 6 downto 0 ) := "1010011"                    ;
             DEFAULT_REQUESTION_INTERVAL    :           integer                         := 1000                         ;
-            DEFAULT_CALIBRATION_LIMIT   :           integer                         := 8                            ;
+            DEFAULT_CALIBRATION_MODE    :           integer                         := 8                            ;
             S_AXI_LITE_CFG_DATA_WIDTH   :           integer                         := 32                           ;
             S_AXI_LITE_CFG_ADDR_WIDTH   :           integer                         := 8                            ;
             CLK_PERIOD                  :           integer                         := 100000000                    ;
@@ -207,6 +207,8 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
         );
     end component;
 
+    signal  interrupt_i : integer := 0;
+
 begin 
 
     CLK <= not CLK after clock_period/2;
@@ -227,7 +229,7 @@ begin
             S_AXI_LITE_DEV_ADDR_WIDTH   =>  S_AXI_LITE_DEV_ADDR_WIDTH                       ,
             DEFAULT_DEVICE_ADDRESS      =>  DEFAULT_DEVICE_ADDRESS                          ,
             DEFAULT_REQUESTION_INTERVAL =>  DEFAULT_REQUESTION_INTERVAL                        ,
-            DEFAULT_CALIBRATION_LIMIT   =>  DEFAULT_CALIBRATION_LIMIT                       ,
+            DEFAULT_CALIBRATION_MODE    =>  DEFAULT_CALIBRATION_MODE                        ,
             S_AXI_LITE_CFG_DATA_WIDTH   =>  S_AXI_LITE_CFG_DATA_WIDTH                       ,
             S_AXI_LITE_CFG_ADDR_WIDTH   =>  S_AXI_LITE_CFG_ADDR_WIDTH                       ,
             CLK_PERIOD                  =>  CLK_PERIOD                                      ,
@@ -341,33 +343,60 @@ begin
     configuration_write_processing : process(CLK)
     begin
         if CLK'event AND CLK = '1' then 
-            case i is 
+            if (ADXL_IRQ = '1') then 
+                case (interrupt_i) is 
 
-                when    300     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF0C"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when    301     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF0C"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                when    302     => cfg_awaddr <= x"00"; cfg_awprot <= "000"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF0C"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    when    10000     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF16"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when    10001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF16"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when    10002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF16"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    when    others    => cfg_awaddr <= cfg_awaddr; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
+                end case;
+            else
+                case i is 
 
-                when others     => cfg_awaddr <= cfg_awaddr; cfg_awprot <= cfg_awprot; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
-            end case;
+                    when    300     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when    301     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when    302     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+
+                    when  20000     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when  20001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when  20002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+
+
+                    when others     => cfg_awaddr <= cfg_awaddr; cfg_awprot <= cfg_awprot; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
+                end case;
+            end if;
+
         end if;
     end process;
 
 
-
-
-    device_write_processing : process(CLK)
-    begin
+    interrupt_i_processing : process(CLK)
+    begin 
         if CLK'event AND CLK = '1' then 
-            case i is 
-
-                when  1009   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  1010   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  1011   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
-
-                when others     => DEV_AWADDR <= DEV_AWADDR; DEV_AWVALID <= '0'; DEV_WDATA <= (others => '0'); DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
-            end case;
+            if ADXL_IRQ = '1' then 
+                interrupt_i <= interrupt_i + 1;
+            else 
+                interrupt_i <= 0;
+            end if;
         end if;
     end process;
+
+
+
+    --device_write_processing : process(CLK)
+    --begin
+    --    if CLK'event AND CLK = '1' then 
+    --        case i is 
+
+    --            when  1009   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+    --            when  1010   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+    --            when  1011   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+
+    --            when others     => DEV_AWADDR <= DEV_AWADDR; DEV_AWVALID <= '0'; DEV_WDATA <= (others => '0'); DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
+    --        end case;
+    --    end if;
+    --end process;
 
 
 
