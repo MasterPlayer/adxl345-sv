@@ -261,9 +261,9 @@ module axi_adxl345 #(
     logic adxl_irq_ack;
 
 
-    logic       calibration      = 1'b0                   ;
-    logic [4:0] calibration_mode = '{default:'{default:0}};
-
+    logic       calibration          = 1'b0        ;
+    logic [4:0] calibration_mode     = '{default:0};
+    logic       calibration_complete               ;
     // always_comb begin : has_dataready_intr_proc
     //     has_dataready_intr = int_source_reg[7] & int_enable_reg[7];
     // end 
@@ -1547,7 +1547,7 @@ module axi_adxl345 #(
                 i2c_address                 , // register_cfg[ 0][14:8],
                 1'b0, //on_work,
                 single_request_complete     , //request_performed,
-                1'b0,  //calibration_flaq,
+                calibration_complete        ,  //calibration_flaq,
                 1'b0,  // ADXL_IRQ,
                 1'b0,
                 allow_irq_reg               , //allow_irq,
@@ -2162,42 +2162,6 @@ module axi_adxl345 #(
 
 
 
-    // always_ff @(posedge CLK) begin 
-    //     case (current_state)
-
-    //         TX_SEND_ADDR_PTR : 
-    //             refresh_after_calib_flaq <= 1'b0;
-
-    //         TX_WRITE_CALIB_OFS_ST : 
-    //             if (!out_awfull)
-    //                 if (write_cmd_word_cnt == 4'h4)
-    //                     refresh_after_calib_flaq <= 1'b1;
-
-    //         default: 
-    //             refresh_after_calib_flaq <= refresh_after_calib_flaq;
-
-    //     endcase
-    // end 
-
-
-
-
-
-    // always_ff @(posedge CLK) begin : reset_logic_timer_proc 
-    //     if (~RESETN)
-    //         reset_logic_timer <= '{default:0};
-    //     else
-    //         if (reset_logic_timer < RESET_DURATION) begin 
-    //             reset_logic_timer <= reset_logic_timer + 1;
-    //         end else begin 
-    //             if (slv_reg_wren_cfg)
-    //                 if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0)
-    //                     if ( S_AXI_LITE_CFG_WSTRB[0] & S_AXI_LITE_CFG_WDATA[0])
-    //                         reset_logic_timer <= '{default:0};
-    //         end     
-    // end 
-
-
 
     always_ff @(posedge CLK) begin : reset_timer_processing 
         if (~RESETN) begin 
@@ -2451,7 +2415,7 @@ module axi_adxl345 #(
         
         .CALIBRATION               (calibration               ),
         .CALIBRATION_MODE          (calibration_mode          ),
-        
+        .CALIBRATION_COMPLETE      (calibration_complete      ),
         
         .M_AXIS_TDATA              (M_AXIS_TDATA              ),
         .M_AXIS_TKEEP              (M_AXIS_TKEEP              ),
