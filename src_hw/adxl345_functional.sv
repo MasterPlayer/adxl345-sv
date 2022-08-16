@@ -1534,10 +1534,8 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                     require_update_flaq <= 1'b1;
                 end 
 
-
             UPD_CHK_FLAQ_ST : 
                 require_update_flaq <= 1'b1;
-
 
             IDLE_CHK_REQ_ST : 
                 if (request_flaq) begin 
