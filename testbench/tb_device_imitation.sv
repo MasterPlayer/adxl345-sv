@@ -37,8 +37,8 @@ module tb_device_imitation (
         8'h00, 8'h00, 8'h00, 8'h00, // 0x24
         8'h00, 8'h00, 8'h00, 8'h00, // 0x28
         8'h0F, 8'h00, 8'h00, 8'h00, // 0x2C
-        8'h80, 8'h30, 8'h0A, 8'h00, // 0x30
-        8'hF3, 8'hFF, 8'h09, 8'h00, // 0x34
+        8'h80, 8'h30, 8'hF0, 8'hFF, // 0x30
+        8'hF0, 8'hFF, 8'hF0, 8'hFF, // 0x34
         8'h00, 8'h00, 8'h00, 8'h00  // 0x38
     };
 
@@ -332,6 +332,25 @@ module tb_device_imitation (
                 end else begin 
                     register_file[ptr] <= register_file[ptr];
                 end 
+
+            READ_OP : 
+                if (valid_event) begin 
+                    case (ptr) 
+                        8'h32   : register_file[ptr] <= -register_file[ptr];
+                        8'h33   : register_file[ptr] <= -register_file[ptr];
+                        8'h34   : register_file[ptr] <= -register_file[ptr];
+                        8'h35   : register_file[ptr] <= -register_file[ptr];
+                        8'h36   : register_file[ptr] <= -register_file[ptr];
+                        8'h37   : register_file[ptr] <= -register_file[ptr];
+                        default : register_file[ptr] <= register_file[ptr];
+                    endcase // ptr
+
+                end else begin 
+                    register_file[ptr] <= register_file[ptr];
+                end 
+
+
+
             default : 
                 register_file[ptr] <= register_file[ptr];
 
