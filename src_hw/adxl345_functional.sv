@@ -27,6 +27,12 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     output logic        CALIBRATION_COMPLETE      , 
     output logic [63:0] CALIBRATION_TIME          ,
 
+    output logic [47:0] OPT_REQUEST_INTERVAL      ,
+    output logic [31:0] READ_VALID_COUNT          ,
+    output logic [31:0] WRITE_VALID_COUNT         ,
+
+    output logic [63:0] WRITE_TRANSACTIONS        ,
+    output logic [63:0] READ_TRANSACTIONS         ,
 
     // data to device
     output logic [ 7:0] M_AXIS_TDATA              ,
@@ -116,9 +122,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         UPD_TX_DATA_ST          , 
         UPD_INCREMENT_ADDR_ST   ,
 
-        CAL_TX_OFS_ST     , // sending zeros for reset OFSX, OFSY, OFSZ
-
-        WAIT_ST              
+        CAL_TX_OFS_ST      
     } fsm;
 
     fsm current_state = IDLE_CHK_REQ_ST;
@@ -131,7 +135,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     logic        requestion_interval_assigned = 1'b0        ;
 
     logic [7:0] out_din_data = '{default:0};
-    logic [0:0] out_din_keep = '{default:0};
+    logic [0:0] out_din_keep = '{default:1};
     logic [7:0] out_din_user = '{default:0};
     logic       out_din_last = 1'b0        ;
     logic       out_wren     = 1'b0        ;
@@ -220,6 +224,54 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
     logic calibration_process = 1'b0; // for time measurements
 
+    logic [31:0] timer                      = '{default:0};
+    logic [31:0] read_valid_counter         = '{default:0};
+    logic [31:0] write_valid_counter        = '{default:0};
+
+    logic [9:0] fsm_state;
+
+    always_comb begin 
+        case (current_state)
+            IDLE_CHK_REQ_ST         : fsm_state <= 10'h0000;
+            IDLE_CHK_UPD_ST         : fsm_state <= 10'h0001;
+            IDLE_CHK_CAL_ST         : fsm_state <= 10'h0002;
+            REQ_TX_ADDR_PTR_ST      : fsm_state <= 10'h0003;
+            REQ_TX_READ_DATA_ST     : fsm_state <= 10'h0004;
+            REQ_RX_READ_DATA_ST     : fsm_state <= 10'h0005;
+            UPD_CHK_FLAQ_ST         : fsm_state <= 10'h0006;
+            UPD_TX_DATA_ST          : fsm_state <= 10'h0007;
+            UPD_INCREMENT_ADDR_ST   : fsm_state <= 10'h0008;
+            CAL_TX_OFS_ST           : fsm_state <= 10'h0009;
+            default                 : fsm_state <= 10'hFFFF;
+        endcase // current_state
+    end 
+
+    always_ff @(posedge CLK) begin 
+        if (RESET) begin 
+            S_AXIS_TREADY <= 1'b0;
+        end else begin 
+            S_AXIS_TREADY <= 1'b1;
+        end 
+    end 
+
+    ila_0 ila_0_inst (
+        .clk    (CLK                                                                                                                             ), // input wire clk
+        .probe0 (M_AXIS_TDATA                                                                                                                    ), // input wire [7:0]  probe0
+        .probe1 (M_AXIS_TVALID                                                                                                                   ), // input wire [0:0]  probe1
+        .probe2 (M_AXIS_TLAST                                                                                                                    ), // input wire [0:0]  probe2
+        .probe3 (M_AXIS_TREADY                                                                                                                   ), // input wire [0:0]  probe3
+        .probe4 (S_AXIS_TDATA                                                                                                                    ), // input wire [7:0]  probe4
+        .probe5 (S_AXIS_TVALID                                                                                                                   ), // input wire [0:0]  probe5
+        .probe6 (S_AXIS_TLAST                                                                                                                    ), // input wire [0:0]  probe6
+        .probe7 (S_AXIS_TREADY                                                                                                                   ), // input wire [0:0]  probe7
+        .probe8 (fsm_state                                                                                                                       ), // input wire [9:0]  probe8
+        .probe9 (request_flaq                                                                                                                    ), // input wire [0:0]  probe9
+        .probe10(need_update_flaq                                                                                                                ), // input wire [0:0]  probe10
+        .probe11(need_calibration_flaq                                                                                                           ), // input wire [0:0]  probe11
+        .probe12(calibration_completed                                                                                                           ), // input wire [0:0]  probe12
+        .probe13({SINGLE_REQUEST, requestion_interval_assigned, interrupt, has_cal_optimal_request_timer_exceeded, update_after_calibration_flaq}),
+        .probe14(SINGLE_REQUEST_COMPLETE                                                                                                         )
+    );
 
     always_comb begin : RDATA_processing 
         RDATA = read_memory_doutb;
@@ -1551,5 +1603,111 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             end 
         end 
     end 
+
+
+
+    always_comb begin : OPT_REQUEST_INTERVAL_processing 
+        OPT_REQUEST_INTERVAL = cal_optimal_request_timer_limit;
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : timer_processing 
+        if (timer == (CLK_PERIOD-1)) begin 
+            timer <= '{default:0};
+        end else begin 
+            timer <= timer + 1;
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : read_valid_counter_processing 
+        if (timer == (CLK_PERIOD-1)) begin 
+            read_valid_counter <= '{default:0};
+        end else begin 
+            if (S_AXIS_TVALID & S_AXIS_TREADY) begin  
+                read_valid_counter <= read_valid_counter + 1;
+            end else begin 
+                read_valid_counter <= read_valid_counter;
+            end 
+        end 
+    end
+
+
+
+    always_ff @(posedge CLK) begin : READ_VALID_COUNT_processing 
+        if (timer == (CLK_PERIOD-1)) begin 
+            if (S_AXIS_TVALID & S_AXIS_TREADY) begin 
+                READ_VALID_COUNT <= read_valid_counter + 1;
+            end else begin 
+                READ_VALID_COUNT <= read_valid_counter;
+            end 
+        end else begin 
+            READ_VALID_COUNT <= READ_VALID_COUNT;
+        end 
+    end
+
+
+
+    always_ff @(posedge CLK) begin : write_valid_counter_processing 
+        if (timer == (CLK_PERIOD-1)) begin 
+            write_valid_counter <= '{default:0};
+        end else begin 
+            if (M_AXIS_TVALID & M_AXIS_TREADY) begin  
+                write_valid_counter <= write_valid_counter + 1;
+            end else begin 
+                write_valid_counter <= write_valid_counter;
+            end 
+        end 
+    end
+
+
+
+    always_ff @(posedge CLK) begin : WRITE_VALID_COUNT_processing 
+        if (timer == (CLK_PERIOD-1)) begin 
+            if (M_AXIS_TVALID & M_AXIS_TREADY) begin 
+                WRITE_VALID_COUNT <= write_valid_counter + 1;
+            end else begin 
+                WRITE_VALID_COUNT <= write_valid_counter;
+            end 
+        end else begin 
+            WRITE_VALID_COUNT <= WRITE_VALID_COUNT;
+        end 
+    end
+
+
+
+    always_ff @(posedge CLK) begin : WRITE_TRANSACTIONS_processing 
+        if (RESET) begin 
+            WRITE_TRANSACTIONS <= '{default:0};
+        end else begin 
+            if (M_AXIS_TVALID & M_AXIS_TREADY & M_AXIS_TLAST) begin
+                WRITE_TRANSACTIONS <= WRITE_TRANSACTIONS + 1;
+            end else begin 
+                WRITE_TRANSACTIONS <= WRITE_TRANSACTIONS;
+            end 
+
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : READ_TRANSACTIONS_processing 
+        if (RESET) begin 
+            READ_TRANSACTIONS <= '{default:0};
+        end else begin 
+            if (S_AXIS_TVALID & S_AXIS_TREADY & S_AXIS_TLAST) begin
+                READ_TRANSACTIONS <= READ_TRANSACTIONS + 1;
+            end else begin 
+                READ_TRANSACTIONS <= READ_TRANSACTIONS;
+            end 
+
+        end 
+    end 
+
+
+
+
 
 endmodule

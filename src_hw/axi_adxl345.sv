@@ -108,18 +108,16 @@ module axi_adxl345 #(
     localparam integer DATA_WIDTH            = 8                                 ;
     localparam integer USER_WIDTH            = 8                                 ;
 
-    logic                                 slv_reg_rden;
-    logic                                 slv_reg_wren;
-    logic [S_AXI_LITE_DEV_DATA_WIDTH-1:0] reg_data_out;
-    logic                                 aw_en       ;
+    (* dont_touch="true" *) logic                                 slv_reg_rden;
+    (* dont_touch="true" *) logic                                 slv_reg_wren;
+    (* dont_touch="true" *) logic [S_AXI_LITE_DEV_DATA_WIDTH-1:0] reg_data_out;
+    (* dont_touch="true" *) logic                                 aw_en       ;
 
-    logic [                         15:0][S_AXI_LITE_CFG_DATA_WIDTH-1:0] register_cfg     = '{default:'{default:0}};
-    logic [                        191:0][                          7:0] register_samples = '{default:'{default:0}};
-    logic [                          7:0]                                sample_address   = '{default:0}           ;
-    logic                                                                slv_reg_rden_cfg                          ;
-    logic                                                                slv_reg_wren_cfg                          ;
-    logic [S_AXI_LITE_CFG_DATA_WIDTH-1:0]                                reg_data_out_cfg                          ;
-    logic                                                                aw_en_cfg                                 ;
+    (* dont_touch="true" *)logic [                         15:0][S_AXI_LITE_CFG_DATA_WIDTH-1:0] register_cfg     = '{default:'{default:0}};
+    (* dont_touch="true" *)logic                                                                slv_reg_rden_cfg                          ;
+    (* dont_touch="true" *)logic                                                                slv_reg_wren_cfg                          ;
+    (* dont_touch="true" *)logic [S_AXI_LITE_CFG_DATA_WIDTH-1:0]                                reg_data_out_cfg                          ;
+    (* dont_touch="true" *)logic                                                                aw_en_cfg                                 ;
 
     // integer byte_index_cfg;
 
@@ -189,10 +187,6 @@ module axi_adxl345 #(
     // logic [($clog2(RESET_DURATION)-1):0] reset_logic_timer    = 1'b0                    ; // reg[0][0]
 
     // logic [                        31:0] request_interval     = DEFAULT_REQUEST_INTERVAL;
-    // logic [                        31:0] read_valid_count     = '{default:0}            ;
-    // logic [                        31:0] read_valid_reg       = '{default:0}            ;
-    // logic [                        31:0] write_valid_count    = '{default:0}            ;
-    // logic [                        31:0] write_valid_reg      = '{default:0}            ;
     // logic [                        31:0] write_transactions   = '{default:0}            ;
     // logic [                        31:0] read_transactions    = '{default:0}            ;
     // logic [                        31:0] transactions_timer   = '{default:0}            ;
@@ -244,8 +238,8 @@ module axi_adxl345 #(
     logic [6:0] i2c_address = DEFAULT_DEVICE_ADDRESS; // reg[0][14:8]
 
     // single requesting data from device
-    logic single_request          = 1'b0;
-    logic single_request_complete = 1'b0;
+    (* dont_touch="true" *)logic single_request          = 1'b0;
+    (* dont_touch="true" *)logic single_request_complete;
 
     // periodic requests for interval timer
     logic            enable_interval_requestion = 1'b0        ;
@@ -261,9 +255,19 @@ module axi_adxl345 #(
     logic adxl_irq_ack;
 
 
-    logic       calibration          = 1'b0        ;
-    logic [4:0] calibration_mode     = '{default:0};
-    logic       calibration_complete               ;
+    logic        calibration          = 1'b0        ;
+    logic [ 4:0] calibration_mode                   ;
+    logic        calibration_complete               ;
+    logic [63:0] calibration_time                   ;
+
+    logic [47:0] opt_request_interval;
+
+    logic [31:0] read_valid_count ;
+    logic [31:0] write_valid_count;
+
+    logic [63:0] write_transactions;
+    logic [63:0] read_transactions ;
+
     // always_comb begin : has_dataready_intr_proc
     //     has_dataready_intr = int_source_reg[7] & int_enable_reg[7];
     // end 
@@ -301,45 +305,6 @@ module axi_adxl345 #(
     //     int_enable_reg = register[11][2];
     // end 
 
-    // always_ff @(posedge CLK) begin : opt_request_interval_proc 
-    //     case (register[11][0][3:0]) 
-    //         8'hF : 
-    //             opt_request_interval <= OPT_REQ_INTERVAL;
-    //         8'hE :
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<1); 
-    //         8'hD :
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<2); 
-    //         8'hC : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<3);
-    //         8'hB : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<4);
-    //         8'hA : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<5);
-    //         8'h9 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<6);
-    //         8'h8 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<7);
-    //         8'h7 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<8);
-    //         8'h6 :
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<9);
-    //         8'h5 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<10);
-    //         8'h4 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<11);
-    //         8'h3 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<12);
-    //         8'h2 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<13);
-    //         8'h1 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<14);
-    //         8'h0 : 
-    //             opt_request_interval <= (OPT_REQ_INTERVAL<<15);
-    //         default :
-    //             opt_request_interval <= (OPT_REQ_INTERVAL);
-    //     endcase // register[11][0][7:0]
-    // end 
-
 
 
     always_comb begin : S_AXI_LITE_DEV_processing 
@@ -351,7 +316,6 @@ module axi_adxl345 #(
         S_AXI_LITE_DEV_ARREADY = axi_dev_arready;
         S_AXI_LITE_DEV_RDATA   = axi_dev_rdata;
         S_AXI_LITE_DEV_RRESP   = axi_dev_rresp;
-        S_AXIS_TREADY          = 1'b1;
     end 
 
 
@@ -1556,71 +1520,20 @@ module axi_adxl345 #(
             };
 
             8'h01 : reg_data_out_cfg <= requestion_interval;
-            8'h02 : reg_data_out_cfg[4:0] <= calibration_mode; //DATA_WIDTH;
-
-            8'h03 : reg_data_out_cfg <= 'b0; //read_valid_reg;
-            8'h04 : reg_data_out_cfg <= 'b0; //write_valid_reg;
-            8'h05 : reg_data_out_cfg <= 'b0; //write_transactions;
-            8'h06 : reg_data_out_cfg <= 'b0; //read_transactions;
-            8'h07 : reg_data_out_cfg <= 'b0; //CLK_PERIOD;
-            8'h08 : reg_data_out_cfg <= 'b0; //{23'h0, has_ovrrn_intr, sample_address};
-            8'h09 : reg_data_out_cfg <= 'b0; //opt_request_interval;
-            8'h0a : reg_data_out_cfg <= 'b0; //calibration_count_limit_reg;
-            8'h0b : reg_data_out_cfg <= 'b0; //calibration_elapsed_time;
-            8'h0c : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0d : reg_data_out_cfg <= '{default:0}; // reserved
-            8'h0e : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h02 : reg_data_out_cfg <= {{27{1'b0}} , calibration_mode}; //DATA_WIDTH;
+            8'h03 : reg_data_out_cfg <= read_valid_count; //read_valid_reg;
+            8'h04 : reg_data_out_cfg <= write_valid_count; //write_valid_reg;
+            8'h05 : reg_data_out_cfg <= read_transactions[31:0]; 
+            8'h06 : reg_data_out_cfg <= read_transactions[63:32];
+            8'h07 : reg_data_out_cfg <= CLK_PERIOD;
+            8'h08 : reg_data_out_cfg <= opt_request_interval[31: 0]; //{23'h0, has_ovrrn_intr, sample_address};
+            8'h09 : reg_data_out_cfg <= {{16{1'b0}}, opt_request_interval[47:32]}; //opt_request_interval;
+            8'h0a : reg_data_out_cfg <= DATA_WIDTH; //calibration_count_limit_reg;
+            8'h0b : reg_data_out_cfg <= calibration_time[31:0];
+            8'h0c : reg_data_out_cfg <= calibration_time[63:32];
+            8'h0d : reg_data_out_cfg <= write_transactions[31:0];
+            8'h0e : reg_data_out_cfg <= write_transactions[63:32];
             8'h0f : reg_data_out_cfg <= '{default:0}; // reserved
-
-            // 8'h10    : reg_data_out_cfg <= register_file[0][31:0];
-            // 8'h11    : reg_data_out_cfg <= register_file[1][31:0];
-            // 8'h12    : reg_data_out_cfg <= register_file[2][31:0];
-            // 8'h13    : reg_data_out_cfg <= register_file[3][31:0];
-            // 8'h14    : reg_data_out_cfg <= register_file[4][31:0];
-            // 8'h15    : reg_data_out_cfg <= register_file[5][31:0];
-            // 8'h16    : reg_data_out_cfg <= register_file[6][31:0];
-            // 8'h17    : reg_data_out_cfg <= register_file[7][31:0];
-            // 8'h18    : reg_data_out_cfg <= register_file[8][31:0];
-            // 8'h19    : reg_data_out_cfg <= register_file[9][31:0];
-            // 8'h1a    : reg_data_out_cfg <= register_file[10][31:0];
-            // 8'h1b    : reg_data_out_cfg <= register_file[11][31:0];
-            // 8'h1c    : reg_data_out_cfg <= register_file[12][31:0];
-            // 8'h1d    : reg_data_out_cfg <= register_file[13][31:0];
-            // 8'h1e    : reg_data_out_cfg <= register_file[14][31:0];
-            // 8'h1f    : reg_data_out_cfg <= register_file[15][31:0];
-            // 8'h20    : reg_data_out_cfg <= register_file[16][31:0];
-            // 8'h21    : reg_data_out_cfg <= register_file[17][31:0];
-            // 8'h22    : reg_data_out_cfg <= register_file[18][31:0];
-            // 8'h23    : reg_data_out_cfg <= register_file[19][31:0];
-            // 8'h24    : reg_data_out_cfg <= register_file[20][31:0];
-            // 8'h25    : reg_data_out_cfg <= register_file[21][31:0];
-            // 8'h26    : reg_data_out_cfg <= register_file[22][31:0];
-            // 8'h27    : reg_data_out_cfg <= register_file[23][31:0];
-            // 8'h28    : reg_data_out_cfg <= register_file[24][31:0];
-            // 8'h29    : reg_data_out_cfg <= register_file[25][31:0];
-            // 8'h2a    : reg_data_out_cfg <= register_file[26][31:0];
-            // 8'h2b    : reg_data_out_cfg <= register_file[27][31:0];
-            // 8'h2c    : reg_data_out_cfg <= register_file[28][31:0];
-            // 8'h2d    : reg_data_out_cfg <= register_file[29][31:0];
-            // 8'h2e    : reg_data_out_cfg <= register_file[30][31:0];
-            // 8'h2f    : reg_data_out_cfg <= register_file[31][31:0];
-            // 8'h30    : reg_data_out_cfg <= register_file[32][31:0];
-            // 8'h31    : reg_data_out_cfg <= register_file[33][31:0];
-            // 8'h32    : reg_data_out_cfg <= register_file[34][31:0];
-            // 8'h33    : reg_data_out_cfg <= register_file[35][31:0];
-            // 8'h34    : reg_data_out_cfg <= register_file[36][31:0];
-            // 8'h35    : reg_data_out_cfg <= register_file[37][31:0];
-            // 8'h36    : reg_data_out_cfg <= register_file[38][31:0];
-            // 8'h37    : reg_data_out_cfg <= register_file[39][31:0];
-            // 8'h38    : reg_data_out_cfg <= register_file[40][31:0];
-            // 8'h39    : reg_data_out_cfg <= register_file[41][31:0];
-            // 8'h3a    : reg_data_out_cfg <= register_file[42][31:0];
-            // 8'h3b    : reg_data_out_cfg <= register_file[43][31:0];
-            // 8'h3c    : reg_data_out_cfg <= register_file[44][31:0];
-            // 8'h3d    : reg_data_out_cfg <= register_file[45][31:0];
-            // 8'h3e    : reg_data_out_cfg <= register_file[46][31:0];
-            // 8'h3f    : reg_data_out_cfg <= register_file[47][31:0];
-
             default : reg_data_out_cfg <= '{default:0};
         endcase
     end
@@ -1774,76 +1687,6 @@ module axi_adxl345 #(
 
 
 
-    // always_ff @(posedge CLK) begin 
-    //     if (~RESETN)
-    //         transactions_timer <= '{default:0};
-    //     else 
-    //         if (transactions_timer < CLK_PERIOD-1) 
-    //             transactions_timer <= transactions_timer + 1;
-    //         else 
-    //             transactions_timer <= '{default:0};
-    // end
-
-    // always_ff @(posedge CLK) begin 
-    //     if (~RESETN)
-    //         read_valid_count <= '{default:0};
-    //     else 
-    //         if (transactions_timer < CLK_PERIOD-1) begin 
-    //             if (S_AXIS_TVALID & S_AXIS_TREADY) begin
-    //                 read_valid_count <= read_valid_count + 1;
-    //             end else begin  
-    //                 read_valid_count <= read_valid_count;
-    //             end  
-    //         end else begin  
-    //             read_valid_count <= '{default:0};
-    //         end 
-    // end 
-
-    // always_ff @(posedge CLK) begin 
-    //     if (~RESETN)
-    //         read_valid_reg <= '{default:0};
-    //     else 
-    //         if (transactions_timer < (CLK_PERIOD-1)) begin 
-    //             read_valid_reg <= read_valid_reg;
-    //         end else begin 
-    //             read_valid_reg <= read_valid_count;
-    //         end 
-    // end 
-
-    // always_ff @(posedge CLK) begin 
-    //     if (~RESETN)
-    //         write_valid_count <= '{default:0};
-    //     else 
-    //         if (transactions_timer < (CLK_PERIOD-1)) begin 
-    //             if (out_wren) begin
-    //                 write_valid_count <= write_valid_count + 1;
-    //             end else begin  
-    //                 write_valid_count <= write_valid_count;
-    //             end  
-    //         end else begin  
-    //             write_valid_count <= '{default:0};
-    //         end 
-    // end 
-
-    // always_ff @(posedge CLK) begin 
-    //     if (~RESETN)
-    //         write_valid_reg <= '{default:0};
-    //     else 
-    //         if (transactions_timer < (CLK_PERIOD-1)) begin 
-    //             write_valid_reg <= write_valid_reg;
-    //         end else begin  
-    //             write_valid_reg <= write_valid_count;
-    //         end 
-    // end 
-
-    // always_ff @(posedge CLK) begin : write_transactions_proc
-    //     if (~RESETN | reset)
-    //         write_transactions <= '{default:0};
-    //     else
-    //         if (out_wren)
-    //             if (out_din_last)
-    //                 write_transactions <= write_transactions + 1;
-    // end 
 
     // always_ff @(posedge CLK) begin : read_transactions_proc
     //     if (~RESETN | reset)
@@ -1852,28 +1695,6 @@ module axi_adxl345 #(
     //         if (S_AXIS_TVALID & S_AXIS_TREADY)
     //             if (S_AXIS_TLAST)
     //                 read_transactions <= read_transactions + 1;
-    // end 
-
-    // always_ff @(posedge CLK) begin 
-    //     if (~RESETN | reset | intr_ack) begin 
-    //         sample_address <= '{default:0};
-    //     end else begin  
-    //         case (current_state) 
-    //             RX_WM_DATA_ST: 
-    //                 if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
-    //                     sample_address <= sample_address + 1;
-    //                 end 
-
-    //             default: 
-    //                 sample_address <= sample_address;
-    //         endcase // current_state;
-    //     end 
-    // end 
-
-    // always_ff @(posedge CLK) begin 
-    //     if (S_AXIS_TVALID & (has_wm_intr | has_ovrrn_intr)) begin 
-    //         register_samples[sample_address][7:0] <= S_AXIS_TDATA;
-    //     end 
     // end 
 
 
@@ -2205,7 +2026,7 @@ module axi_adxl345 #(
 
     // logic for perform single request
     always_ff @(posedge CLK) begin : single_request_processing 
-        if (~RESETN | reset | single_request_complete) begin 
+        if (~RESETN | reset) begin 
             single_request <= 1'b0;
         end else begin 
             if (slv_reg_wren_cfg) begin 
@@ -2219,7 +2040,11 @@ module axi_adxl345 #(
                     single_request <= single_request;
                 end 
             end else begin 
-                single_request <= single_request;
+                if (single_request_complete) begin 
+                    single_request <= 1'b0;
+                end else begin 
+                    single_request <= single_request;
+                end 
             end 
         end 
     end 
@@ -2416,6 +2241,15 @@ module axi_adxl345 #(
         .CALIBRATION               (calibration               ),
         .CALIBRATION_MODE          (calibration_mode          ),
         .CALIBRATION_COMPLETE      (calibration_complete      ),
+        .CALIBRATION_TIME          (calibration_time          ),
+        
+        .OPT_REQUEST_INTERVAL      (opt_request_interval      ),
+        
+        .READ_VALID_COUNT          (read_valid_count          ),
+        .WRITE_VALID_COUNT         (write_valid_count         ),
+        
+        .WRITE_TRANSACTIONS        (write_transactions        ),
+        .READ_TRANSACTIONS         (read_transactions         ),
         
         .M_AXIS_TDATA              (M_AXIS_TDATA              ),
         .M_AXIS_TKEEP              (M_AXIS_TKEEP              ),

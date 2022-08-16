@@ -20,7 +20,7 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
     constant   S_AXI_LITE_DEV_DATA_WIDTH  : integer                         := 32                           ;
     constant   S_AXI_LITE_DEV_ADDR_WIDTH  : integer                         := 8                            ;
     constant   DEFAULT_DEVICE_ADDRESS     : std_logic_Vector ( 6 downto 0 ) := "1010011"                    ;
-    constant   DEFAULT_REQUESTION_INTERVAL: integer                         := 10                           ;
+    constant   DEFAULT_REQUESTION_INTERVAL: integer                         := 1000                         ;
     constant   DEFAULT_CALIBRATION_MODE   : integer                         := 2                            ;
     constant   S_AXI_LITE_CFG_DATA_WIDTH  : integer                         := 32                           ;
     constant   S_AXI_LITE_CFG_ADDR_WIDTH  : integer                         := 8                            ;
@@ -353,21 +353,25 @@ begin
             else
                 case i is 
 
-                    when    300     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when    301     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when    302     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    --when    300     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    --when    301     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    --when    302     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
-                    when  20000     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when  20001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when  20002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    when  20000     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when  20001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when  20002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
-                    when 600000     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000005"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 600001     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000005"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 600002     => cfg_awaddr <= x"08"; cfg_awvalid <= '0'; cfg_wdata <= x"00000005"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    when 600000     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000010"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600001     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000010"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600002     => cfg_awaddr <= x"08"; cfg_awvalid <= '0'; cfg_wdata <= x"00000010"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
-                    when 700000     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 700001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 700002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    when 600010     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600011     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600012     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
+
+                    --when 700000     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    --when 700001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    --when 700002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
                     when others     => cfg_awaddr <= cfg_awaddr; cfg_awprot <= cfg_awprot; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
                 end case;
@@ -390,19 +394,19 @@ begin
 
 
 
-    --device_write_processing : process(CLK)
-    --begin
-    --    if CLK'event AND CLK = '1' then 
-    --        case i is 
+    device_write_processing : process(CLK)
+    begin
+        if CLK'event AND CLK = '1' then 
+            case i is 
 
-    --            when  1009   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-    --            when  1010   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-    --            when  1011   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"FF80FFFF"; DEV_WSTRB <= x"4"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+                when  200000   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0000080F"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  200001   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0000080F"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  200002   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"0000080F"; DEV_WSTRB <= x"F"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
-    --            when others     => DEV_AWADDR <= DEV_AWADDR; DEV_AWVALID <= '0'; DEV_WDATA <= (others => '0'); DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
-    --        end case;
-    --    end if;
-    --end process;
+                when others     => DEV_AWADDR <= DEV_AWADDR; DEV_AWVALID <= '0'; DEV_WDATA <= (others => '0'); DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
+            end case;
+        end if;
+    end process;
 
 
 
