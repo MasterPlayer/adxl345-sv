@@ -220,7 +220,6 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
     logic calibration_completed      = 1'b0; // flaq for sending newest calibrated data to device
 
-    logic update_after_calibration_flaq = 1'b0; // flaq for update internal memory over reading from device data
 
     logic calibration_process = 1'b0; // for time measurements
 
@@ -229,6 +228,8 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     logic [31:0] write_valid_counter        = '{default:0};
 
     logic [9:0] fsm_state;
+
+    logic require_update_flaq = 1'b0; // flaq for update internal <read>memory after changes on <write>memory and device memory 
 
     always_comb begin 
         case (current_state)
@@ -246,6 +247,8 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         endcase // current_state
     end 
 
+
+
     always_ff @(posedge CLK) begin 
         if (RESET) begin 
             S_AXIS_TREADY <= 1'b0;
@@ -254,24 +257,26 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         end 
     end 
 
-    ila_0 ila_0_inst (
-        .clk    (CLK                                                                                                                             ), // input wire clk
-        .probe0 (M_AXIS_TDATA                                                                                                                    ), // input wire [7:0]  probe0
-        .probe1 (M_AXIS_TVALID                                                                                                                   ), // input wire [0:0]  probe1
-        .probe2 (M_AXIS_TLAST                                                                                                                    ), // input wire [0:0]  probe2
-        .probe3 (M_AXIS_TREADY                                                                                                                   ), // input wire [0:0]  probe3
-        .probe4 (S_AXIS_TDATA                                                                                                                    ), // input wire [7:0]  probe4
-        .probe5 (S_AXIS_TVALID                                                                                                                   ), // input wire [0:0]  probe5
-        .probe6 (S_AXIS_TLAST                                                                                                                    ), // input wire [0:0]  probe6
-        .probe7 (S_AXIS_TREADY                                                                                                                   ), // input wire [0:0]  probe7
-        .probe8 (fsm_state                                                                                                                       ), // input wire [9:0]  probe8
-        .probe9 (request_flaq                                                                                                                    ), // input wire [0:0]  probe9
-        .probe10(need_update_flaq                                                                                                                ), // input wire [0:0]  probe10
-        .probe11(need_calibration_flaq                                                                                                           ), // input wire [0:0]  probe11
-        .probe12(calibration_completed                                                                                                           ), // input wire [0:0]  probe12
-        .probe13({SINGLE_REQUEST, requestion_interval_assigned, interrupt, has_cal_optimal_request_timer_exceeded, update_after_calibration_flaq}),
-        .probe14(SINGLE_REQUEST_COMPLETE                                                                                                         )
-    );
+    // ila_0 ila_0_inst (
+    //     .clk    (CLK                                                                                                                             ), // input wire clk
+    //     .probe0 (M_AXIS_TDATA                                                                                                                    ), // input wire [7:0]  probe0
+    //     .probe1 (M_AXIS_TVALID                                                                                                                   ), // input wire [0:0]  probe1
+    //     .probe2 (M_AXIS_TLAST                                                                                                                    ), // input wire [0:0]  probe2
+    //     .probe3 (M_AXIS_TREADY                                                                                                                   ), // input wire [0:0]  probe3
+    //     .probe4 (S_AXIS_TDATA                                                                                                                    ), // input wire [7:0]  probe4
+    //     .probe5 (S_AXIS_TVALID                                                                                                                   ), // input wire [0:0]  probe5
+    //     .probe6 (S_AXIS_TLAST                                                                                                                    ), // input wire [0:0]  probe6
+    //     .probe7 (S_AXIS_TREADY                                                                                                                   ), // input wire [0:0]  probe7
+    //     .probe8 (fsm_state                                                                                                                       ), // input wire [9:0]  probe8
+    //     .probe9 (request_flaq                                                                                                                    ), // input wire [0:0]  probe9
+    //     .probe10(need_update_flaq                                                                                                                ), // input wire [0:0]  probe10
+    //     .probe11(need_calibration_flaq                                                                                                           ), // input wire [0:0]  probe11
+    //     .probe12(calibration_completed                                                                                                           ), // input wire [0:0]  probe12
+    //     .probe13({SINGLE_REQUEST, requestion_interval_assigned, interrupt, has_cal_optimal_request_timer_exceeded, update_after_calibration_flaq}),
+    //     .probe14(SINGLE_REQUEST_COMPLETE                                                                                                         )
+    // );
+
+
 
     always_comb begin : RDATA_processing 
         RDATA = read_memory_doutb;
@@ -385,7 +390,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
     // if needed request, OR for this register
     always_ff @(posedge CLK) begin : request_flaq_processing 
-        request_flaq <= SINGLE_REQUEST | requestion_interval_assigned | interrupt | has_cal_optimal_request_timer_exceeded | update_after_calibration_flaq;
+        request_flaq <= SINGLE_REQUEST | requestion_interval_assigned | interrupt | has_cal_optimal_request_timer_exceeded | require_update_flaq;
     end 
 
 
@@ -430,7 +435,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     always_ff @(posedge CLK) begin : requestion_interval_assigned_processing 
         if (ENABLE_INTERVAL_REQUESTION) begin 
             if (requestion_interval_counter == 0) begin 
-                requestion_interval_assigned <= ~ADXL_IRQ;
+                requestion_interval_assigned <= ~(ADXL_IRQ | calibration_process);
             end else begin 
                 requestion_interval_assigned <= 1'b0; 
             end 
@@ -1519,33 +1524,38 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
 
-    always_ff @(posedge CLK) begin : update_after_calibration_flaq_processing 
+    always_ff @(posedge CLK) begin : require_update_flaq_processing 
         case (current_state)
 
             CAL_TX_OFS_ST : 
                 if (need_calibration_flaq) begin 
-                    update_after_calibration_flaq <= 1'b0;
+                    require_update_flaq <= 1'b0;
                 end else begin 
-                    update_after_calibration_flaq <= 1'b1;
+                    require_update_flaq <= 1'b1;
                 end 
+
+
+            UPD_CHK_FLAQ_ST : 
+                require_update_flaq <= 1'b1;
+
 
             IDLE_CHK_REQ_ST : 
                 if (request_flaq) begin 
                     if (interrupt) begin 
-                        update_after_calibration_flaq <= update_after_calibration_flaq;
+                        require_update_flaq <= require_update_flaq;
                     end else begin 
                         if (has_cal_optimal_request_timer_exceeded) begin 
-                            update_after_calibration_flaq <= update_after_calibration_flaq;
+                            require_update_flaq <= require_update_flaq;
                         end else begin 
-                            update_after_calibration_flaq <= 1'b0;
+                            require_update_flaq <= 1'b0;
                         end 
                     end
                 end else begin 
-                    update_after_calibration_flaq <= update_after_calibration_flaq;
+                    require_update_flaq <= require_update_flaq;
                 end 
 
             default : 
-                update_after_calibration_flaq <= update_after_calibration_flaq;
+                require_update_flaq <= require_update_flaq;
 
 
         endcase // data_format_range_field
