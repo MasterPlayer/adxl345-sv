@@ -196,27 +196,27 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     logic [31:0] calibration_count       = '{default:0};
     logic        has_calibrated_data     = 1'b0        ; // received data with this signal is calibration data of coordinates and this data added to cal_sum_* registers 
 
-    logic [47:0] cal_sum_x = '{default:0}; // calibration data accumulator for coordinate_x
-    logic [47:0] cal_sum_y = '{default:0}; // calibration data accumulator for coordinate_y
-    logic [47:0] cal_sum_z = '{default:0}; // calibration data accumulator for coordinate_z
+    logic signed [47:0] cal_sum_x = '{default:0}; // calibration data accumulator for coordinate_x
+    logic signed [47:0] cal_sum_y = '{default:0}; // calibration data accumulator for coordinate_y
+    logic signed [47:0] cal_sum_z = '{default:0}; // calibration data accumulator for coordinate_z
 
-    logic [15:0] cal_average_x = '{default:0};
-    logic [15:0] cal_average_y = '{default:0};
-    logic [15:0] cal_average_z = '{default:0};
+    logic signed [15:0] cal_average_x = '{default:0};
+    logic signed [15:0] cal_average_y = '{default:0};
+    logic signed [15:0] cal_average_z = '{default:0};
 
-    logic [15:0] cal_offset_x = '{default:0};
-    logic [15:0] cal_offset_y = '{default:0};
-    logic [15:0] cal_offset_z = '{default:0};
+    logic signed [15:0] cal_offset_x = '{default:0};
+    logic signed [15:0] cal_offset_y = '{default:0};
+    logic signed [15:0] cal_offset_z = '{default:0};
 
-    logic [ 7:0] cal_offset_lsb_x = '{default:0};
-    logic [ 7:0] cal_offset_lsb_y = '{default:0};
-    logic [ 7:0] cal_offset_lsb_z = '{default:0};
+    logic signed [ 7:0] cal_offset_lsb_x = '{default:0};
+    logic signed [ 7:0] cal_offset_lsb_y = '{default:0};
+    logic signed [ 7:0] cal_offset_lsb_z = '{default:0};
 
     logic [23:0] calibration_vector = '{default:0};
 
     logic [4:0] calibration_mode_reg = '{default:0};
 
-    logic [15:0] datax_shift_register = '{default:0};
+    logic signed [15:0] datax_shift_register = '{default:0};
 
     logic calibration_completed      = 1'b0; // flaq for sending newest calibrated data to device
 
