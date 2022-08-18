@@ -366,9 +366,9 @@ begin
                     when  20002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
 
-                    when 600000     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000006"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 600001     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000006"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 600002     => cfg_awaddr <= x"08"; cfg_awvalid <= '0'; cfg_wdata <= x"00000006"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    when 600000     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000001"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600001     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000001"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600002     => cfg_awaddr <= x"08"; cfg_awvalid <= '0'; cfg_wdata <= x"00000001"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
                     when 600010     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
                     when 600011     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';

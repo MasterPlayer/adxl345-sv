@@ -122,7 +122,8 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         UPD_TX_DATA_ST          , 
         UPD_INCREMENT_ADDR_ST   ,
 
-        CAL_TX_OFS_ST      
+        CAL_TX_OFS_ST           ,
+        CAL_SHIFT_ST             
     } fsm;
 
     fsm current_state = IDLE_CHK_REQ_ST;
@@ -196,17 +197,17 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     logic [31:0] calibration_count       = '{default:0};
     logic        has_calibrated_data     = 1'b0        ; // received data with this signal is calibration data of coordinates and this data added to cal_sum_* registers 
 
-    logic signed [47:0] cal_sum_x = '{default:0}; // calibration data accumulator for coordinate_x
-    logic signed [47:0] cal_sum_y = '{default:0}; // calibration data accumulator for coordinate_y
-    logic signed [47:0] cal_sum_z = '{default:0}; // calibration data accumulator for coordinate_z
+    logic signed [47:0] cal_acc_x = '{default:0}; // calibration data accumulator for coordinate_x
+    logic signed [47:0] cal_acc_y = '{default:0}; // calibration data accumulator for coordinate_y
+    logic signed [47:0] cal_acc_z = '{default:0}; // calibration data accumulator for coordinate_z
 
-    logic signed [15:0] cal_average_x = '{default:0};
-    logic signed [15:0] cal_average_y = '{default:0};
-    logic signed [15:0] cal_average_z = '{default:0};
+    logic signed [47:0] cal_average_x_shifter = '{default:0}; // accumulator data right-shifted for division of power of 2
+    logic signed [47:0] cal_average_y_shifter = '{default:0}; // accumulator data right-shifted for division of power of 2
+    logic signed [47:0] cal_average_z_shifter = '{default:0}; // accumulator data right-shifted for division of power of 2
 
-    logic signed [15:0] cal_offset_x = '{default:0};
-    logic signed [15:0] cal_offset_y = '{default:0};
-    logic signed [15:0] cal_offset_z = '{default:0};
+    logic signed [15:0] cal_average_x = '{default:0}; // average value accordingly with current mode of resolution (on device)
+    logic signed [15:0] cal_average_y = '{default:0}; // average value accordingly with current mode of resolution (on device)
+    logic signed [15:0] cal_average_z = '{default:0}; // average value accordingly with current mode of resolution (on device)
 
     logic signed [ 7:0] cal_offset_lsb_x = '{default:0};
     logic signed [ 7:0] cal_offset_lsb_y = '{default:0};
@@ -227,27 +228,11 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     logic [31:0] read_valid_counter         = '{default:0};
     logic [31:0] write_valid_counter        = '{default:0};
 
-    logic [9:0] fsm_state;
+    // logic [9:0] fsm_state;
 
     logic require_update_flaq = 1'b0; // flaq for update internal <read>memory after changes on <write>memory and device memory 
 
-    always_comb begin 
-        case (current_state)
-            IDLE_CHK_REQ_ST         : fsm_state <= 10'h0000;
-            IDLE_CHK_UPD_ST         : fsm_state <= 10'h0001;
-            IDLE_CHK_CAL_ST         : fsm_state <= 10'h0002;
-            REQ_TX_ADDR_PTR_ST      : fsm_state <= 10'h0003;
-            REQ_TX_READ_DATA_ST     : fsm_state <= 10'h0004;
-            REQ_RX_READ_DATA_ST     : fsm_state <= 10'h0005;
-            UPD_CHK_FLAQ_ST         : fsm_state <= 10'h0006;
-            UPD_TX_DATA_ST          : fsm_state <= 10'h0007;
-            UPD_INCREMENT_ADDR_ST   : fsm_state <= 10'h0008;
-            CAL_TX_OFS_ST           : fsm_state <= 10'h0009;
-            default                 : fsm_state <= 10'hFFFF;
-        endcase // current_state
-    end 
-
-
+    logic [31:0] calibration_count_limit_shifter = '{default:0};
 
     always_ff @(posedge CLK) begin 
         if (RESET) begin 
@@ -256,25 +241,6 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             S_AXIS_TREADY <= 1'b1;
         end 
     end 
-
-    // ila_0 ila_0_inst (
-    //     .clk    (CLK                                                                                                                             ), // input wire clk
-    //     .probe0 (M_AXIS_TDATA                                                                                                                    ), // input wire [7:0]  probe0
-    //     .probe1 (M_AXIS_TVALID                                                                                                                   ), // input wire [0:0]  probe1
-    //     .probe2 (M_AXIS_TLAST                                                                                                                    ), // input wire [0:0]  probe2
-    //     .probe3 (M_AXIS_TREADY                                                                                                                   ), // input wire [0:0]  probe3
-    //     .probe4 (S_AXIS_TDATA                                                                                                                    ), // input wire [7:0]  probe4
-    //     .probe5 (S_AXIS_TVALID                                                                                                                   ), // input wire [0:0]  probe5
-    //     .probe6 (S_AXIS_TLAST                                                                                                                    ), // input wire [0:0]  probe6
-    //     .probe7 (S_AXIS_TREADY                                                                                                                   ), // input wire [0:0]  probe7
-    //     .probe8 (fsm_state                                                                                                                       ), // input wire [9:0]  probe8
-    //     .probe9 (request_flaq                                                                                                                    ), // input wire [0:0]  probe9
-    //     .probe10(need_update_flaq                                                                                                                ), // input wire [0:0]  probe10
-    //     .probe11(need_calibration_flaq                                                                                                           ), // input wire [0:0]  probe11
-    //     .probe12(calibration_completed                                                                                                           ), // input wire [0:0]  probe12
-    //     .probe13({SINGLE_REQUEST, requestion_interval_assigned, interrupt, has_cal_optimal_request_timer_exceeded, update_after_calibration_flaq}),
-    //     .probe14(SINGLE_REQUEST_COMPLETE                                                                                                         )
-    // );
 
 
 
@@ -860,7 +826,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
                 IDLE_CHK_CAL_ST : 
                     if (need_calibration_flaq | calibration_completed) begin 
-                        current_state <= CAL_TX_OFS_ST;
+                        current_state <= CAL_SHIFT_ST;
                     end else begin 
                         current_state <= IDLE_CHK_REQ_ST;
                     end 
@@ -922,6 +888,13 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                         end else begin 
                             current_state <= current_state;
                         end 
+                    end else begin 
+                        current_state <= current_state;
+                    end 
+
+                CAL_SHIFT_ST : 
+                    if (calibration_count_limit_shifter[0]) begin 
+                        current_state <= CAL_TX_OFS_ST;
                     end else begin 
                         current_state <= current_state;
                     end 
@@ -1164,7 +1137,21 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         end 
     end 
 
+    always_ff @(posedge CLK) begin : calibration_count_limit_shifter_processing 
+        case (current_state)
 
+            CAL_SHIFT_ST :
+                calibration_count_limit_shifter[30:0] <= calibration_count_limit_shifter[31:1];
+
+            default : 
+                if (need_calibration_flaq) begin 
+                    calibration_count_limit_shifter <= calibration_count_limit_rom[CALIBRATION_MODE];
+                end else begin 
+                    calibration_count_limit_shifter <= calibration_count_limit_shifter;
+                end 
+
+        endcase // current_state
+    end 
 
     always_ff @(posedge CLK) begin : has_calibration_count_exceeded_processing 
         if (RESET) begin 
@@ -1221,16 +1208,16 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
     always_ff @(posedge CLK) begin : cal_sum_x_processing
         if (RESET | need_calibration_flaq) begin 
-            cal_sum_x <= '{default:0};
+            cal_acc_x <= '{default:0};
         end else begin 
             if (read_memory_wea & has_calibrated_data) begin 
                 if (read_memory_addra == DATAX1_ADDR) begin 
-                    cal_sum_x <= cal_sum_x + datax_shift_register;
+                    cal_acc_x <= cal_acc_x + datax_shift_register;
                 end else begin 
-                    cal_sum_x <= cal_sum_x;
+                    cal_acc_x <= cal_acc_x;
                 end 
             end else begin 
-                cal_sum_x <= cal_sum_x;
+                cal_acc_x <= cal_acc_x;
             end 
         end 
     end 
@@ -1239,16 +1226,16 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
     always_ff @(posedge CLK) begin : cal_sum_y_processing
         if (RESET | need_calibration_flaq) begin 
-            cal_sum_y <= '{default:0};
+            cal_acc_y <= '{default:0};
         end else begin 
             if (read_memory_wea & has_calibrated_data) begin 
                 if (read_memory_addra == DATAY1_ADDR) begin 
-                    cal_sum_y <= cal_sum_y + datax_shift_register;
+                    cal_acc_y <= cal_acc_y + datax_shift_register;
                 end else begin 
-                    cal_sum_y <= cal_sum_y;
+                    cal_acc_y <= cal_acc_y;
                 end 
             end else begin 
-                cal_sum_y <= cal_sum_y;
+                cal_acc_y <= cal_acc_y;
             end 
         end 
     end 
@@ -1257,141 +1244,78 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
     always_ff @(posedge CLK) begin : cal_sum_z_processing
         if (RESET | need_calibration_flaq) begin 
-            cal_sum_z <= '{default:0};
+            cal_acc_z <= '{default:0};
         end else begin 
             if (read_memory_wea & has_calibrated_data) begin 
                 if (read_memory_addra == DATAZ1_ADDR) begin 
-                    cal_sum_z <= cal_sum_z + datax_shift_register;
+                    cal_acc_z <= cal_acc_z + datax_shift_register;
                 end else begin 
-                    cal_sum_z <= cal_sum_z;
+                    cal_acc_z <= cal_acc_z;
                 end 
             end else begin 
-                cal_sum_z <= cal_sum_z;
+                cal_acc_z <= cal_acc_z;
             end 
         end 
     end 
 
 
 
-    always_ff @(posedge CLK) begin : cal_average_x_processing
-        case (calibration_mode_reg)  
-            5'h00 : cal_average_x <= (cal_sum_x );
-            5'h01 : cal_average_x <= (cal_sum_x >> 1);
-            5'h02 : cal_average_x <= (cal_sum_x >> 2);
-            5'h03 : cal_average_x <= (cal_sum_x >> 3);
-            5'h04 : cal_average_x <= (cal_sum_x >> 4);
-            5'h05 : cal_average_x <= (cal_sum_x >> 5);
-            5'h06 : cal_average_x <= (cal_sum_x >> 6);
-            5'h07 : cal_average_x <= (cal_sum_x >> 7);
-            5'h08 : cal_average_x <= (cal_sum_x >> 8);
-            5'h09 : cal_average_x <= (cal_sum_x >> 9);
-            5'h0a : cal_average_x <= (cal_sum_x >> 10);
-            5'h0b : cal_average_x <= (cal_sum_x >> 11);
-            5'h0c : cal_average_x <= (cal_sum_x >> 12);
-            5'h0d : cal_average_x <= (cal_sum_x >> 13);
-            5'h0e : cal_average_x <= (cal_sum_x >> 14);
-            5'h0f : cal_average_x <= (cal_sum_x >> 15);
-            5'h10 : cal_average_x <= (cal_sum_x >> 16);
-            5'h11 : cal_average_x <= (cal_sum_x >> 17);
-            5'h12 : cal_average_x <= (cal_sum_x >> 18);
-            5'h13 : cal_average_x <= (cal_sum_x >> 19);
-            5'h14 : cal_average_x <= (cal_sum_x >> 20);
-            5'h15 : cal_average_x <= (cal_sum_x >> 21);
-            5'h16 : cal_average_x <= (cal_sum_x >> 22);
-            5'h17 : cal_average_x <= (cal_sum_x >> 23);
-            5'h18 : cal_average_x <= (cal_sum_x >> 24);
-            5'h19 : cal_average_x <= (cal_sum_x >> 25);
-            5'h1a : cal_average_x <= (cal_sum_x >> 26);
-            5'h1b : cal_average_x <= (cal_sum_x >> 27);
-            5'h1c : cal_average_x <= (cal_sum_x >> 28);
-            5'h1d : cal_average_x <= (cal_sum_x >> 29);
-            5'h1e : cal_average_x <= (cal_sum_x >> 30);
-            5'h1f : cal_average_x <= (cal_sum_x >> 31);
+    always_ff @(posedge CLK) begin : cal_average_x_shifter_processing
+        case (current_state)
+            CAL_SHIFT_ST : 
+                if (calibration_count_limit_shifter[0]) begin
+                    cal_average_x_shifter <= cal_average_x_shifter;
+                end else begin 
+                    cal_average_x_shifter[46:0] <= cal_average_x_shifter[47:1];
+                end 
+            
+            IDLE_CHK_CAL_ST : 
+                cal_average_x_shifter <= cal_acc_x;
+            
+            default : 
+                cal_average_x_shifter <= cal_average_x_shifter;
 
-            default : cal_average_x <= (cal_sum_x);
-        endcase // calibration_mode_reg
+        endcase 
     end 
 
 
 
     always_ff @(posedge CLK) begin : cal_average_y_processing
-        case (calibration_mode_reg)  
-            5'h00 : cal_average_y <= (cal_sum_y );
-            5'h01 : cal_average_y <= (cal_sum_y >> 1);
-            5'h02 : cal_average_y <= (cal_sum_y >> 2);
-            5'h03 : cal_average_y <= (cal_sum_y >> 3);
-            5'h04 : cal_average_y <= (cal_sum_y >> 4);
-            5'h05 : cal_average_y <= (cal_sum_y >> 5);
-            5'h06 : cal_average_y <= (cal_sum_y >> 6);
-            5'h07 : cal_average_y <= (cal_sum_y >> 7);
-            5'h08 : cal_average_y <= (cal_sum_y >> 8);
-            5'h09 : cal_average_y <= (cal_sum_y >> 9);
-            5'h0a : cal_average_y <= (cal_sum_y >> 10);
-            5'h0b : cal_average_y <= (cal_sum_y >> 11);
-            5'h0c : cal_average_y <= (cal_sum_y >> 12);
-            5'h0d : cal_average_y <= (cal_sum_y >> 13);
-            5'h0e : cal_average_y <= (cal_sum_y >> 14);
-            5'h0f : cal_average_y <= (cal_sum_y >> 15);
-            5'h10 : cal_average_y <= (cal_sum_y >> 16);
-            5'h11 : cal_average_y <= (cal_sum_y >> 17);
-            5'h12 : cal_average_y <= (cal_sum_y >> 18);
-            5'h13 : cal_average_y <= (cal_sum_y >> 19);
-            5'h14 : cal_average_y <= (cal_sum_y >> 20);
-            5'h15 : cal_average_y <= (cal_sum_y >> 21);
-            5'h16 : cal_average_y <= (cal_sum_y >> 22);
-            5'h17 : cal_average_y <= (cal_sum_y >> 23);
-            5'h18 : cal_average_y <= (cal_sum_y >> 24);
-            5'h19 : cal_average_y <= (cal_sum_y >> 25);
-            5'h1a : cal_average_y <= (cal_sum_y >> 26);
-            5'h1b : cal_average_y <= (cal_sum_y >> 27);
-            5'h1c : cal_average_y <= (cal_sum_y >> 28);
-            5'h1d : cal_average_y <= (cal_sum_y >> 29);
-            5'h1e : cal_average_y <= (cal_sum_y >> 30);
-            5'h1f : cal_average_y <= (cal_sum_y >> 31);
+        case (current_state)
+            CAL_SHIFT_ST : 
+                if (calibration_count_limit_shifter[0]) begin
+                    cal_average_y_shifter <= cal_average_y_shifter;
+                end else begin 
+                    cal_average_y_shifter[46:0] <= cal_average_y_shifter[47:1];
+                end 
+            
+            IDLE_CHK_CAL_ST : 
+                cal_average_y_shifter <= cal_acc_y;
+            
+            default : 
+                cal_average_y_shifter <= cal_average_y_shifter;
 
-            default : cal_average_y <= (cal_sum_y);
-        endcase // calibration_mode_reg 
+        endcase 
     end 
 
 
 
     always_ff @(posedge CLK) begin : cal_average_z_processing
-        case (calibration_mode_reg)  
-            5'h00 : cal_average_z <= (cal_sum_z );
-            5'h01 : cal_average_z <= (cal_sum_z >> 1);
-            5'h02 : cal_average_z <= (cal_sum_z >> 2);
-            5'h03 : cal_average_z <= (cal_sum_z >> 3);
-            5'h04 : cal_average_z <= (cal_sum_z >> 4);
-            5'h05 : cal_average_z <= (cal_sum_z >> 5);
-            5'h06 : cal_average_z <= (cal_sum_z >> 6);
-            5'h07 : cal_average_z <= (cal_sum_z >> 7);
-            5'h08 : cal_average_z <= (cal_sum_z >> 8);
-            5'h09 : cal_average_z <= (cal_sum_z >> 9);
-            5'h0a : cal_average_z <= (cal_sum_z >> 10);
-            5'h0b : cal_average_z <= (cal_sum_z >> 11);
-            5'h0c : cal_average_z <= (cal_sum_z >> 12);
-            5'h0d : cal_average_z <= (cal_sum_z >> 13);
-            5'h0e : cal_average_z <= (cal_sum_z >> 14);
-            5'h0f : cal_average_z <= (cal_sum_z >> 15);
-            5'h10 : cal_average_z <= (cal_sum_z >> 16);
-            5'h11 : cal_average_z <= (cal_sum_z >> 17);
-            5'h12 : cal_average_z <= (cal_sum_z >> 18);
-            5'h13 : cal_average_z <= (cal_sum_z >> 19);
-            5'h14 : cal_average_z <= (cal_sum_z >> 20);
-            5'h15 : cal_average_z <= (cal_sum_z >> 21);
-            5'h16 : cal_average_z <= (cal_sum_z >> 22);
-            5'h17 : cal_average_z <= (cal_sum_z >> 23);
-            5'h18 : cal_average_z <= (cal_sum_z >> 24);
-            5'h19 : cal_average_z <= (cal_sum_z >> 25);
-            5'h1a : cal_average_z <= (cal_sum_z >> 26);
-            5'h1b : cal_average_z <= (cal_sum_z >> 27);
-            5'h1c : cal_average_z <= (cal_sum_z >> 28);
-            5'h1d : cal_average_z <= (cal_sum_z >> 29);
-            5'h1e : cal_average_z <= (cal_sum_z >> 30);
-            5'h1f : cal_average_z <= (cal_sum_z >> 31);
+        case (current_state)
+            CAL_SHIFT_ST : 
+                if (calibration_count_limit_shifter[0]) begin
+                    cal_average_z_shifter <= cal_average_z_shifter;
+                end else begin 
+                    cal_average_z_shifter[46:0] <= cal_average_z_shifter[47:1];
+                end 
+            
+            IDLE_CHK_CAL_ST : 
+                cal_average_z_shifter <= cal_acc_z;
+            
+            default : 
+                cal_average_z_shifter <= cal_average_z_shifter;
 
-            default : cal_average_z <= (cal_sum_z);
-        endcase // calibration_mode_reg 
+        endcase 
     end 
 
 
@@ -1399,8 +1323,12 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     always_ff @(posedge CLK) begin : calibration_mode_reg_processing 
         case (current_state) 
 
-            CAL_TX_OFS_ST : 
-                calibration_mode_reg <= CALIBRATION_MODE;
+            IDLE_CHK_CAL_ST : 
+                if (need_calibration_flaq) begin 
+                    calibration_mode_reg <= CALIBRATION_MODE;
+                end else begin 
+                    calibration_mode_reg <= calibration_mode_reg;
+                end 
 
             default : 
                 calibration_mode_reg <= calibration_mode_reg;
@@ -1411,26 +1339,26 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
     always_ff @(posedge CLK) begin : cal_offset_x_processing
-        cal_offset_x <= cal_average_x;
+        cal_average_x <= cal_average_x_shifter[15:0];
     end 
 
 
 
     always_ff @(posedge CLK) begin : cal_offset_y_processing
-        cal_offset_y <= cal_average_y;
+        cal_average_y <= cal_average_y_shifter[15:0];
     end 
 
 
 
     always_ff @(posedge CLK) begin : cal_offset_z_processing
         if (data_format_full_res_field) begin 
-            cal_offset_z <= cal_average_z - 256;
+            cal_average_z <= cal_average_z_shifter[15:0] - 256;
         end else begin 
             case (data_format_range_field) 
-                2'b00 : cal_offset_z <= cal_average_z - 256; 
-                2'b01 : cal_offset_z <= cal_average_z - 128;
-                2'b10 : cal_offset_z <= cal_average_z - 64;
-                2'b11 : cal_offset_z <= cal_average_z - 32;
+                2'b00 : cal_average_z <= cal_average_z_shifter[15:0] - 256; 
+                2'b01 : cal_average_z <= cal_average_z_shifter[15:0] - 128;
+                2'b10 : cal_average_z <= cal_average_z_shifter[15:0] - 64;
+                2'b11 : cal_average_z <= cal_average_z_shifter[15:0] - 32;
             endcase // register[12][1][1:0] 
         end 
     end 
@@ -1442,13 +1370,13 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             cal_offset_lsb_x <= '{default:0};
         end else begin 
             if (data_format_full_res_field) begin 
-                cal_offset_lsb_x <= -(cal_offset_x >> 2);
+                cal_offset_lsb_x <= -(cal_average_x >> 2);
             end else begin 
                 case (data_format_range_field) 
-                    2'b00 : cal_offset_lsb_x <= -(cal_offset_x >> 2);
-                    2'b01 : cal_offset_lsb_x <= -(cal_offset_x >> 1);
-                    2'b10 : cal_offset_lsb_x <= -(cal_offset_x);
-                    2'b11 : cal_offset_lsb_x <= -(cal_offset_x << 1);
+                    2'b00 : cal_offset_lsb_x <= -(cal_average_x >> 2);
+                    2'b01 : cal_offset_lsb_x <= -(cal_average_x >> 1);
+                    2'b10 : cal_offset_lsb_x <= -(cal_average_x);
+                    2'b11 : cal_offset_lsb_x <= -(cal_average_x << 1);
                 endcase // current_state
             end 
         end 
@@ -1461,13 +1389,13 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             cal_offset_lsb_y <= '{default:0};
         end else begin 
             if (data_format_full_res_field) begin 
-                cal_offset_lsb_y <= -(cal_offset_y >> 2);
+                cal_offset_lsb_y <= -(cal_average_y >> 2);
             end else begin 
                 case (data_format_range_field) 
-                    2'b00 : cal_offset_lsb_y <= -(cal_offset_y >> 2);
-                    2'b01 : cal_offset_lsb_y <= -(cal_offset_y >> 1);
-                    2'b10 : cal_offset_lsb_y <= -(cal_offset_y);
-                    2'b11 : cal_offset_lsb_y <= -(cal_offset_y << 1);
+                    2'b00 : cal_offset_lsb_y <= -(cal_average_y >> 2);
+                    2'b01 : cal_offset_lsb_y <= -(cal_average_y >> 1);
+                    2'b10 : cal_offset_lsb_y <= -(cal_average_y);
+                    2'b11 : cal_offset_lsb_y <= -(cal_average_y << 1);
                 endcase // current_state
             end 
         end 
@@ -1480,13 +1408,13 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             cal_offset_lsb_z <= '{default:0};
         end else begin 
             if (data_format_full_res_field) begin 
-                cal_offset_lsb_z <= -(cal_offset_z >> 2);
+                cal_offset_lsb_z <= -(cal_average_z >> 2);
             end else begin 
                 case (data_format_range_field) 
-                    2'b00 : cal_offset_lsb_z <= -(cal_offset_z >> 2);
-                    2'b01 : cal_offset_lsb_z <= -(cal_offset_z >> 1);
-                    2'b10 : cal_offset_lsb_z <= -(cal_offset_z);
-                    2'b11 : cal_offset_lsb_z <= -(cal_offset_z << 1);
+                    2'b00 : cal_offset_lsb_z <= -(cal_average_z >> 2);
+                    2'b01 : cal_offset_lsb_z <= -(cal_average_z >> 1);
+                    2'b10 : cal_offset_lsb_z <= -(cal_average_z);
+                    2'b11 : cal_offset_lsb_z <= -(cal_average_z << 1);
                 endcase // current_state
             end 
         end 
