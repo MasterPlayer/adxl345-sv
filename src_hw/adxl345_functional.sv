@@ -1036,12 +1036,16 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             LINK_ON <= 1'b0;
         end else begin 
             case (current_state)
-                REQ_RX_READ_DATA_ST : 
-                    if (read_memory_addra == DEVICE_ID_ADDR) begin 
-                        if (read_memory_dina == DEVICE_ID) begin 
-                            LINK_ON <= 1'b1;
+                REQ_RX_READ_DATA_ST :   
+                    if (read_memory_wea) begin 
+                        if (read_memory_addra == DEVICE_ID_ADDR) begin 
+                            if (read_memory_dina == DEVICE_ID) begin 
+                                LINK_ON <= 1'b1;
+                            end else begin 
+                                LINK_ON <= 1'b0;
+                            end 
                         end else begin 
-                            LINK_ON <= 1'b0;
+                            LINK_ON <= LINK_ON;
                         end 
                     end else begin 
                         LINK_ON <= LINK_ON;
