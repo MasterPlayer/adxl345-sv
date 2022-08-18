@@ -272,12 +272,12 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     always_ff @(posedge CLK) begin : interrupt_processing 
         case (current_state)
 
-            REQ_TX_READ_DATA_ST : 
-                if (interrupt) begin 
-                    interrupt <= 1'b0;
-                end else begin 
-                    interrupt <= interrupt;
-                end 
+            // REQ_TX_READ_DATA_ST : 
+            //     if (interrupt) begin 
+            //         interrupt <= 1'b0;
+            //     end else begin 
+            //         interrupt <= interrupt;
+            //     end 
 
             default : 
                 if (ADXL_INTERRUPT & ALLOW_IRQ) begin 
