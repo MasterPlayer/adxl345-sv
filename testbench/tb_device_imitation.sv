@@ -200,13 +200,6 @@ module tb_device_imitation (
                             ptr <= ptr;
                         end 
 
-                    // WRITE_OP : 
-                    //     if (valid_event) begin 
-                    //         ptr <= ptr + 1;
-                    //     end else begin 
-                    //         ptr <= ptr;
-                    //     end 
-
                     default : 
                         ptr <= ptr;
                 endcase // current_state
@@ -333,59 +326,57 @@ module tb_device_imitation (
                     register_file[ptr] <= register_file[ptr];
                 end 
 
-            // READ_OP : 
-            //     if (valid_event) begin 
-            //         case (ptr) 
-            //             8'h32 : 
-            //                 if (register_file[ptr] == 8'hf0) begin 
-            //                     register_file[ptr] <= 8'h10;
-            //                 end else begin 
-            //                     register_file[ptr] <= 8'hF0;
-            //                 end 
+            READ_OP : 
+                if (valid_event & ~IRQ) begin 
+                    case (ptr) 
+                        8'h32 : 
+                            if (register_file[ptr] == 8'hf0) begin 
+                                register_file[ptr] <= 8'h10;
+                            end else begin 
+                                register_file[ptr] <= 8'hF0;
+                            end 
                             
-            //             8'h33 : 
-            //                 if (register_file[ptr] == 8'hff) begin 
-            //                     register_file[ptr] <= 8'h00;
-            //                 end else begin 
-            //                     register_file[ptr] <= 8'hFF;
-            //                 end 
+                        8'h33 : 
+                            if (register_file[ptr] == 8'hff) begin 
+                                register_file[ptr] <= 8'h00;
+                            end else begin 
+                                register_file[ptr] <= 8'hFF;
+                            end 
 
-            //             8'h34 : 
-            //                 if (register_file[ptr] == 8'hf0) begin 
-            //                     register_file[ptr] <= 8'h10;
-            //                 end else begin 
-            //                     register_file[ptr] <= 8'hF0;
-            //                 end 
+                        8'h34 : 
+                            if (register_file[ptr] == 8'hf0) begin 
+                                register_file[ptr] <= 8'h10;
+                            end else begin 
+                                register_file[ptr] <= 8'hF0;
+                            end 
                             
-            //             8'h35 : 
-            //                 if (register_file[ptr] == 8'hff) begin 
-            //                     register_file[ptr] <= 8'h00;
-            //                 end else begin 
-            //                     register_file[ptr] <= 8'hFF;
-            //                 end 
+                        8'h35 : 
+                            if (register_file[ptr] == 8'hff) begin 
+                                register_file[ptr] <= 8'h00;
+                            end else begin 
+                                register_file[ptr] <= 8'hFF;
+                            end 
 
-            //             8'h36 : 
-            //                 if (register_file[ptr] == 8'hf0) begin 
-            //                     register_file[ptr] <= 8'h10;
-            //                 end else begin 
-            //                     register_file[ptr] <= 8'hF0;
-            //                 end 
+                        8'h36 : 
+                            if (register_file[ptr] == 8'hf0) begin 
+                                register_file[ptr] <= 8'h10;
+                            end else begin 
+                                register_file[ptr] <= 8'hF0;
+                            end 
                             
-            //             8'h37 : 
-            //                 if (register_file[ptr] == 8'hff) begin 
-            //                     register_file[ptr] <= 8'h00;
-            //                 end else begin 
-            //                     register_file[ptr] <= 8'hFF;
-            //                 end 
+                        8'h37 : 
+                            if (register_file[ptr] == 8'hff) begin 
+                                register_file[ptr] <= 8'h00;
+                            end else begin 
+                                register_file[ptr] <= 8'hFF;
+                            end 
 
-            //             default : register_file[ptr] <= register_file[ptr];
-            //         endcase // ptr
+                        default : register_file[ptr] <= register_file[ptr];
+                    endcase // ptr
 
-                // end else begin 
-                //     register_file[ptr] <= register_file[ptr];
-                // end 
-
-
+                end else begin 
+                    register_file[ptr] <= register_file[ptr];
+                end 
 
             default : 
                 register_file[ptr] <= register_file[ptr];

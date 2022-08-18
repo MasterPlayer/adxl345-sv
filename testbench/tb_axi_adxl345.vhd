@@ -345,9 +345,9 @@ begin
         if CLK'event AND CLK = '1' then 
             if (ADXL_IRQ = '1') then 
                 case (interrupt_i) is 
-                    when    10000   => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF16"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when    10001   => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF16"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when    10002   => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF16"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    when    100000  => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF14"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when    100001  => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF14"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when    100002  => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF14"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
                     when    others  => cfg_awaddr <= cfg_awaddr; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
                 end case;
             else
@@ -365,19 +365,17 @@ begin
                     when  20001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
                     when  20002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
+                    when 600000     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000003"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600001     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000003"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600002     => cfg_awaddr <= x"08"; cfg_awvalid <= '0'; cfg_wdata <= x"00000003"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
-                    when 600000     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000001"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 600001     => cfg_awaddr <= x"08"; cfg_awvalid <= '1'; cfg_wdata <= x"00000001"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 600002     => cfg_awaddr <= x"08"; cfg_awvalid <= '0'; cfg_wdata <= x"00000001"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
+                    when 600010     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005326"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600011     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005326"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 600012     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005326"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
-                    when 600010     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 600011     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 600012     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-                    when 10000010     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 10000011     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when 10000012     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005322"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
+                    when 10000010   => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005324"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 10000011   => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005324"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
+                    when 10000012   => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005324"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
 
                     --when 700000     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
                     --when 700001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF20"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
@@ -409,9 +407,9 @@ begin
         if CLK'event AND CLK = '1' then 
             case i is 
 
-                when  200000   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0000080E"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  200001   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0000080E"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  200002   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"0000080E"; DEV_WSTRB <= x"F"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+                when  200000   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0001080E"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  200001   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0001080E"; DEV_WSTRB <= x"F"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  200002   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"0001080E"; DEV_WSTRB <= x"F"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
                 when others     => DEV_AWADDR <= DEV_AWADDR; DEV_AWVALID <= '0'; DEV_WDATA <= (others => '0'); DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
             end case;

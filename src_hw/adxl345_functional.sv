@@ -164,7 +164,8 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     logic [3:0] write_memory_hi;
     logic [1:0] write_memory_lo;
 
-    logic interrupt      = 1'b0;
+    logic interrupt      = 1'b0; // signal for flaq which needed for FSM for transit to REQ_* states
+    logic interrupt_saved = 1'b0; // signal for assertion ADXL_IRQ signal
 
     logic need_calibration_flaq = 1'b0;
 
@@ -234,7 +235,10 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
     logic [31:0] calibration_count_limit_shifter = '{default:0};
 
+
+
     always_ff @(posedge CLK) begin 
+
         if (RESET) begin 
             S_AXIS_TREADY <= 1'b0;
         end else begin 
@@ -245,44 +249,93 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
     always_comb begin : RDATA_processing 
+
         RDATA = read_memory_doutb;
     end 
 
 
 
     always_comb begin : write_memory_hi_processing 
+
         write_memory_hi = write_memory_addrb[5:2];
     end 
 
 
 
     always_comb begin : write_memory_lo_processing 
+
         write_memory_lo = write_memory_addrb[1:0];
     end 
 
 
 
     always_ff @(posedge CLK) begin : interrupt_processing 
-        if (ADXL_INTERRUPT & ALLOW_IRQ) begin 
-            interrupt <= 1'b1;
-        end else begin 
-            interrupt <= 1'b0;
-        end 
+        case (current_state)
+
+            REQ_TX_READ_DATA_ST : 
+                if (interrupt) begin 
+                    interrupt <= 1'b0;
+                end else begin 
+                    interrupt <= interrupt;
+                end 
+
+            default : 
+                if (ADXL_INTERRUPT & ALLOW_IRQ) begin 
+                    interrupt <= 1'b1;
+                end else begin 
+                    interrupt <= 1'b0;
+                end 
+
+        endcase // current_state
     end 
 
 
+    always_ff @(posedge CLK) begin : interrupt_saved_processing 
+        case (current_state)
+
+            REQ_TX_READ_DATA_ST : 
+                if (interrupt) begin 
+                    interrupt_saved <= 1'b1;
+                end else begin 
+                    interrupt_saved <= 1'b0;
+                end 
+
+            REQ_RX_READ_DATA_ST : 
+                if (S_AXIS_TVALID & S_AXIS_TREADY & S_AXIS_TLAST) begin 
+                    if (interrupt_saved) begin 
+                        interrupt_saved <= 1'b0;
+                    end else begin 
+                        interrupt_saved <= interrupt_saved;
+                    end 
+                end else begin 
+                    interrupt_saved <= interrupt_saved;
+                end 
+
+        endcase // current_state
+    end 
 
     always_ff @(posedge CLK) begin : adxl_irq_processing 
         if (ADXL_IRQ_ACK | RESET) begin 
             ADXL_IRQ <= 1'b0;
         end else begin 
-            if (!ADXL_INTERRUPT & ALLOW_IRQ & interrupt) begin 
-                ADXL_IRQ <= 1'b1;
-            end else begin 
-                ADXL_IRQ <= ADXL_IRQ;
-            end 
+            case (current_state)
+                REQ_RX_READ_DATA_ST : 
+                    if (S_AXIS_TVALID & S_AXIS_TREADY & S_AXIS_TLAST) begin 
+                        if (interrupt_saved & !ADXL_INTERRUPT) begin 
+                            ADXL_IRQ <= 1'b1;
+                        end else begin 
+                            ADXL_IRQ <= ADXL_IRQ;
+                        end 
+                    end else begin 
+                        ADXL_IRQ <= ADXL_IRQ;
+                    end 
+
+                default : 
+                    ADXL_IRQ <= ADXL_IRQ;
+            endcase // current_state
         end 
     end 
+
 
 
     generate
@@ -1098,7 +1151,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             has_cal_optimal_request_timer_exceeded <= 1'b0;
         end else begin 
             if (cal_optimal_request_timer == 0) begin 
-                has_cal_optimal_request_timer_exceeded <= 1'b1;
+                has_cal_optimal_request_timer_exceeded <= !ADXL_IRQ;// 1'b1;
             end else begin 
                 has_cal_optimal_request_timer_exceeded <= 1'b0;
             end 
@@ -1137,11 +1190,13 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         end 
     end 
 
+
+
     always_ff @(posedge CLK) begin : calibration_count_limit_shifter_processing 
         case (current_state)
 
             CAL_SHIFT_ST :
-                calibration_count_limit_shifter[30:0] <= calibration_count_limit_shifter[31:1];
+                calibration_count_limit_shifter <= {1'b0, calibration_count_limit_shifter[31:1]};
 
             default : 
                 if (need_calibration_flaq) begin 
@@ -1152,6 +1207,8 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
         endcase // current_state
     end 
+
+
 
     always_ff @(posedge CLK) begin : has_calibration_count_exceeded_processing 
         if (RESET) begin 
@@ -1266,7 +1323,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                 if (calibration_count_limit_shifter[0]) begin
                     cal_average_x_shifter <= cal_average_x_shifter;
                 end else begin 
-                    cal_average_x_shifter[46:0] <= cal_average_x_shifter[47:1];
+                    cal_average_x_shifter[47:0] <= {cal_average_x_shifter[47], cal_average_x_shifter[47:1]};
                 end 
             
             IDLE_CHK_CAL_ST : 
@@ -1286,7 +1343,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                 if (calibration_count_limit_shifter[0]) begin
                     cal_average_y_shifter <= cal_average_y_shifter;
                 end else begin 
-                    cal_average_y_shifter[46:0] <= cal_average_y_shifter[47:1];
+                    cal_average_y_shifter[47:0] <= {cal_average_y_shifter[47], cal_average_y_shifter[47:1]};
                 end 
             
             IDLE_CHK_CAL_ST : 
@@ -1306,7 +1363,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                 if (calibration_count_limit_shifter[0]) begin
                     cal_average_z_shifter <= cal_average_z_shifter;
                 end else begin 
-                    cal_average_z_shifter[46:0] <= cal_average_z_shifter[47:1];
+                    cal_average_z_shifter[47:0] <= {cal_average_z_shifter[47], cal_average_z_shifter[47:1]};
                 end 
             
             IDLE_CHK_CAL_ST : 
@@ -1483,7 +1540,6 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             default : 
                 require_update_flaq <= require_update_flaq;
 
-
         endcase // data_format_range_field
     end 
 
@@ -1505,12 +1561,8 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                     CALIBRATION_COMPLETE <= CALIBRATION_COMPLETE;
 
             endcase // data_format_range_field
-
         end 
     end 
-
-
-
 
 
 
