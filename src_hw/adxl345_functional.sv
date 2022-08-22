@@ -34,6 +34,8 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     output logic [63:0] WRITE_TRANSACTIONS        ,
     output logic [63:0] READ_TRANSACTIONS         ,
 
+    output logic        ON_WORK,
+
     // data to device
     output logic [ 7:0] M_AXIS_TDATA              ,
     output logic [ 0:0] M_AXIS_TKEEP              ,
@@ -1698,6 +1700,29 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         end 
     end 
 
+
+
+    always_ff @(posedge CLK) begin : ON_WORK_processing 
+        if (RESET) begin 
+            ON_WORK <= 1'b0;
+        end else begin 
+            case (current_state)
+                
+                IDLE_CHK_REQ_ST  :
+                    ON_WORK <= 1'b0;
+                
+                IDLE_CHK_UPD_ST  :
+                    ON_WORK <= 1'b0;
+
+                IDLE_CHK_CAL_ST  :
+                    ON_WORK <= 1'b0;
+
+                default : 
+                    ON_WORK <= 1'b1;
+ 
+            endcase // data_format_range_field
+        end 
+    end 
 
 
 

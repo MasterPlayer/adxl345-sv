@@ -24,6 +24,9 @@ typedef struct {
 	uint32_t write_transactions_msb_reg;
 	uint32_t reserved_15_reg;
 } adxl_cfg;
+
+
+
 /*MASKS for REGISTER_0 - ctl_reg*/
 #define CFG_CTL_RESET_LOGIC_MASK                  0x00000001
 #define CFG_CTL_ENABLE_INTERVAL_REQUESTION_MASK   0x00000002
