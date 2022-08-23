@@ -15,8 +15,12 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     input  logic [ 6:0] I2C_ADDRESS               ,
     input  logic        ENABLE_INTERVAL_REQUESTION,
     input  logic [31:0] REQUESTION_INTERVAL       ,
+    
     input  logic        SINGLE_REQUEST            ,
+    input  logic [7:0]  SINGLE_REQUEST_ADDRESS    ,
+    input  logic [7:0]  SINGLE_REQUEST_SIZE       , 
     output logic        SINGLE_REQUEST_COMPLETE   ,
+
     input  logic        ALLOW_IRQ                 ,
     output logic        LINK_ON                   ,
     input  logic        ADXL_INTERRUPT            ,
@@ -713,6 +717,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                     default : out_din_data <= out_din_data;
                 endcase // word_counter
 
+
             REQ_TX_READ_DATA_ST : 
                 if (interrupt) begin 
                     out_din_data <= 8'h08;
@@ -720,7 +725,11 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                     if (has_cal_optimal_request_timer_exceeded) begin 
                         out_din_data <= 8'h06;
                     end else begin 
-                        out_din_data <= ADDRESS_LIMIT;
+                        if (SINGLE_REQUEST) begin 
+                            out_din_data <= SINGLE_REQUEST_SIZE;
+                        end else begin 
+                            out_din_data <= ADDRESS_LIMIT;
+                        end 
                     end 
                 end 
 
@@ -744,6 +753,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
             default : 
                 out_din_data <= out_din_data;
+
         endcase // current_state
     end 
 
@@ -972,7 +982,11 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                     if (has_cal_optimal_request_timer_exceeded) begin 
                         address_ptr <= DATAX0_ADDR;
                     end else begin 
-                        address_ptr <= DEVICE_ID_ADDR;
+                        if (SINGLE_REQUEST) begin 
+                            address_ptr <= SINGLE_REQUEST_ADDRESS;
+                        end else begin 
+                            address_ptr <= DEVICE_ID_ADDR;
+                        end 
                     end 
                 end 
 

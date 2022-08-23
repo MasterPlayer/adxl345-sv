@@ -216,6 +216,8 @@ module axi_adxl345 #(
 
     // single requesting data from device
     (* dont_touch="true" *)logic single_request          = 1'b0;
+    (* dont_touch="true" *)logic [7:0] single_request_address;
+    (* dont_touch="true" *)logic [7:0] single_request_size   ;
     (* dont_touch="true" *)logic single_request_complete; // output signal from functional 
     (* dont_touch="true" *)logic single_request_complete_flaq = 1'b0; // signal to register space for reading from device
 
@@ -1209,21 +1211,21 @@ module axi_adxl345 #(
                 reset                         // reset
             };
 
-            8'h01 : reg_data_out_cfg <= requestion_interval;
-            8'h02 : reg_data_out_cfg <= {{27{1'b0}} , calibration_mode}; //DATA_WIDTH;
-            8'h03 : reg_data_out_cfg <= read_valid_count; //read_valid_reg;
-            8'h04 : reg_data_out_cfg <= write_valid_count; //write_valid_reg;
-            8'h05 : reg_data_out_cfg <= read_transactions[31:0]; 
-            8'h06 : reg_data_out_cfg <= read_transactions[63:32];
-            8'h07 : reg_data_out_cfg <= CLK_PERIOD;
-            8'h08 : reg_data_out_cfg <= opt_request_interval[31: 0]; //{23'h0, has_ovrrn_intr, sample_address};
-            8'h09 : reg_data_out_cfg <= {{16{1'b0}}, opt_request_interval[47:32]}; //opt_request_interval;
-            8'h0a : reg_data_out_cfg <= DATA_WIDTH; //calibration_count_limit_reg;
-            8'h0b : reg_data_out_cfg <= calibration_time[31:0];
-            8'h0c : reg_data_out_cfg <= calibration_time[63:32];
-            8'h0d : reg_data_out_cfg <= write_transactions[31:0];
-            8'h0e : reg_data_out_cfg <= write_transactions[63:32];
-            8'h0f : reg_data_out_cfg <= '{default:0}; // reserved
+            8'h01   : reg_data_out_cfg <= requestion_interval;
+            8'h02   : reg_data_out_cfg <= {{27{1'b0}} , calibration_mode}; //DATA_WIDTH;
+            8'h03   : reg_data_out_cfg <= read_valid_count; //read_valid_reg;
+            8'h04   : reg_data_out_cfg <= write_valid_count; //write_valid_reg;
+            8'h05   : reg_data_out_cfg <= read_transactions[31:0];
+            8'h06   : reg_data_out_cfg <= read_transactions[63:32];
+            8'h07   : reg_data_out_cfg <= CLK_PERIOD;
+            8'h08   : reg_data_out_cfg <= opt_request_interval[31: 0]; //{23'h0, has_ovrrn_intr, sample_address};
+            8'h09   : reg_data_out_cfg <= {{16{1'b0}}, opt_request_interval[47:32]}; //opt_request_interval;
+            8'h0a   : reg_data_out_cfg <= DATA_WIDTH; //calibration_count_limit_reg;
+            8'h0b   : reg_data_out_cfg <= calibration_time[31:0];
+            8'h0c   : reg_data_out_cfg <= calibration_time[63:32];
+            8'h0d   : reg_data_out_cfg <= write_transactions[31:0];
+            8'h0e   : reg_data_out_cfg <= write_transactions[63:32];
+            8'h0f   : reg_data_out_cfg <= {16'h0000, single_request_size, single_request_address};
             default : reg_data_out_cfg <= '{default:0};
         endcase
     end
@@ -1484,6 +1486,58 @@ module axi_adxl345 #(
 
 
 
+    always_ff @(posedge CLK) begin : single_request_address_processing 
+        if (~RESETN | reset) begin 
+            single_request_address <= '{default:0};
+        end else begin 
+            if (slv_reg_wren_cfg) begin
+                if (!on_work) begin 
+                    if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 15) begin
+                        if ( S_AXI_LITE_CFG_WSTRB[0]) begin
+                            single_request_address <= S_AXI_LITE_CFG_WDATA[7:0];
+                        end else begin
+                            single_request_address <= single_request_address;
+                        end
+                    end else begin
+                        single_request_address <= single_request_address;
+                    end
+                end else begin 
+                    single_request_address <= single_request_address;
+                end 
+            end else begin
+                single_request_address <= single_request_address;
+            end
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : single_request_size_processing 
+        if (~RESETN | reset) begin 
+            single_request_size <= 8'h3A;
+        end else begin 
+            if (!on_work) begin 
+                if (slv_reg_wren_cfg) begin
+                    if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 15) begin
+                        if (S_AXI_LITE_CFG_WSTRB[1]) begin
+                            single_request_size <= S_AXI_LITE_CFG_WDATA[15:8];
+                        end else begin
+                            single_request_size <= single_request_size;
+                        end
+                    end else begin
+                        single_request_size <= single_request_size;
+                    end
+                end else begin 
+                    single_request_size <= single_request_size;
+                end 
+            end else begin
+                single_request_size <= single_request_size;
+            end
+        end 
+    end 
+
+
+
     adxl345_functional #(.CLK_PERIOD(CLK_PERIOD)) adxl345_functional_inst (
         .CLK                       (CLK                       ),
         .RESET                     (reset                     ),
@@ -1501,6 +1555,8 @@ module axi_adxl345 #(
         .ALLOW_IRQ                 (allow_irq_reg             ),
         
         .SINGLE_REQUEST            (single_request            ),
+        .SINGLE_REQUEST_ADDRESS    (single_request_address    ),
+        .SINGLE_REQUEST_SIZE       (single_request_size       ),
         .SINGLE_REQUEST_COMPLETE   (single_request_complete   ),
         
         .ENABLE_INTERVAL_REQUESTION(enable_interval_requestion),
@@ -1526,7 +1582,7 @@ module axi_adxl345 #(
         .READ_TRANSACTIONS         (read_transactions         ),
         
         .ON_WORK                   (on_work                   ),
-
+        
         .M_AXIS_TDATA              (M_AXIS_TDATA              ),
         .M_AXIS_TKEEP              (M_AXIS_TKEEP              ),
         .M_AXIS_TUSER              (M_AXIS_TUSER              ),
