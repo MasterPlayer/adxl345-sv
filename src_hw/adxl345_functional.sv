@@ -577,7 +577,11 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
             REQ_RX_READ_DATA_ST : 
                 if (read_memory_wea) begin 
-                    read_memory_addra <= read_memory_addra + 1;
+                    if (read_memory_addra == (ADDRESS_LIMIT-1)) begin 
+                        read_memory_addra <= '{default:0};
+                    end else begin 
+                        read_memory_addra <= read_memory_addra + 1;
+                    end 
                 end else begin 
                     read_memory_addra <= read_memory_addra;
                 end 
@@ -716,7 +720,6 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                     4'h1    : out_din_data <= address_ptr; // address pointer
                     default : out_din_data <= out_din_data;
                 endcase // word_counter
-
 
             REQ_TX_READ_DATA_ST : 
                 if (interrupt) begin 
