@@ -2,6 +2,7 @@
 #include "platform.h"
 #include "xil_printf.h"
 #include "axi_adxl.h"
+#include <xscugic.h>
 
 #define ADXL_CFG_BASEADDRESS 0x40030000
 #define ADXL_DEV_BASEADDRESS 0x40040000
@@ -12,7 +13,7 @@
 void print_menu();
 int menu(axi_adxl *ptr, int mode);
 int gic_init(XScuGic *ptr, axi_adxl* adxl_ptr);
-
+void adxl_intr_handler(void *callback);
 
 
 int main() {
@@ -22,6 +23,10 @@ int main() {
 
     int status = 0;
     axi_adxl adxl;
+    XScuGic gic;
+
+    gic_init(&gic, &adxl);
+
 
     char s[256];
 
@@ -298,7 +303,7 @@ int menu(axi_adxl *ptr, int mode){
 
 
 
-int scugic_initialize(XScuGic *ptr, axi_adxl* adxl_ptr){
+int gic_init(XScuGic *ptr, axi_adxl* adxl_ptr){
 
     int status = 0;
 
