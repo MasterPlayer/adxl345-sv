@@ -676,7 +676,7 @@ int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value){
             break;
             default:
                 printf("<undefined value>\r\n");
-                return ERROR_UNDEF_VALUE;
+                return ADXL_UNCORRECT_VALUE;
             break;
     }
 
