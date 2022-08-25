@@ -689,6 +689,56 @@ int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value){
 
 
 
-int axi_adxl_set_range(axi_adxl *ptr){
+int axi_adxl_measurement_start(axi_adxl *ptr){
+	if (ptr->init_flaq != 1){
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_MSMT_START] : has no init device\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_MSMT_START] : Link down\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_power_ctl(ptr->dev, adxl_dev_get_power_ctl(ptr->dev) | POWER_CTL_MEASURE_MASK);
+
+	/*
+		TODO : Add checking equations
+	*/
+	printf("\t[ADXL_MSMT_START] : Measurement started\r\n");
+
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_measurement_stop(axi_adxl *ptr){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_MSMT_STOP] : has no init device\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_MSMT_STOP] : Link down\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_LINK_LOST;
+	}
+
+	/*
+		TODO : Add checking equations
+	*/
+	printf("\t[ADXL_MSMT_START] : Measurement stopped\r\n");
+
+	return ADXL_OK;
 
 }

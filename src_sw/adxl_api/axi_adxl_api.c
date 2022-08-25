@@ -54,6 +54,7 @@ int main() {
 
 void print_menu(){
 	printf(" ***** ADXL345 DEMO APP ***** \r\n");
+	printf("=====<Configuration space>=====\r\n");
 	printf("0. Debug log output\r\n");
 	printf("1. Reset device\r\n");
 	printf("2. Initialize device\r\n");
@@ -65,7 +66,12 @@ void print_menu(){
 	printf("8. Calibration\r\n");
 	printf("9. Set iic address\r\n");
 
-	printf("99. Dump device register space\r\n");
+	printf("=====<Device space>====="\r\n);
+	printf("50. Bandwidth setup\r\n");
+	printf("51. Measure start\r\n");
+	printf("52. Measure stop\r\n");
+
+	printf("100. Dump device register space\r\n");
 }
 
 
@@ -81,18 +87,22 @@ int menu(axi_adxl *ptr, int mode){
 
 	switch(mode){
 		case 0:
+
 			axi_adxl_cfg_debug(ptr->cfg);
 		break;
 
 		case 1 :
+
 			status = axi_adxl_reset(ptr);
 		break;
 
 		case 2 :
+
 			status = axi_adxl_init(ptr, ADXL_CFG_BASEADDRESS, ADXL_DEV_BASEADDRESS, ADXL_IIC_ADDRESS);
 		break;
 
 		case 3 :
+
 			printf("[MENU] : Enter start address : ");
 			while((*p++=getchar ()) != 13);
 			*p = '\0';
@@ -111,6 +121,7 @@ int menu(axi_adxl *ptr, int mode){
 		break;
 
 		case 4 :
+
 			printf("[MENU] : Enter bandwidth value : ");
 
 			while((*p++=getchar ()) != 13);
@@ -122,14 +133,17 @@ int menu(axi_adxl *ptr, int mode){
 		break;
 
 		case 5 :
+
 			status = axi_adxl_disable_interval_requestion(ptr);
 		break;
 
 		case 6 :
+
 			status = axi_adxl_irq_allow(ptr);
 		break;
 
 		case 7 :
+
 			status = axi_adxl_irq_unallow(ptr);
 		break;
 
@@ -153,7 +167,7 @@ int menu(axi_adxl *ptr, int mode){
 			status = axi_adxl_set_iic_address(ptr, value);
 		break;
 
-		case 10 : 
+		case 50 : 
 			printf("[MENU] : Select BW_RATE from list \r\n");
 			printf("\t0. 0.10 Hz \r\n");
 			printf("\t1. 0.20 Hz \r\n");
@@ -214,8 +228,16 @@ int menu(axi_adxl *ptr, int mode){
 			}
 		break;			
 
-		case 99 :
-			axi_adxl_dev_debug_register_space(ADXL_DEV_BASEADDRESS);
+		case 51 : 
+			status = axi_adxl_measurement_start(ptr);
+		break;
+
+		case 52 :  
+			status = axi_adxl_measurement_stop(ptr);
+		break;
+
+		case 100 :
+			status = axi_adxl_dev_debug_register_space(ADXL_DEV_BASEADDRESS);
 		break;
 
 		default :

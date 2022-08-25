@@ -85,4 +85,5 @@ int check_access_reserved(int address);
 
 
 int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value);
-int axi_adxl_set_range(axi_adxl *ptr);
+int axi_adxl_measurement_start(axi_adxl *ptr);
+int axi_adxl_measurement_stop(axi_adxl *ptr);
