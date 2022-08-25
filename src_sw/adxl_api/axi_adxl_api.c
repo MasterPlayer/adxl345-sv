@@ -7,21 +7,151 @@
 #define ADXL_DEV_BASEADDRESS 0x40040000
 #define ADXL_IIC_ADDRESS     0x53
 
+
+
+void print_menu();
+int menu(axi_adxl *ptr, int mode);
+
+
+
 int main() {
     init_platform();
 
+    textcolor(DEFAULT, STD, STD);
+
+    int status = 0;
     axi_adxl adxl;
 
-    axi_adxl_cfg_debug(ADXL_CFG_BASEADDRESS);
-
-    axi_adxl_init(&adxl, ADXL_CFG_BASEADDRESS, ADXL_DEV_BASEADDRESS, ADXL_IIC_ADDRESS);
+    char s[256];
 
     while(1){
-    	axi_adxl_cfg_debug(&adxl);
-    	sleep(1);
+    	print_menu();
+
+    	char *p = s;
+
+        while((*p++=getchar ()) != 13);
+        *p = '\0';
+        int mode = atoi(s);
+
+        status = menu(&adxl, mode);
+        if (status != ADXL_OK){
+            textcolor(BRIGHT, RED, STD);
+            printf("[MAIN] : current operation performed with error %d\r\n", status);
+            textcolor(DEFAULT, STD, STD);
+
+        }
+
     }
 
 
     cleanup_platform();
     return 0;
+}
+
+
+
+
+
+void print_menu(){
+	printf(" ***** ADXL345 DEMO APP ***** \r\n");
+	printf("0. Debug log output\r\n");
+	printf("1. Reset device\r\n");
+	printf("2. Initialize device\r\n");
+	printf("3. Single Request\r\n");
+	printf("4. Enable interval requestion\r\n");
+	printf("5. Disable interval requestion\r\n");
+	printf("6. IRQ allow\r\n");
+	printf("7. IRQ unallow\r\n");
+	printf("8. Calibration\r\n");
+
+	printf("99. Dump device register space\r\n");
+}
+
+
+
+int menu(axi_adxl *ptr, int mode){
+
+	int status = ADXL_OK;
+
+	char s [256];
+	char *p = s;
+	int value = 0;
+
+
+	switch(mode){
+		case 0:
+			axi_adxl_cfg_debug(ptr->cfg);
+		break;
+
+		case 1 :
+			status = axi_adxl_reset(ptr);
+		break;
+
+		case 2 :
+			status = axi_adxl_init(ptr, ADXL_CFG_BASEADDRESS, ADXL_DEV_BASEADDRESS, ADXL_IIC_ADDRESS);
+		break;
+
+		case 3 :
+			printf("[MENU] : Enter start address : ");
+			while((*p++=getchar ()) != 13);
+			*p = '\0';
+			uint8_t address = atoi(s);
+			printf("%d\r\n", address);
+
+			p = &s[0];
+
+			printf("[MENU] : Enter size : ");
+			while((*p++=getchar ()) != 13);
+			*p = '\0';
+			uint8_t size = atoi(s);
+			printf("%d\r\n", size);
+
+			status = axi_adxl_perform_single_request(ptr, address, size);
+		break;
+
+		case 4 :
+			printf("[MENU] : Enter bandwidth value : ");
+
+			while((*p++=getchar ()) != 13);
+			*p = '\0';
+			value = atoi(s);
+			printf("%d\r\n", value);
+
+			status = axi_adxl_perform_interval_requestion(ptr, value);
+		break;
+
+		case 5 :
+			status = axi_adxl_disable_interval_requestion(ptr);
+		break;
+
+		case 6 :
+			status = axi_adxl_irq_allow(ptr);
+		break;
+
+		case 7 :
+			status = axi_adxl_irq_unallow(ptr);
+		break;
+
+		case 8 :
+			printf("[MENU] : Enter power of 2 for calibration: ");
+
+			while((*p++=getchar ()) != 13);
+			*p = '\0';
+			value = atoi(s);
+			printf("%d(calibration count : %d)\r\n", value, (1<<value));
+
+			status = axi_adxl_calibration(ptr, value);
+		break;
+
+		case 99 :
+			axi_adxl_dev_debug_register_space(ADXL_DEV_BASEADDRESS);
+		break;
+
+		default :
+			printf("[MENU] : incorrect selection : 0x%02x\r\n", mode);
+
+	}
+
+	return status;
+
 }
