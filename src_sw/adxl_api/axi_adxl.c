@@ -580,108 +580,107 @@ int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value){
 
 	}
 
-	printf("\t[SET_BW] : setup new bandwidth value : ");
-        switch (value){
-        case BW_RATE_3200 :
-                printf("3200 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)3200);
-            break;
-        case BW_RATE_1600 :
-                printf("1600 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)1600);
-            break;
-        case BW_RATE_800  :
-                printf("800 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)800);
-            break;
-        case BW_RATE_400  :
-                printf("400 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)400);
-            break;
-        case BW_RATE_200  :
-                printf("200 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)200);
-            break;
-        case BW_RATE_100  :
-                printf("100 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)100);
-            break;
-        case BW_RATE_50   :
-                printf("50 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)50);
-            break;
-        case BW_RATE_25   :
-                printf("25 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)25);
-            break;
-        case BW_RATE_12_5 :
-                printf("12.5 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)12.5);
-            break;
-        case BW_RATE_6_25 :
-                printf("6.25 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)6.25);
-            break;
-        case BW_RATE_3_13 :
-                printf("3.13 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)3.13);
-            break;
-        case BW_RATE_1_56 :
-                printf("1.56 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)1.56);
-            break;
-        case BW_RATE_0_78 :
-                printf("0.78 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)0.78);
-            break;
-        case BW_RATE_0_39 :
-                printf("0.39 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)0.39);
-            break;
-        case BW_RATE_0_20 :
-                printf("0.20 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)0.20);
-            break;
-        case BW_RATE_0_10 :
-                printf("0.10 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)0.10);
-            break;
-        case BW_RATE_400_LP  :
-                printf("400 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)400);
-                printf("\t[SET_BW] : low power mode activated\r\n");
-            break;
-        case BW_RATE_200_LP  :
-                printf("200 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)200);
-                printf("\t[SET_BW] : low power mode activated\r\n");
-            break;
-        case BW_RATE_100_LP  :
-                printf("100 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)100);
-                printf("\t[SET_BW] : low power mode activated\r\n");
-            break;
-        case BW_RATE_50_LP   :
-                printf("50 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)50);
-                printf("\t[SET_BW] : low power mode activated\r\n");
-            break;
-        case BW_RATE_25_LP   :
-                printf("25 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)25);
-                printf("\t[SET_BW] : low power mode activated\r\n");
-            break;
-        case BW_RATE_12_5_LP :
-                printf("12.5 Hz\r\n");
-                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)12.5);
-                printf("\t[SET_BW] : low power mode activated\r\n");
-            break;
-            default:
-                printf("<undefined value>\r\n");
-                return ADXL_UNCORRECT_VALUE;
-            break;
-    }
-
+	printf("\t[ADXL_SET_BW_RATE] : setup new bandwidth value : ");
+    switch (value){
+    case BW_RATE_3200 :
+            printf("3200 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)3200);
+        break;
+    case BW_RATE_1600 :
+            printf("1600 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)1600);
+        break;
+    case BW_RATE_800  :
+            printf("800 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)800);
+        break;
+    case BW_RATE_400  :
+            printf("400 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)400);
+        break;
+    case BW_RATE_200  :
+            printf("200 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)200);
+        break;
+    case BW_RATE_100  :
+            printf("100 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)100);
+        break;
+    case BW_RATE_50   :
+            printf("50 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)50);
+        break;
+    case BW_RATE_25   :
+            printf("25 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)25);
+        break;
+    case BW_RATE_12_5 :
+            printf("12.5 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)12.5);
+        break;
+    case BW_RATE_6_25 :
+            printf("6.25 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)6.25);
+        break;
+    case BW_RATE_3_13 :
+            printf("3.13 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)3.13);
+        break;
+    case BW_RATE_1_56 :
+            printf("1.56 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)1.56);
+        break;
+    case BW_RATE_0_78 :
+            printf("0.78 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)0.78);
+        break;
+    case BW_RATE_0_39 :
+            printf("0.39 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)0.39);
+        break;
+    case BW_RATE_0_20 :
+            printf("0.20 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)0.20);
+        break;
+    case BW_RATE_0_10 :
+            printf("0.10 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)0.10);
+        break;
+    case BW_RATE_400_LP  :
+            printf("400 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)400);
+            printf("\t[ADXL_SET_BW_RATE] : low power mode activated\r\n");
+        break;
+    case BW_RATE_200_LP  :
+            printf("200 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)200);
+            printf("\t[ADXL_SET_BW_RATE] : low power mode activated\r\n");
+        break;
+    case BW_RATE_100_LP  :
+            printf("100 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)100);
+            printf("\t[ADXL_SET_BW_RATE] : low power mode activated\r\n");
+        break;
+    case BW_RATE_50_LP   :
+            printf("50 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)50);
+            printf("\t[ADXL_SET_BW_RATE] : low power mode activated\r\n");
+        break;
+    case BW_RATE_25_LP   :
+            printf("25 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)25);
+            printf("\t[ADXL_SET_BW_RATE] : low power mode activated\r\n");
+        break;
+    case BW_RATE_12_5_LP :
+            printf("12.5 Hz\r\n");
+            printf("\t[ADXL_SET_BW_RATE] : request interval : %3.6f seconds\r\n", (float)1/(float)12.5);
+            printf("\t[ADXL_SET_BW_RATE] : low power mode activated\r\n");
+        break;
+        default:
+            printf("<undefined value>\r\n");
+            return ADXL_UNCORRECT_VALUE;
+        break;
+	}
 
 	adxl_dev_set_bw_rate(ptr->dev, value);
 
@@ -711,8 +710,26 @@ int axi_adxl_measurement_start(axi_adxl *ptr){
 	/*
 		TODO : Add checking equations
 	*/
-	printf("\t[ADXL_MSMT_START] : Measurement started\r\n");
 
+	int timer = TIMER_LIMIT;
+
+	printf("\t[ADXL_MSMT_START] : ");
+	while( !(adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_MEASURE_MASK) ){
+		if (timer == 0){
+			textcolor(DEFAULT, BLACK, RED);
+			printf("launch measurement failed");
+			textcolor(DEFAULT, STD, STD);	
+			printf("\r\n");	
+			return ADXL_TIMEOUT;
+		}
+		printf(".");
+		timer--;
+	}
+
+	textcolor(DEFAULT, BLACK, GREEN);
+	printf("measurement actived");
+	textcolor(DEFAULT, STD, STD);
+	printf("\r\n")
 
 	return ADXL_OK;
 
@@ -736,13 +753,29 @@ int axi_adxl_measurement_stop(axi_adxl *ptr){
 		return ADXL_LINK_LOST;
 	}
 
-	/*
-		TODO : Add checking equations
-	*/
-
 	adxl_dev_set_power_ctl(ptr->dev, adxl_dev_get_power_ctl(ptr->dev) & ~POWER_CTL_MEASURE_MASK);
 
-	printf("\t[ADXL_MSMT_START] : Measurement stopped\r\n");
+	printf("\t[ADXL_MSMT_STOP] : ");
+
+	int timer = TIMER_LIMIT;
+
+	while((adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_MEASURE_MASK) ){
+		if (timer == 0){
+			textcolor(DEFAULT, BLACK, RED);
+			printf("launch measurement failed");
+			textcolor(DEFAULT, STD, STD);	
+			printf("\r\n");	
+			return ADXL_TIMEOUT;
+		}
+		printf(".");
+		timer--;
+	}
+
+	printf("\t[ADXL_MSMT_STOP] : ");
+	textcolor(DEFAULT, BLACK, RED);
+	printf("measurement stopped");
+	textcolor(DEFAULT, STD, STD);
+	printf("\r\n")
 
 	return ADXL_OK;
 
