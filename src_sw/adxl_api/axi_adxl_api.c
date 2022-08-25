@@ -11,6 +11,7 @@
 
 void print_menu();
 int menu(axi_adxl *ptr, int mode);
+int gic_init(XScuGic *ptr, axi_adxl* adxl_ptr);
 
 
 
@@ -292,3 +293,53 @@ int menu(axi_adxl *ptr, int mode){
 	return status;
 
 }
+
+
+
+
+
+int scugic_initialize(XScuGic *ptr, axi_adxl* adxl_ptr){
+
+    int status = 0;
+
+    XScuGic_Config *cfg;
+
+    cfg = XScuGic_LookupConfig(XPAR_SCUGIC_0_DEVICE_ID);
+    if (!cfg){
+        return XST_FAILURE;
+    }
+
+    status = XScuGic_CfgInitialize(ptr, cfg, cfg->CpuBaseAddress);
+    if (status != XST_SUCCESS){
+        return XST_FAILURE;
+    }
+
+    XScuGic_SetPriorityTriggerType(ptr, XPAR_FABRIC_AXI_ADXL345_VHD_0_ADXL_IRQ_INTR, 0x00, 0x1);
+
+    status = XScuGic_Connect(ptr, XPAR_FABRIC_AXI_ADXL345_VHD_0_ADXL_IRQ_INTR, (Xil_InterruptHandler)adxl_intr_handler, adxl_ptr);
+    if (status != XST_SUCCESS){
+        return XST_FAILURE;
+    }
+
+    XScuGic_Enable(ptr, XPAR_FABRIC_AXI_ADXL345_VHD_0_ADXL_IRQ_INTR);
+
+    Xil_ExceptionRegisterHandler(XIL_EXCEPTION_ID_INT, (Xil_ExceptionHandler)XScuGic_InterruptHandler, ptr);
+    Xil_ExceptionEnable();
+
+    return status ;
+}
+
+
+
+
+int irq_indexator = 0;
+
+void adxl_intr_handler(void *callback){
+    axi_adxl *ptr = (axi_adxl*)callback;
+    printf("IRQ %d\r\n", irq_indexator);
+    irq_indexator++;
+    axi_adxl_irq_ack(ptr);
+
+    return;
+}
+

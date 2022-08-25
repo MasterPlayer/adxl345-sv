@@ -581,6 +581,9 @@ int axi_adxl_set_iic_address(axi_adxl *ptr, uint8_t iic_address){
 
 
 int axi_adxl_irq_ack(axi_adxl *ptr){
+
+	adxl_cfg_ctl_intr_ack(ptr->cfg);
+
     return ADXL_OK;
 }
 
