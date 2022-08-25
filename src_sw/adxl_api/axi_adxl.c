@@ -116,6 +116,7 @@ void axi_adxl_cfg_debug(adxl_cfg *ptr){
 }
 
 
+
 void axi_adxl_dev_debug_register_space(adxl_dev *ptr){
 	int byte_cnt = 0;
 	printf("\t|| [0] \t| [1] \t| [2] \t| [3] \t|\r\n");
@@ -471,11 +472,9 @@ int axi_adxl_irq_allow(axi_adxl *ptr){
 	printf(" complete\r\n");
     textcolor(DEFAULT, STD, STD);
 
-
-
-
     return ADXL_OK;
 }
+
 
 
 int axi_adxl_irq_unallow(axi_adxl *ptr){
@@ -514,8 +513,6 @@ int axi_adxl_irq_unallow(axi_adxl *ptr){
 
 
 
-
-
 int axi_adxl_calibration(axi_adxl *ptr, uint32_t calibration_count_limit){
 
 	if (ptr->init_flaq != 1) {
@@ -543,7 +540,155 @@ int axi_adxl_calibration(axi_adxl *ptr, uint32_t calibration_count_limit){
 
 
 
+int axi_adxl_set_iic_address(axi_adxl *ptr, uint8_t iic_address){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_SET_IIC_ADDRESS] : has no init device\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_UNINIT;
+	}
+
+	adxl_cfg_ctl_set_iic_address(ptr->cfg, iic_address);
+
+	return ADXL_OK;
+}
+
+
+
 int axi_adxl_irq_ack(axi_adxl *ptr){
     return ADXL_OK;
 }
 
+
+
+int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value){
+	if (ptr->init_flaq != 1){
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_SET_BW_RATE] : has no init device\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_SET_BW_RATE] : Link down\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_LINK_LOST;
+
+	}
+
+	printf("\t[SET_BW] : setup new bandwidth value : ");
+        switch (value){
+        case BW_RATE_3200 :
+                printf("3200 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)3200);
+            break;
+        case BW_RATE_1600 :
+                printf("1600 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)1600);
+            break;
+        case BW_RATE_800  :
+                printf("800 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)800);
+            break;
+        case BW_RATE_400  :
+                printf("400 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)400);
+            break;
+        case BW_RATE_200  :
+                printf("200 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)200);
+            break;
+        case BW_RATE_100  :
+                printf("100 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)100);
+            break;
+        case BW_RATE_50   :
+                printf("50 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)50);
+            break;
+        case BW_RATE_25   :
+                printf("25 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)25);
+            break;
+        case BW_RATE_12_5 :
+                printf("12.5 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)12.5);
+            break;
+        case BW_RATE_6_25 :
+                printf("6.25 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)6.25);
+            break;
+        case BW_RATE_3_13 :
+                printf("3.13 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)3.13);
+            break;
+        case BW_RATE_1_56 :
+                printf("1.56 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)1.56);
+            break;
+        case BW_RATE_0_78 :
+                printf("0.78 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)0.78);
+            break;
+        case BW_RATE_0_39 :
+                printf("0.39 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)0.39);
+            break;
+        case BW_RATE_0_20 :
+                printf("0.20 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)0.20);
+            break;
+        case BW_RATE_0_10 :
+                printf("0.10 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)0.10);
+            break;
+        case BW_RATE_400_LP  :
+                printf("400 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)400);
+                printf("\t[SET_BW] : low power mode activated\r\n");
+            break;
+        case BW_RATE_200_LP  :
+                printf("200 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)200);
+                printf("\t[SET_BW] : low power mode activated\r\n");
+            break;
+        case BW_RATE_100_LP  :
+                printf("100 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)100);
+                printf("\t[SET_BW] : low power mode activated\r\n");
+            break;
+        case BW_RATE_50_LP   :
+                printf("50 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)50);
+                printf("\t[SET_BW] : low power mode activated\r\n");
+            break;
+        case BW_RATE_25_LP   :
+                printf("25 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)25);
+                printf("\t[SET_BW] : low power mode activated\r\n");
+            break;
+        case BW_RATE_12_5_LP :
+                printf("12.5 Hz\r\n");
+                printf("\t[SET_BW] : request interval : %3.6f seconds\r\n", (float)1/(float)12.5);
+                printf("\t[SET_BW] : low power mode activated\r\n");
+            break;
+            default:
+                printf("<undefined value>\r\n");
+                return ERROR_UNDEF_VALUE;
+            break;
+    }
+
+
+	adxl_dev_set_bw_rate(ptr->dev, value);
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_set_range(axi_adxl *ptr){
+
+}

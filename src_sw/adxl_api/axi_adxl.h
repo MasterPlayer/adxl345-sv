@@ -23,6 +23,34 @@ typedef struct {
 } axi_adxl;
 
 
+
+enum bw_rate_enum {
+    BW_RATE_400_LP  = 0x1C,
+    BW_RATE_200_LP  = 0x1B,
+    BW_RATE_100_LP  = 0x1A,
+    BW_RATE_50_LP   = 0x19,
+    BW_RATE_25_LP   = 0x18,
+    BW_RATE_12_5_LP = 0x17,
+    BW_RATE_3200    = 0x0F,
+    BW_RATE_1600    = 0x0E,
+    BW_RATE_800     = 0x0D,
+    BW_RATE_400     = 0x0C,
+    BW_RATE_200     = 0x0B,
+    BW_RATE_100     = 0x0A,
+    BW_RATE_50      = 0x09,
+    BW_RATE_25      = 0x08,
+    BW_RATE_12_5    = 0x07,
+    BW_RATE_6_25    = 0x06,
+    BW_RATE_3_13    = 0x05,
+    BW_RATE_1_56    = 0x04,
+    BW_RATE_0_78    = 0x03,
+    BW_RATE_0_39    = 0x02,
+    BW_RATE_0_20    = 0x01,
+    BW_RATE_0_10    = 0x00
+};
+
+
+
 #define TIMER_LIMIT 1000
 
 
@@ -40,7 +68,7 @@ int axi_adxl_irq_allow(axi_adxl *ptr);
 int axi_adxl_irq_unallow(axi_adxl *ptr);
 int axi_adxl_irq_ack(axi_adxl *ptr);
 int axi_adxl_calibration(axi_adxl *ptr, uint32_t calibration_count_limit);
-
+int axi_adxl_set_iic_address(axi_adxl *ptr, uint8_t iic_address);
 
 #define ADXL_DEV_RW_COUNT 20
 #define ADXL_DEV_RO_COUNT 10
@@ -55,3 +83,6 @@ int check_access_rw(int address);
 int check_access_ro(int address);
 int check_access_reserved(int address);
 
+
+int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value);
+int axi_adxl_set_range(axi_adxl *ptr);
