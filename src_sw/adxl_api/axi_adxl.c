@@ -707,11 +707,7 @@ int axi_adxl_measurement_start(axi_adxl *ptr){
 
 	adxl_dev_set_power_ctl(ptr->dev, adxl_dev_get_power_ctl(ptr->dev) | POWER_CTL_MEASURE_MASK);
 
-	/*
-		TODO : Add checking equations
-	*/
-
-	int timer = TIMER_LIMIT;
+	int timer = adxl_cfg_get_clk_period(ptr->cfg)*3;
 
 	printf("\t[ADXL_MSMT_START] : ");
 	while( !(adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_MEASURE_MASK) ){
@@ -729,7 +725,7 @@ int axi_adxl_measurement_start(axi_adxl *ptr){
 	textcolor(DEFAULT, BLACK, GREEN);
 	printf("measurement actived");
 	textcolor(DEFAULT, STD, STD);
-	printf("\r\n")
+	printf("\r\n");
 
 	return ADXL_OK;
 
@@ -757,12 +753,12 @@ int axi_adxl_measurement_stop(axi_adxl *ptr){
 
 	printf("\t[ADXL_MSMT_STOP] : ");
 
-	int timer = TIMER_LIMIT;
+	int timer = adxl_cfg_get_clk_period(ptr->cfg)*3;
 
 	while((adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_MEASURE_MASK) ){
 		if (timer == 0){
 			textcolor(DEFAULT, BLACK, RED);
-			printf("launch measurement failed");
+			printf("stop measurement failed");
 			textcolor(DEFAULT, STD, STD);	
 			printf("\r\n");	
 			return ADXL_TIMEOUT;
@@ -772,10 +768,10 @@ int axi_adxl_measurement_stop(axi_adxl *ptr){
 	}
 
 	printf("\t[ADXL_MSMT_STOP] : ");
-	textcolor(DEFAULT, BLACK, RED);
+	textcolor(DEFAULT, BLACK, GREEN);
 	printf("measurement stopped");
 	textcolor(DEFAULT, STD, STD);
-	printf("\r\n")
+	printf("\r\n");
 
 	return ADXL_OK;
 
