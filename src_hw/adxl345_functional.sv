@@ -26,10 +26,12 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     input  logic        ADXL_INTERRUPT            ,
     output logic        ADXL_IRQ                  ,
     input  logic        ADXL_IRQ_ACK              ,
+
     input  logic        CALIBRATION               ,
     input  logic [ 4:0] CALIBRATION_MODE          ,
     output logic        CALIBRATION_COMPLETE      , 
     output logic [63:0] CALIBRATION_TIME          ,
+    output logic        CALIBRATION_IN_PROGRESS   ,
 
     output logic [47:0] OPT_REQUEST_INTERVAL      ,
     output logic [31:0] READ_VALID_COUNT          ,
@@ -1601,6 +1603,9 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         end 
     end 
 
+    always_comb begin 
+        CALIBRATION_IN_PROGRESS = calibration_process;
+    end 
 
 
     always_ff @(posedge CLK) begin : CALIBRATION_TIME_processing 

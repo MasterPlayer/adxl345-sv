@@ -240,6 +240,7 @@ module axi_adxl345 #(
     logic [ 4:0] calibration_mode                   ;
     logic        calibration_complete               ;
     logic [63:0] calibration_time                   ;
+    logic        calibration_in_progress            ;
 
     logic [47:0] opt_request_interval;
 
@@ -1203,16 +1204,24 @@ module axi_adxl345 #(
                 i2c_address                 , // register_cfg[ 0][14:8],
                 on_work                     ,
                 single_request_complete_flaq, //request_performed,
-                calibration_complete        ,  //calibration_flaq,
-                1'b0,  // ADXL_IRQ,
-                1'b0,
+                1'b0                        ,  //calibration_flaq,
+                1'b0                        ,  // ADXL_IRQ,
+                1'b0                        ,
                 allow_irq_reg               , //allow_irq,
                 enable_interval_requestion  , //enable,
                 reset                         // reset
             };
 
             8'h01   : reg_data_out_cfg <= requestion_interval;
-            8'h02   : reg_data_out_cfg <= {{27{1'b0}} , calibration_mode}; //DATA_WIDTH;
+            
+            8'h02   : reg_data_out_cfg <= {
+                14'b0, 
+                calibration_in_progress, 
+                calibration_complete, 
+                11'b0,
+                calibration_mode
+            };
+
             8'h03   : reg_data_out_cfg <= read_valid_count; //read_valid_reg;
             8'h04   : reg_data_out_cfg <= write_valid_count; //write_valid_reg;
             8'h05   : reg_data_out_cfg <= read_transactions[31:0];
@@ -1447,8 +1456,8 @@ module axi_adxl345 #(
             calibration <= 1'b0;
         end else begin 
             if (slv_reg_wren_cfg) begin 
-                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 0) begin 
-                    if ((S_AXI_LITE_CFG_WSTRB[0] == 1) & S_AXI_LITE_CFG_WDATA[5]) begin 
+                if (axi_awaddr_cfg[ADDR_LSB_CFG + OPT_MEM_ADDR_BITS_CFG : ADDR_LSB_CFG] == 2) begin 
+                    if ((S_AXI_LITE_CFG_WSTRB[1] == 1) & S_AXI_LITE_CFG_WDATA[8]) begin 
                         calibration <= 1'b1;
                     end else begin 
                         calibration <= 1'b0;
@@ -1572,6 +1581,8 @@ module axi_adxl345 #(
         .CALIBRATION_MODE          (calibration_mode          ),
         .CALIBRATION_COMPLETE      (calibration_complete      ),
         .CALIBRATION_TIME          (calibration_time          ),
+        .CALIBRATION_IN_PROGRESS   (calibration_in_progress   ),
+
         
         .OPT_REQUEST_INTERVAL      (opt_request_interval      ),
         
