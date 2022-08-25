@@ -4,7 +4,9 @@
 
 void axi_adxl_cfg_debug(adxl_cfg *ptr){
     printf("[CFG SPACE]\r\n");
+
     printf("\t[NAME] \t\t\t\t| [RAW]\t\t| [VALUE]\r\n");
+    
     printf("\t[VERSION] \t\t\t| 0x%08x \t| %d.%d\r\n", (((uint32_t)adxl_cfg_ctl_get_version_major(ptr) << 8) + (uint32_t)adxl_cfg_ctl_get_version_minor(ptr)), adxl_cfg_ctl_get_version_major(ptr), adxl_cfg_ctl_get_version_minor(ptr));
 
     printf("\t[RESET_COMPLETED] \t\t| 0x%08x \t| ", adxl_cfg_ctl_reset_completed(ptr));
@@ -343,7 +345,7 @@ int axi_adxl_reset(axi_adxl *ptr){
     adxl_cfg_ctl_reset(ptr->cfg);
     while (!adxl_cfg_ctl_reset_completed(ptr->cfg)){
     	if (timer == 0) {
-    		textcolor(BRIGHT, RED, STD);
+    		textcolor(BRIGHT, BLACK, RED);
     		printf(" FAILED\r\n");
     		textcolor(DEFAULT, STD, STD);
     		return ADXL_RESET_INFINITE;
@@ -351,7 +353,7 @@ int axi_adxl_reset(axi_adxl *ptr){
     	printf(".");
     	timer--;
     }
-    textcolor(BRIGHT, GREEN, STD);
+    textcolor(DEFAULT, BLACK, GREEN);
     printf(" completed\r\n");
     textcolor(DEFAULT, STD, STD);
 
@@ -379,7 +381,27 @@ int axi_adxl_perform_interval_requestion(axi_adxl *ptr, uint32_t requestion_inte
 	adxl_cfg_set_request_interval(ptr->cfg, requestion_interval);
 
 	adxl_cfg_ctl_interval_requestion_enable(ptr->cfg);
+	int timer = TIMER_LIMIT;
 
+	while(!adxl_cfg_ctl_interval_requestion(ptr->cfg)){
+		if (timer == 0){
+			printf("[ADXL_INTERVAL_REQ] : ");
+			textcolor(DEFAULT, BLACK, RED);
+			printf("interval requestion start failed");
+			textcolor(DEFAULT, STD, STD);
+			printf("\r\n");
+			return ADXL_TIMEOUT;
+		}
+		timer--;
+		printf(".");
+	}
+
+	printf("[ADXL_INTERVAL_REQ] : ");
+	textcolor(DEFAULT, BLACK, GREEN);
+	printf("interval requestion launched");
+	textcolor(DEFAULT, STD, STD);
+	printf("\r\n");
+	
     return ADXL_OK;
 }
 
@@ -565,6 +587,7 @@ int axi_adxl_irq_ack(axi_adxl *ptr){
 
 
 int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value){
+	
 	if (ptr->init_flaq != 1){
 	    textcolor(BRIGHT, RED, STD);
 		printf("\t[ADXL_SET_BW_RATE] : has no init device\r\n");
@@ -776,3 +799,52 @@ int axi_adxl_measurement_stop(axi_adxl *ptr){
 	return ADXL_OK;
 
 }
+
+
+
+int axi_adxl_interrupt_enable(axi_adxl *ptr, uint8_t intr){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_INTR_EN] : has no init device\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_INTR_EN] : Link down\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_int_enable(ptr->dev, (adxl_dev_get_int_enable(ptr->dev) | intr));
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_interrupt_disable(axi_adxl *ptr, uint8_t intr){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_INTR_DSBL] : has no init device\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(BRIGHT, RED, STD);
+		printf("\t[ADXL_INTR_DSBL] : Link down\r\n");
+	    textcolor(DEFAULT, STD, STD);
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_int_enable(ptr->dev, (adxl_dev_get_int_enable(ptr->dev) & ~intr));
+
+	return ADXL_OK;
+}
+
+
+

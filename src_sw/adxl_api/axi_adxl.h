@@ -49,6 +49,17 @@ enum bw_rate_enum {
     BW_RATE_0_10    = 0x00
 };
 
+enum int_mask_enum {
+    DATA_READY = 0x80,
+    SINGLE_TAP = 0x40,
+    DOUBLE_TAP = 0x20,
+    ACTIVITY = 0x10,
+    INACTIVITY = 0x08,
+    FREE_FALL = 0x04,
+    WATERMARK = 0x02,
+    OVERRUN = 0x01,
+    INTR_ALL_MASK = 0xFF
+}
 
 
 #define TIMER_LIMIT 1000
@@ -87,3 +98,5 @@ int check_access_reserved(int address);
 int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value);
 int axi_adxl_measurement_start(axi_adxl *ptr);
 int axi_adxl_measurement_stop(axi_adxl *ptr);
+int axi_adxl_interrupt_enable(axi_adxl *ptr, uint8_t intr);
+int axi_adxl_interrupt_disable(axi_adxl *ptr, uint8_t intr);

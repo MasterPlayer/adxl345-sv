@@ -70,6 +70,8 @@ void print_menu(){
 	printf("50. Bandwidth setup\r\n");
 	printf("51. Measure start\r\n");
 	printf("52. Measure stop\r\n");
+	printf("53. Interrupt enable\r\n");
+	printf("54. Interrupt disable\r\n");
 
 	printf("100. Dump device register space\r\n");
 }
@@ -234,6 +236,52 @@ int menu(axi_adxl *ptr, int mode){
 
 		case 52 :  
 			status = axi_adxl_measurement_stop(ptr);
+		break;
+
+		case 53 : 
+			printf("Selected interrupt disable subunit\r\n");
+			printf("1. DATA_READY\r\n");
+			printf("2. SINGLE TAP\r\n");
+			printf("3. DOUBLE TAP\r\n");
+			printf("4. ACTIVITY\r\n");
+			printf("5. INACTIVITY\r\n");
+			printf("6. FREE FALL\r\n");
+			printf("7. WATERMARK\r\n");
+			printf("8. OVERRUN\r\n");
+			printf("Which interrupt will be disabled : ");
+
+			printf("Enter bandwidth value : ");
+			char *p = s;
+
+			while((*p++=getchar ()) != 13);
+			*p = '\0';
+			value = atoi(s);
+			printf("%d\r\n", value);
+
+
+			status = axi_adxl_interrupt_enable(ptr, value);
+		break;
+
+		case 54 : 
+			printf("Selected interrupt disable subunit\r\n");
+			printf("1. DATA_READY\r\n");
+			printf("2. SINGLE TAP\r\n");
+			printf("3. DOUBLE TAP\r\n");
+			printf("4. ACTIVITY\r\n");
+			printf("5. INACTIVITY\r\n");
+			printf("6. FREE FALL\r\n");
+			printf("7. WATERMARK\r\n");
+			printf("8. OVERRUN\r\n");
+			printf("Which interrupt will be disabled : ");
+			printf("Enter bandwidth value : ");
+			char *p = s;
+
+			while((*p++=getchar ()) != 13);
+			*p = '\0';
+			value = atoi(s);
+			printf("%d\r\n", value);
+
+			status = axi_adxl_interrupt_disable(ptr, value);
 		break;
 
 		case 100 :
