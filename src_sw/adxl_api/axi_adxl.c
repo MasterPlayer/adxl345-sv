@@ -40,13 +40,17 @@ void axi_adxl_cfg_debug(adxl_cfg *ptr){
 	textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    printf("\t[CALIBRATION] \t\t\t| 0x%08x \t| ", adxl_cfg_ctl_calibration_completed(ptr));
-    if (adxl_cfg_ctl_calibration_completed(ptr)){
+    printf("\t[CALIBRATION] \t\t\t| 0x%08x \t| ", adxl_cfg_calibration_completed(ptr));
+    if (adxl_cfg_calibration_completed(ptr)){
     	textcolor(DEFAULT, BLACK, GREEN);
         printf("completed");
     }else{
     	textcolor(DEFAULT, BLACK, RED);
-        printf("not started");
+    	if (adxl_cfg_calibration_in_progress(ptr)){
+    		printf("in progress");
+    	}else{
+    		printf("not started");
+    	}
     }
 	textcolor(DEFAULT, STD, STD);
     printf("\r\n");
@@ -156,6 +160,7 @@ void axi_adxl_dev_debug_register_space(adxl_dev *ptr){
 
 	}
 }
+
 
 
 int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, uint8_t iic_address){
@@ -529,7 +534,7 @@ int axi_adxl_calibration(axi_adxl *ptr, uint32_t calibration_count_limit){
 	}
 
 	adxl_cfg_set_calibration_count_limit(ptr->cfg, calibration_count_limit);
-	adxl_cfg_ctl_calibration(ptr->cfg);
+	adxl_cfg_calibration(ptr->cfg);
 
 	printf("[ADXL_CALIBRATION] : calibration in progress and stopped automatically\r\n");
 

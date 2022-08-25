@@ -75,11 +75,11 @@ typedef struct {
 #define adxl_cfg_set_request_interval(ptr, interval) ((ptr)->request_interval_reg = interval)
 #define adxl_cfg_get_request_interval(ptr) (ptr->request_interval_reg)
 
-#define adxl_cfg_calibration(ptr) (ptr)->ctl_reg |= CFG_CTL_CALIBRATION_MASK
-#define adxl_cfg_calibration_completed(ptr) ((ptr)->ctl_reg & CFG_CTL_CALIBRATION_MASK) ? TRUE : FALSE
-#define adxl_cfg_calibration_in_progress(ptr) ((ptr)->ctl_reg & CFG_CTL_CALIBRATION_MASK) ? TRUE : FALSE
-#define adxl_cfg_set_calibration_count_limit(ptr, limit) ((ptr)->calibration_count_reg = (limit & CFG_CALIBRATION_COUNT_LIMIT_MASK))
-#define adxl_cfg_get_calibration_count_limit(ptr) ((ptr)->calibration_count_reg & CFG_CALIBRATION_COUNT_LIMIT_MASK)
+#define adxl_cfg_calibration(ptr) (ptr)->ctl_reg |= CFG_CAL_START_MASK
+#define adxl_cfg_calibration_completed(ptr) ((ptr)->ctl_reg & CFG_CAL_COMPLETE_MASK) ? TRUE : FALSE
+#define adxl_cfg_calibration_in_progress(ptr) ((ptr)->ctl_reg & CFG_CAL_IN_PROGRESS_MASK) ? TRUE : FALSE
+#define adxl_cfg_set_calibration_count_limit(ptr, limit) ((ptr)->calibration_count_reg = (limit & CFG_CAL_COUNT_LIMIT_MASK))
+#define adxl_cfg_get_calibration_count_limit(ptr) ((ptr)->calibration_count_reg & CFG_CAL_COUNT_LIMIT_MASK)
 
 #define adxl_cfg_ctl_get_read_valid_count(ptr) ((ptr)->read_valid_count_reg)
 
