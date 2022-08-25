@@ -59,7 +59,7 @@ enum int_mask_enum {
     WATERMARK = 0x02,
     OVERRUN = 0x01,
     INTR_ALL_MASK = 0xFF
-}
+};
 
 
 #define TIMER_LIMIT 1000

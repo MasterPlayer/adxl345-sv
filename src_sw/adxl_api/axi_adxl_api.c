@@ -195,8 +195,6 @@ int menu(axi_adxl *ptr, int mode){
 			printf("\t21. 12_5 Hz low power\r\n");
 
 			printf("Enter bandwidth value : ");
-			char *p = s;
-
 			while((*p++=getchar ()) != 13);
 			*p = '\0';
 			value = atoi(s);
@@ -251,7 +249,6 @@ int menu(axi_adxl *ptr, int mode){
 			printf("Which interrupt will be disabled : ");
 
 			printf("Enter bandwidth value : ");
-			char *p = s;
 
 			while((*p++=getchar ()) != 13);
 			*p = '\0';
@@ -274,7 +271,6 @@ int menu(axi_adxl *ptr, int mode){
 			printf("8. OVERRUN\r\n");
 			printf("Which interrupt will be disabled : ");
 			printf("Enter bandwidth value : ");
-			char *p = s;
 
 			while((*p++=getchar ()) != 13);
 			*p = '\0';
