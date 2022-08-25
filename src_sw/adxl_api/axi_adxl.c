@@ -168,8 +168,10 @@ int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, u
 
     printf("\t[ADXL_INIT] : set address to pointers\r\n");
     ptr->cfg = (adxl_cfg*)baseaddr_cfg;
+    ptr->dev = (adxl_dev*)baseaddr_dev;
 
     printf("\t\tconfiguration address space : 0x%08x\r\n", baseaddr_cfg);
+    printf("\t\tconfiguration address space : 0x%08x\r\n", baseaddr_dev);
 
     int timer = TIMER_LIMIT;
 
@@ -737,6 +739,9 @@ int axi_adxl_measurement_stop(axi_adxl *ptr){
 	/*
 		TODO : Add checking equations
 	*/
+
+	adxl_dev_set_power_ctl(ptr->dev, adxl_dev_get_power_ctl(ptr->dev) & ~POWER_CTL_MEASURE_MASK);
+
 	printf("\t[ADXL_MSMT_START] : Measurement stopped\r\n");
 
 	return ADXL_OK;

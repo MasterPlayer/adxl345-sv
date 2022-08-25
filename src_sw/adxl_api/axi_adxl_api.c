@@ -66,7 +66,7 @@ void print_menu(){
 	printf("8. Calibration\r\n");
 	printf("9. Set iic address\r\n");
 
-	printf("=====<Device space>====="\r\n);
+	printf("=====<Device space>=====\r\n");
 	printf("50. Bandwidth setup\r\n");
 	printf("51. Measure start\r\n");
 	printf("52. Measure stop\r\n");
@@ -237,7 +237,7 @@ int menu(axi_adxl *ptr, int mode){
 		break;
 
 		case 100 :
-			status = axi_adxl_dev_debug_register_space(ADXL_DEV_BASEADDRESS);
+			axi_adxl_dev_debug_register_space(ADXL_DEV_BASEADDRESS);
 		break;
 
 		default :
