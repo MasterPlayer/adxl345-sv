@@ -143,6 +143,18 @@ int menu(axi_adxl *ptr, int mode){
 			status = axi_adxl_calibration(ptr, value);
 		break;
 
+		case 9 :
+			printf("[MENU] : Enter new address of i2c device\r\n");
+			while((*p++=getchar ()) != 13);
+			*p = '\0';
+			value = atoi(s);
+			printf("%d(calibration count : %d)\r\n", value, (1<<value));
+
+		break;
+
+
+
+
 		case 99 :
 			axi_adxl_dev_debug_register_space(ADXL_DEV_BASEADDRESS);
 		break;
