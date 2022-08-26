@@ -588,7 +588,7 @@ int selector_axi_adxl_change_latent(axi_adxl *ptr){
     char *str_ptr = str;
     
     printf("[MENU] : Selected changing latency\r\n");
-    printf("Enter new value of latency <precision : %d LSB=%3.6f s>: ", 1, SCALE_LATENCY);
+    printf("Enter new value of latency <precision : %d LSB=%3.6f s>: ", 1, SCALE_LATENT);
 
     while((*str_ptr++=getchar ()) != 13);
 
@@ -596,7 +596,7 @@ int selector_axi_adxl_change_latent(axi_adxl *ptr){
 
     uint8_t value = atoi(str);
 
-    printf("%d(%3.6f s)\r\n", value, (((float)value)+1)*SCALE_LATENCY);
+    printf("%d(%3.6f s)\r\n", value, (((float)value)+1)*SCALE_LATENT);
 
     return axi_adxl_change_latent(ptr, value);
 

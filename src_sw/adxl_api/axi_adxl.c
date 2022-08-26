@@ -1255,7 +1255,7 @@ int axi_adxl_change_time_inact(axi_adxl *ptr, uint8_t time_inact){
 		return ADXL_LINK_LOST;
 	}
 
-    printf("\t[ADXL_SET_TIME_INACT] : changing inactivity time: %3f s => %3f s\r\n", (((float)adxl_dev_get_time_inact(ptr->dev)+1) * SCALE_TIME_INACT), (((float)time_inact+1) * time_inact));
+    printf("\t[ADXL_SET_TIME_INACT] : changing inactivity time: %3f s => %3f s\r\n", (((float)adxl_dev_get_time_inact(ptr->dev)+1) * SCALE_TIME_INACT), (((float)time_inact+1) * SCALE_TIME_INACT));
 	
 	adxl_dev_set_time_inact(ptr->dev, time_inact);
 

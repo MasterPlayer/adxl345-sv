@@ -83,6 +83,12 @@ void print_menu(){
     printf("\t55. Range change\r\n");
     printf("\t56. Threshold tap change\r\n");
     printf("\t57. Duration change\r\n");
+    printf("\t58. Latent change\r\n");
+    printf("\t59. Window change\r\n");
+    printf("\t60. Activity threshold change\r\n");
+    printf("\t61. Inactivity threshold change\r\n");
+    printf("\t62. Inactivity time change\r\n");
+
 
     textcolor(REVERSE, STD, STD);
     printf("=====<Show statistics>=====");
@@ -172,7 +178,25 @@ int menu(axi_adxl *ptr, int mode){
             status = selector_axi_adxl_change_dur(ptr);
         break;
 
+        case 58 :
+        	status = selector_axi_adxl_change_latent(ptr);
+        break;
 
+        case 59 :
+        	status = selector_axi_adxl_change_window(ptr);
+        break;
+
+        case 60 :
+        	status = selector_axi_adxl_change_thresh_act(ptr);
+        break;
+
+        case 61 :
+        	status = selector_axi_adxl_change_thresh_inact(ptr);
+        break;
+
+        case 62 :
+        	status = selector_axi_adxl_change_time_inact(ptr);
+        break;
         /*Debug device*/
 
         case 100 :
