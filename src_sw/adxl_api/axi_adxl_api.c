@@ -81,6 +81,8 @@ void print_menu(){
     printf("\t53. Interrupt enable\r\n");
     printf("\t54. Interrupt disable\r\n");
     printf("\t55. Range change\r\n");
+    printf("\t56. Threshold tap change\r\n");
+    printf("\t57. Duration change\r\n");
 
     textcolor(REVERSE, STD, STD);
     printf("=====<Show statistics>=====");
@@ -161,6 +163,15 @@ int menu(axi_adxl *ptr, int mode){
         case 55 : 
             status = selector_axi_adxl_change_range(ptr);
         break;
+
+        case 56 : 
+            status = selector_axi_adxl_change_thresh_tap(ptr);
+        break;
+
+        case 57 : 
+            status = selector_axi_adxl_change_dur(ptr);
+        break;
+
 
         /*Debug device*/
 

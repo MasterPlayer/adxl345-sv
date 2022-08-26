@@ -85,6 +85,16 @@ enum range_enum{
     RANGE_16G_FULL = 0x0B
 };
 
+#define SCALE_THRESH_TAP        (0.0625)
+#define SCALE_OFS               (0.0156)        //15.6 us
+#define SCALE_DUR               (0.000625)      // 625us
+#define SCALE_LATENT            (0.00125)       //1.25 ms
+#define SCALE_WINDOW            (0.00125)       //1.25 ms
+#define SCALE_THRESH_ACT        (0.0625)        //62.5 mg
+#define SCALE_THRESH_INACT      (0.0625)        //62.5 mg
+#define SCALE_TIME_INACT        (1)             //1 sec
+#define SCALE_THRESH_FF         (0.0625)        //62.5 mg/lsb
+#define SCALE_TIME_FF           (0.005)         //5ms/lsb
 
 
 
@@ -125,6 +135,8 @@ int axi_adxl_measurement_stop(axi_adxl *ptr);
 int axi_adxl_interrupt_enable(axi_adxl *ptr, enum int_mask_enum intr);
 int axi_adxl_interrupt_disable(axi_adxl *ptr, enum int_mask_enum intr);
 int axi_adxl_change_range(axi_adxl *ptr, enum range_enum range);
+int axi_adxl_change_thresh_tap(axi_adxl *ptr, uint8_t thresh_tap);
+int axi_adxl_change_dur(axi_adxl *ptr, uint8_t duration)
 
 int axi_adxl_interrupt_enabled(axi_adxl *ptr, enum int_mask_enum intr);
 int axi_adxl_get_range(axi_adxl *ptr);

@@ -1064,6 +1064,59 @@ int axi_adxl_change_range(axi_adxl *ptr, enum range_enum range){
 }
 
 
+int axi_adxl_change_thresh_tap(axi_adxl *ptr, uint8_t thresh_tap){
+	
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_THRESH_TAP] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_THRESH_TAP] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("[ADXL_SET_THRESH_TAP] : thresh tap from %3.3f to %3.3f\r\n", ((float)adxl_dev_get_thresh_tap(ptr->dev) * SCALE_THRESH_TAP), ((float)thresh_tap * SCALE_THRESH_TAP));
+
+    adxl_dev_set_thresh_tap(ptr->dev, thresh_tap);
+
+    return ADXL_OK;
+}
+
+
+
+int axi_adxl_change_dur(axi_adxl *ptr, uint8_t duration){
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_DUR] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_DUR] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+    printf("\t[ADXL_SET_DUR] : changing duration: %3.6f sec => %3.6f sec\r\n", ((float)adxl_dev_get_dur(ptr->dev) * SCALE_DUR), ((float)duration * SCALE_DUR));
+    
+    adxl_dev_set_dur(ptr->dev, duration);
+
+	return ADXL_OK;
+}
+
+
+
 
 int axi_adxl_interrupt_enabled(axi_adxl *ptr, enum int_mask_enum intr){
 	return (adxl_dev_get_int_enable(ptr->dev) & intr);
