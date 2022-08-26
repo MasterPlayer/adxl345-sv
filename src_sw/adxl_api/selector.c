@@ -554,15 +554,14 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
 int selector_axi_adxl_change_thresh_tap(axi_adxl *ptr){
     char str [256];
     char *str_ptr = str;
-    int status = ADXL_OK;
+
     printf("[MENU] : Selected changing for threshold tap\r\n");
     printf("Enter new value of threshold tap <precision : %d LSB=%3.6f g>: ", 1, SCALE_THRESH_TAP);
     while((*str_ptr++=getchar ()) != 13);
     *str_ptr = '\0';
     uint8_t value = atoi(str);
     printf("%d(%3.6f g)\r\n", value, ((float)value)*SCALE_THRESH_TAP );
-    status = axi_adxl_change_thresh_tap(axi_adxl *ptr, value)
-    return status;
+    return axi_adxl_change_thresh_tap(ptr, value);
 }
 
 
@@ -571,8 +570,6 @@ int selector_axi_adxl_change_dur(axi_adxl *ptr){
 
     char str [256];
     char *str_ptr = str;
-
-    int status = ADXL_OK;
     
     printf("[MENU] : Selected changing duration\r\n");
     printf("Enter new value of duration <precision : %d LSB=%3.6f s>: ", 1, SCALE_DUR);
@@ -580,8 +577,5 @@ int selector_axi_adxl_change_dur(axi_adxl *ptr){
     *str_ptr = '\0';
     uint8_t value = atoi(str);
     printf("%d(%3.6f s)\r\n", value, ((float)value)*SCALE_DUR );
-    status = axi_adxl_change_dur(axi_adxl *ptr, value)
-    return status;
-
-
+    return axi_adxl_change_dur(ptr, value);
 }
