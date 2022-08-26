@@ -1402,7 +1402,7 @@ int axi_adxl_activity_control_disable(axi_adxl *ptr, enum act_enum act_mask){
     		return ADXL_UNCORRECT_VALUE;
     }
 
-    printf("was enabled\r\n");
+    printf("was disabled\r\n");
 
 	return ADXL_OK;
 }
@@ -1427,7 +1427,7 @@ int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mas
 		return ADXL_LINK_LOST;
 	}
 
-    printf("\t[ADXL_DISABLE_INACT_CTRL] : activity coord ");
+    printf("\t[ADXL_DISABLE_INACT_CTRL] : inactivity coord ");
 
     switch (inact_mask){
     	case INACT_X_MASK : 
@@ -1453,6 +1453,37 @@ int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mas
     printf("was enabled\r\n");
 
 	return ADXL_OK;
+}
+
+
+int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask){
+
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_ACT_ACDC] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_ACT_ACDC] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & )
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t mask){
+
 }
 
 

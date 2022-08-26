@@ -90,6 +90,8 @@ enum act_enum {
     ACT_Z_MASK      = 0x10
 };
 
+#define ACT_AC_MASK = 0x80
+
 
 enum inact_enum {
     INACT_X_MASK    = 0x04, 
@@ -170,4 +172,7 @@ int axi_adxl_activity_control_enable(axi_adxl *ptr, enum act_enum act_mask);
 int axi_adxl_inactivity_control_enable(axi_adxl *ptr, enum inact_enum inact_mask);
 int axi_adxl_activity_control_disable(axi_adxl *ptr, enum act_enum act_mask);
 int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mask);
+int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask);
+int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t mask);
+
 int axi_adxl_has_act_inact_control(axi_adxl *ptr, uint8_t mask);
