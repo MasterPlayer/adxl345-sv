@@ -26,3 +26,8 @@ int selector_axi_adxl_dev_debug_register_space(axi_adxl *ptr);
 int selector_axi_adxl_change_range(axi_adxl *ptr);
 int selector_axi_adxl_change_thresh_tap(axi_adxl *ptr);
 int selector_axi_adxl_change_dur(axi_adxl *ptr);
+int selector_axi_adxl_change_latent(axi_adxl *ptr);
+int selector_axi_adxl_change_window(axi_adxl *ptr);
+int selector_axi_adxl_change_thresh_act(axi_adxl *ptr);
+int selector_axi_adxl_change_thresh_inact(axi_adxl *ptr);
+int selector_axi_adxl_change_time_inact(axi_adxl *ptr);
