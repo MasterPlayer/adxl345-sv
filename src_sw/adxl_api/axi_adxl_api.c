@@ -75,19 +75,23 @@ void print_menu(){
     printf("=====<Device space>=====");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
-    printf("\t   29. \tThreshold tap change [REG_29]\r\n");
-    printf("\t   33. \tDuration change [REG_33]\r\n");
-    printf("\t   34. \tLatent change [REG_34]\r\n");
-    printf("\t   35. \tWindow change [REG_35]\r\n");
-    printf("\t   36. \tActivity threshold change [REG_36]\r\n");
-    printf("\t   37. \tInactivity threshold change [REG_37]\r\n");
-    printf("\t   38. \tInactivity time change [REG_38]\r\n");
-    printf("\t   44. \tBandwidth rate setup [REG_44]\r\n");
-    printf("\t 4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
-    printf("\t 4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
-    printf("\t  461. \tInterrupt enable [REG_46][ENABLE]\r\n");
-    printf("\t  460. \tInterrupt disable [REG_46][DISABLE]\r\n");
-    printf("\t49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
+    printf("\t    29. \tThreshold tap change [REG_29]\r\n");
+    printf("\t    33. \tDuration change [REG_33]\r\n");
+    printf("\t    34. \tLatent change [REG_34]\r\n");
+    printf("\t    35. \tWindow change [REG_35]\r\n");
+    printf("\t    36. \tActivity threshold change [REG_36]\r\n");
+    printf("\t    37. \tInactivity threshold change [REG_37]\r\n");
+    printf("\t    38. \tInactivity time change [REG_38]\r\n");
+    printf("\t396541. \tActivity control enable[REG_38][BIT_6][BIT_5][BIT_4][ENABLE]\r\n");
+    printf("\t396540. \tActivity control disable[REG_38][BIT_6][BIT_5][BIT_4][DISABLE]\r\n");
+    printf("\t392101. \tInactivity control enable[REG_38][BIT_2][BIT_1][BIT_0][ENABLE]\r\n");
+    printf("\t392100. \tInactivity control disable[REG_38][BIT_2][BIT_1][BIT_0][DISABLE]\r\n");
+    printf("\t    44. \tBandwidth rate setup [REG_44]\r\n");
+    printf("\t  4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
+    printf("\t  4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
+    printf("\t   461. \tInterrupt enable [REG_46][ENABLE]\r\n");
+    printf("\t   460. \tInterrupt disable [REG_46][DISABLE]\r\n");
+    printf("\t 49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
 
 
     textcolor(REVERSE, STD, STD);
@@ -200,6 +204,23 @@ int menu(axi_adxl *ptr, int mode){
         case 38 : //0x26
         	status = selector_axi_adxl_change_time_inact(ptr);
         break;
+
+        case 396541 : //0x27
+        	status = selector_axi_adxl_activity_control_enable(ptr);
+		break;
+
+        case 396540 : //0x27
+        	status = selector_axi_adxl_activity_control_disable(ptr);
+		break;
+
+        case 392101 :
+        	status = selector_axi_adxl_inactivity_control_enable(ptr);
+		break;
+
+        case 392100 :
+        	status = selector_axi_adxl_inactivity_control_disable(ptr);
+		break;
+
 
         
         /*Debug device*/

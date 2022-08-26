@@ -1429,7 +1429,7 @@ int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mas
 
     printf("\t[ADXL_DISABLE_INACT_CTRL] : activity coord ");
 
-    switch (act_mask){
+    switch (inact_mask){
     	case INACT_X_MASK : 
     		printf("X ");
     		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & (~INACT_X_MASK)); 
@@ -1457,5 +1457,5 @@ int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mas
 
 
 int axi_adxl_has_act_inact_control(axi_adxl *ptr, uint8_t mask){
-	return (adxl_dev_get_act_inact_ctl(ptr->dev) & mask);
+	return (adxl_dev_get_act_inact_ctl(ptr->dev) & mask) ? TRUE : FALSE;
 }

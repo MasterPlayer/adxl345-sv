@@ -698,6 +698,7 @@ int selector_axi_adxl_activity_control_enable(axi_adxl *ptr){
 
     int status = ADXL_OK;
 
+
     printf("\t[MENU] : Selected enable of activity control\r\n");
 
     if (axi_adxl_has_act_inact_control(ptr, ACT_X_MASK)){

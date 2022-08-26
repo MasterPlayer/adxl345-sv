@@ -88,14 +88,14 @@ enum act_enum {
     ACT_X_MASK      = 0x40, 
     ACT_Y_MASK      = 0x20, 
     ACT_Z_MASK      = 0x10
-}
+};
 
 
 enum inact_enum {
     INACT_X_MASK    = 0x04, 
     INACT_Y_MASK    = 0x02, 
     INACT_Z_MASK    = 0x01
-}
+};
 
 
 
