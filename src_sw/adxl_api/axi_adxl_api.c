@@ -2,6 +2,7 @@
 #include "platform.h"
 #include "xil_printf.h"
 #include "axi_adxl.h"
+#include "selector.h"
 #include <xscugic.h>
 
 
@@ -79,6 +80,7 @@ void print_menu(){
     printf("\t52. Measure stop\r\n");
     printf("\t53. Interrupt enable\r\n");
     printf("\t54. Interrupt disable\r\n");
+    printf("\t55. Range change\r\n");
 
     textcolor(REVERSE, STD, STD);
     printf("=====<Show statistics>=====");
@@ -134,6 +136,8 @@ int menu(axi_adxl *ptr, int mode){
             status = selector_axi_adxl_set_iic_address(ptr);
         break;
 
+
+        /*Work with device*/
         case 50 : 
             status = selector_axi_adxl_set_bw_rate(ptr);
         break;          
@@ -153,6 +157,12 @@ int menu(axi_adxl *ptr, int mode){
         case 54 : 
             status = selector_axi_adxl_interrupt_disable(ptr);
         break;
+
+        case 55 : 
+            status = selector_axi_adxl_change_range(ptr);
+        break;
+
+        /*Debug device*/
 
         case 100 :
             status = selector_axi_adxl_dev_debug_register_space(ptr);

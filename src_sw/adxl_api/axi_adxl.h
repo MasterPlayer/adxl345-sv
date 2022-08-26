@@ -72,6 +72,28 @@ enum int_mask_enum {
 };
 
 
+
+
+enum range_enum{
+    RANGE_2G = 0x00,
+    RANGE_4G = 0x01,
+    RANGE_8G = 0x02,
+    RANGE_16G = 0x03,
+    RANGE_2G_FULL = 0x08,
+    RANGE_4G_FULL = 0x09,
+    RANGE_8G_FULL = 0x0A,
+    RANGE_16G_FULL = 0x0B
+};
+
+
+
+
+#define SCALE_FACTOR_FULL_RES (0.0039)
+#define SCALE_FACTOR_2G       (0.0039)
+#define SCALE_FACTOR_4G       (0.0078)
+#define SCALE_FACTOR_8G       (0.0156)
+#define SCALE_FACTOR_16G      (0.0312)
+
 #define TIMER_LIMIT 1000
 
 
@@ -100,5 +122,9 @@ int check_access_reserved(int address);
 int axi_adxl_set_bw_rate(axi_adxl *ptr, uint8_t value);
 int axi_adxl_measurement_start(axi_adxl *ptr);
 int axi_adxl_measurement_stop(axi_adxl *ptr);
-int axi_adxl_interrupt_enable(axi_adxl *ptr, uint8_t intr);
-int axi_adxl_interrupt_disable(axi_adxl *ptr, uint8_t intr);
+int axi_adxl_interrupt_enable(axi_adxl *ptr, enum int_mask_enum intr);
+int axi_adxl_interrupt_disable(axi_adxl *ptr, enum int_mask_enum intr);
+int axi_adxl_change_range(axi_adxl *ptr, enum range_enum range);
+
+int axi_adxl_interrupt_enabled(axi_adxl *ptr, enum int_mask_enum intr);
+int axi_adxl_get_range(axi_adxl *ptr, enum range_enum range);

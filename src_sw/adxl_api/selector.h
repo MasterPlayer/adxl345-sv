@@ -23,3 +23,4 @@ int selector_axi_adxl_measurement_stop(axi_adxl *ptr);
 int selector_axi_adxl_interrupt_enable(axi_adxl *ptr);
 int selector_axi_adxl_interrupt_disable(axi_adxl *ptr);
 int selector_axi_adxl_dev_debug_register_space(axi_adxl *ptr);
+int selector_axi_adxl_change_range(axi_adxl *ptr);

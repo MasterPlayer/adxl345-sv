@@ -124,3 +124,11 @@ run_hw_axi read_registry
 create_hw_axi_txn read_registry [get_hw_axis hw_axi_1] -address 0x40040034 -type read -force
 run_hw_axi read_registry]
 
+create_hw_axi_txn write_registry [get_hw_axis hw_axi_1] -address 0x4004001D -data 0x00000400 -type write -force
+run_hw_axi write_registry
+create_hw_axi_txn write_registry [get_hw_axis hw_axi_1] -address 0x40040020 -data 0x01010100 -type write -force
+run_hw_axi write_registry
+create_hw_axi_txn write_registry [get_hw_axis hw_axi_1] -address 0x40040028 -data 0x00000700 -type write -force
+run_hw_axi write_registry
+
+
