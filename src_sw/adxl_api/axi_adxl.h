@@ -127,4 +127,4 @@ int axi_adxl_interrupt_disable(axi_adxl *ptr, enum int_mask_enum intr);
 int axi_adxl_change_range(axi_adxl *ptr, enum range_enum range);
 
 int axi_adxl_interrupt_enabled(axi_adxl *ptr, enum int_mask_enum intr);
-int axi_adxl_get_range(axi_adxl *ptr, enum range_enum range);
+int axi_adxl_get_range(axi_adxl *ptr);
