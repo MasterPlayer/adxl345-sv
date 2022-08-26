@@ -690,3 +690,228 @@ int selector_axi_adxl_change_time_inact(axi_adxl *ptr){
 }
 
 
+
+int selector_axi_adxl_activity_control_enable(axi_adxl *ptr){
+
+    char str [256];
+    char *str_ptr = str;
+
+    int status = ADXL_OK;
+
+    printf("\t[MENU] : Selected enable of activity control\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, ACT_X_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t0. Activity X");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, ACT_Y_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t1. Activity Y");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, ACT_Z_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t2. Activity Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+
+    printf("Enter coordinate : ");
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+    
+    printf("%d\r\n", value);
+    
+    switch (value){
+        case 0 : status = axi_adxl_activity_control_enable(ptr, ACT_X_MASK); break;
+        case 1 : status = axi_adxl_activity_control_enable(ptr, ACT_Y_MASK); break;
+        case 2 : status = axi_adxl_activity_control_enable(ptr, ACT_Z_MASK); break;
+        default : status = ADXL_UNCORRECT_VALUE; break;
+    }
+    return status;
+}
+
+
+
+int selector_axi_adxl_inactivity_control_enable(axi_adxl *ptr){
+
+    char str [256];
+    char *str_ptr = str;
+
+    int status = ADXL_OK;
+
+    printf("\t[MENU] : Selected enable of inactivity control\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, INACT_X_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t0. Inactivity X");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, INACT_Y_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t1. Inactivity Y");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, INACT_Z_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t2. Inactivity Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+
+    printf("Enter coordinate : ");
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+    
+    printf("%d\r\n", value);
+    
+    switch (value){
+        case 0 : status = axi_adxl_inactivity_control_enable(ptr, INACT_X_MASK); break;
+        case 1 : status = axi_adxl_inactivity_control_enable(ptr, INACT_Y_MASK); break;
+        case 2 : status = axi_adxl_inactivity_control_enable(ptr, INACT_Z_MASK); break;
+        default : status = ADXL_UNCORRECT_VALUE; break;
+    }
+
+    return status;
+}
+
+
+
+
+int selector_axi_adxl_activity_control_disable(axi_adxl *ptr){
+
+    char str [256];
+    char *str_ptr = str;
+
+    int status = ADXL_OK;
+
+    printf("\t[MENU] : Selected disable of activity control. \r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, ACT_X_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t0. Activity X");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, ACT_Y_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t1. Activity Y");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, ACT_Z_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t2. Activity Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+
+    printf("Enter coordinate : ");
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+    
+    printf("%d\r\n", value);
+    
+    switch (value){
+        case 0 : status = axi_adxl_activity_control_disable(ptr, ACT_X_MASK); break;
+        case 1 : status = axi_adxl_activity_control_disable(ptr, ACT_Y_MASK); break;
+        case 2 : status = axi_adxl_activity_control_disable(ptr, ACT_Z_MASK); break;
+        default : status = ADXL_UNCORRECT_VALUE; break;
+    }
+    return status;
+}
+
+
+
+int selector_axi_adxl_inactivity_control_disable(axi_adxl *ptr){
+
+    char str [256];
+    char *str_ptr = str;
+
+    int status = ADXL_OK;
+
+    printf("\t[MENU] : Selected disable of inactivity control\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, INACT_X_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t0. Inactivity X");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, INACT_Y_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t1. Inactivity Y");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, INACT_Z_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, STD, STD);
+    }
+    printf("\t2. Inactivity Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+
+    printf("Enter coordinate : ");
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+    
+    printf("%d\r\n", value);
+    
+    switch (value){
+        case 0 : status = axi_adxl_inactivity_control_disable(ptr, INACT_X_MASK); break;
+        case 1 : status = axi_adxl_inactivity_control_disable(ptr, INACT_Y_MASK); break;
+        case 2 : status = axi_adxl_inactivity_control_disable(ptr, INACT_Z_MASK); break;
+        default : status = ADXL_UNCORRECT_VALUE; break;
+    }
+    
+    return status;
+}

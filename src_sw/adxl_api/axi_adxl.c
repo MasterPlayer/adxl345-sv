@@ -1262,3 +1262,200 @@ int axi_adxl_change_time_inact(axi_adxl *ptr, uint8_t time_inact){
 	return ADXL_OK;
 
 }
+
+
+
+int axi_adxl_activity_control_enable(axi_adxl *ptr, enum act_enum act_mask){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_ENABLE_ACT_CTRL] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_ENABLE_ACT_CTRL] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+    printf("\t[ADXL_ENABLE_ACT_CTRL] : activity coord ");
+
+    switch (act_mask){
+    	case ACT_X_MASK : 
+    		printf("X ");
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) | ACT_X_MASK); 
+    	break;
+
+    	case ACT_Y_MASK :
+    		printf("Y "); 
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) | ACT_Y_MASK); 
+    	break;
+
+    	case ACT_Z_MASK : 
+    		printf("Z ");
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) | ACT_Z_MASK); 
+    	break;
+
+    	default : 
+    		printf("<incorrect>\r\n");
+    		return ADXL_UNCORRECT_VALUE;
+    }
+
+    printf("was enabled\r\n");
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_inactivity_control_enable(axi_adxl *ptr, enum inact_enum inact_mask){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_ENABLE_INACT_CTRL] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_ENABLE_INACT_CTRL] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+    printf("\t[ADXL_ENABLE_INACT_CTRL] : inactivity coord ");
+
+    switch (inact_mask){
+    	case INACT_X_MASK : 
+    		printf("X ");
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) | INACT_X_MASK); 
+    	break;
+
+    	case INACT_Y_MASK :
+    		printf("Y "); 
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) | INACT_Y_MASK); 
+    	break;
+
+    	case INACT_Z_MASK : 
+    		printf("Z ");
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) | INACT_Z_MASK); 
+    	break;
+
+    	default : 
+    		printf("<incorrect>\r\n");
+    		return ADXL_UNCORRECT_VALUE;
+    }
+
+    printf("was enabled\r\n");
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_activity_control_disable(axi_adxl *ptr, enum act_enum act_mask){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_DISABLE_ACT_CTRL] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_DISABLE_ACT_CTRL] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+    printf("\t[ADXL_DISABLE_ACT_CTRL] : activity coord ");
+
+    switch (act_mask){
+    	case ACT_X_MASK : 
+    		printf("X ");
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & (~ACT_X_MASK)); 
+    	break;
+
+    	case ACT_Y_MASK :
+    		printf("Y "); 
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & (~ACT_Y_MASK)); 
+    	break;
+
+    	case ACT_Z_MASK : 
+    		printf("Z ");
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & (~ACT_Z_MASK)); 
+    	break;
+
+    	default : 
+    		printf("<incorrect>\r\n");
+    		return ADXL_UNCORRECT_VALUE;
+    }
+
+    printf("was enabled\r\n");
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mask){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_DISABLE_INACT_CTRL] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_DISABLE_INACT_CTRL] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+    printf("\t[ADXL_DISABLE_INACT_CTRL] : activity coord ");
+
+    switch (act_mask){
+    	case INACT_X_MASK : 
+    		printf("X ");
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & (~INACT_X_MASK)); 
+    	break;
+
+    	case INACT_Y_MASK :
+    		printf("Y "); 
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & (~INACT_Y_MASK)); 
+    	break;
+
+    	case INACT_Z_MASK : 
+    		printf("Z ");
+    		adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & (~INACT_Z_MASK)); 
+    	break;
+
+    	default : 
+    		printf("<incorrect>\r\n");
+    		return ADXL_UNCORRECT_VALUE;
+    }
+
+    printf("was enabled\r\n");
+
+	return ADXL_OK;
+}
+
+
+int axi_adxl_has_act_inact_control(axi_adxl *ptr, uint8_t mask){
+	return (adxl_dev_get_act_inact_ctl(ptr->dev) & mask);
+}

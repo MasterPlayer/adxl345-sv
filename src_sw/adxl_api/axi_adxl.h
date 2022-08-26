@@ -72,8 +72,6 @@ enum int_mask_enum {
 };
 
 
-
-
 enum range_enum{
     RANGE_2G = 0x00,
     RANGE_4G = 0x01,
@@ -84,6 +82,23 @@ enum range_enum{
     RANGE_8G_FULL = 0x0A,
     RANGE_16G_FULL = 0x0B
 };
+
+
+enum act_enum {
+    ACT_X_MASK      = 0x40, 
+    ACT_Y_MASK      = 0x20, 
+    ACT_Z_MASK      = 0x10
+}
+
+
+enum inact_enum {
+    INACT_X_MASK    = 0x04, 
+    INACT_Y_MASK    = 0x02, 
+    INACT_Z_MASK    = 0x01
+}
+
+
+
 
 
 // measure precision in G or Seconds
@@ -148,3 +163,11 @@ int axi_adxl_change_time_inact(axi_adxl *ptr, uint8_t time_inact);
 
 int axi_adxl_interrupt_enabled(axi_adxl *ptr, enum int_mask_enum intr);
 int axi_adxl_get_range(axi_adxl *ptr);
+
+
+// 0x27
+int axi_adxl_activity_control_enable(axi_adxl *ptr, enum act_enum act_mask);
+int axi_adxl_inactivity_control_enable(axi_adxl *ptr, enum inact_enum inact_mask);
+int axi_adxl_activity_control_disable(axi_adxl *ptr, enum act_enum act_mask);
+int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mask);
+int axi_adxl_has_act_inact_control(axi_adxl *ptr, uint8_t mask);
