@@ -449,7 +449,7 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
     int status = ADXL_OK;
     printf("\t[MENU] : Selected change range of device measurement\r\n");
 
-    if (axi_adxl_get_range(ptr, RANGE_2G)){
+    if (axi_adxl_get_range(ptr) == RANGE_2G){
   	    textcolor(DEFAULT, BLACK, GREEN);
     }else{
   	    textcolor(DEFAULT, STD, STD);
@@ -459,7 +459,7 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
 	printf("\r\n");
 
 
-	if (axi_adxl_get_range(ptr, RANGE_4G)){
+	if (axi_adxl_get_range(ptr) == RANGE_4G){
 		textcolor(DEFAULT, BLACK, GREEN);
 	}else{
 		textcolor(DEFAULT, STD, STD);
@@ -469,7 +469,7 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
     printf("\r\n");
 
 
-    if (axi_adxl_get_range(ptr, RANGE_8G)){
+    if (axi_adxl_get_range(ptr) == RANGE_8G){
   	    textcolor(DEFAULT, BLACK, GREEN);
     }else{
   	    textcolor(DEFAULT, STD, STD);
@@ -479,7 +479,7 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
     printf("\r\n");
 
 
-    if (axi_adxl_get_range(ptr, RANGE_16G)){
+    if (axi_adxl_get_range(ptr) == RANGE_16G){
   	    textcolor(DEFAULT, BLACK, GREEN);
     }else{
   	    textcolor(DEFAULT, STD, STD);
@@ -489,7 +489,7 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
     printf("\r\n");
 
 
-    if (axi_adxl_get_range(ptr, RANGE_2G_FULL)){
+    if (axi_adxl_get_range(ptr) == RANGE_2G_FULL){
   	    textcolor(DEFAULT, BLACK, GREEN);
     }else{
   	    textcolor(DEFAULT, STD, STD);
@@ -499,7 +499,7 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
     printf("\r\n");
 
 
-    if (axi_adxl_get_range(ptr, RANGE_4G_FULL)){
+    if (axi_adxl_get_range(ptr) == RANGE_4G_FULL){
   	    textcolor(DEFAULT, BLACK, GREEN);
     }else{
   	    textcolor(DEFAULT, STD, STD);
@@ -509,7 +509,7 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
     printf("\r\n");
 
 
-    if (axi_adxl_get_range(ptr, RANGE_8G_FULL)){
+    if (axi_adxl_get_range(ptr) == RANGE_8G_FULL){
   	    textcolor(DEFAULT, BLACK, GREEN);
     }else{
   	    textcolor(DEFAULT, STD, STD);
@@ -518,7 +518,7 @@ int selector_axi_adxl_change_range(axi_adxl *ptr){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    if (axi_adxl_get_range(ptr, RANGE_16G_FULL)){
+    if (axi_adxl_get_range(ptr) == RANGE_16G_FULL){
   	    textcolor(DEFAULT, BLACK, GREEN);
     }else{
   	    textcolor(DEFAULT, STD, STD);
