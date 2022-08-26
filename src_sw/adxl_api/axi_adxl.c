@@ -1071,7 +1071,7 @@ int axi_adxl_interrupt_enabled(axi_adxl *ptr, enum int_mask_enum intr){
 
 
 
-int axi_adxl_get_range(axi_adxl *ptr, enum range_enum range){
-	return ((adxl_dev_get_data_format(ptr->dev) & (DATA_FORMAT_RANGE_MASK | DATA_FORMAT_FULL_RES_MASK)) == range) ? TRUE : FALSE;
+int axi_adxl_get_range(axi_adxl *ptr){
+	return (adxl_dev_get_data_format(ptr->dev) & (DATA_FORMAT_RANGE_MASK | DATA_FORMAT_FULL_RES_MASK));
 }
 
