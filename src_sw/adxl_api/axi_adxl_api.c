@@ -75,19 +75,19 @@ void print_menu(){
     printf("=====<Device space>=====");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
-    printf("\t50. Bandwidth setup\r\n");
-    printf("\t51. Measure start\r\n");
-    printf("\t52. Measure stop\r\n");
-    printf("\t53. Interrupt enable\r\n");
-    printf("\t54. Interrupt disable\r\n");
-    printf("\t55. Range change\r\n");
-    printf("\t56. Threshold tap change\r\n");
-    printf("\t57. Duration change\r\n");
-    printf("\t58. Latent change\r\n");
-    printf("\t59. Window change\r\n");
-    printf("\t60. Activity threshold change\r\n");
-    printf("\t61. Inactivity threshold change\r\n");
-    printf("\t62. Inactivity time change\r\n");
+    printf("\t   29. \tThreshold tap change [REG_29]\r\n");
+    printf("\t   33. \tDuration change [REG_33]\r\n");
+    printf("\t   34. \tLatent change [REG_34]\r\n");
+    printf("\t   35. \tWindow change [REG_35]\r\n");
+    printf("\t   36. \tActivity threshold change [REG_36]\r\n");
+    printf("\t   37. \tInactivity threshold change [REG_37]\r\n");
+    printf("\t   38. \tInactivity time change [REG_38]\r\n");
+    printf("\t   44. \tBandwidth rate setup [REG_44]\r\n");
+    printf("\t 4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
+    printf("\t 4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
+    printf("\t  461. \tInterrupt enable [REG_46][ENABLE]\r\n");
+    printf("\t  460. \tInterrupt disable [REG_46][DISABLE]\r\n");
+    printf("\t49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
 
 
     textcolor(REVERSE, STD, STD);
@@ -146,57 +146,62 @@ int menu(axi_adxl *ptr, int mode){
 
 
         /*Work with device*/
-        case 50 : 
+        // Possible masks : [REGISTER_NUMBER][BIT_NUMBER][BIT_STATE]
+        // Possible masks : [REGISTER_NUMBER][REGISTER_STATE]
+        // Possible masks : [REGISTER_NUMBER][BIT_NUMBERS]
+        case 44 : 
             status = selector_axi_adxl_set_bw_rate(ptr);
         break;          
 
-        case 51 : 
+        case 4531 : 
             status = selector_axi_adxl_measurement_start(ptr);
         break;
 
-        case 52 : 
+        case 4530 : 
             status = selector_axi_adxl_measurement_stop(ptr); 
         break;
 
-        case 53 : 
+        case 461 : 
             status = selector_axi_adxl_interrupt_enable(ptr);
         break;
 
-        case 54 : 
+        case 460 : 
             status = selector_axi_adxl_interrupt_disable(ptr);
         break;
 
-        case 55 : 
+        case 49310 : 
             status = selector_axi_adxl_change_range(ptr);
         break;
 
-        case 56 : 
+        case 29 : //0x1D
             status = selector_axi_adxl_change_thresh_tap(ptr);
         break;
 
-        case 57 : 
+        case 33 : //0x21 
             status = selector_axi_adxl_change_dur(ptr);
         break;
 
-        case 58 :
+        case 34 : //0x22
         	status = selector_axi_adxl_change_latent(ptr);
         break;
 
-        case 59 :
+        case 35 : //0x23
         	status = selector_axi_adxl_change_window(ptr);
         break;
 
-        case 60 :
+        case 36 : //0x24
         	status = selector_axi_adxl_change_thresh_act(ptr);
         break;
 
-        case 61 :
+        case 37 : //0x25
         	status = selector_axi_adxl_change_thresh_inact(ptr);
         break;
 
-        case 62 :
+        case 38 : //0x26
         	status = selector_axi_adxl_change_time_inact(ptr);
         break;
+
+        
         /*Debug device*/
 
         case 100 :

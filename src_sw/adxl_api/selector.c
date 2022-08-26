@@ -557,10 +557,10 @@ int selector_axi_adxl_change_thresh_tap(axi_adxl *ptr){
 
     printf("[MENU] : Selected changing for threshold tap\r\n");
     printf("Enter new value of threshold tap <precision : %d LSB=%3.6f g>: ", 1, SCALE_THRESH_TAP);
-    while((*str_ptr++=getchar ()) != 13);
+    while((*str_ptr++=getchar()) != 13);
     *str_ptr = '\0';
     uint8_t value = atoi(str);
-    printf("%d(%3.6f g)\r\n", value, (((float)value)+1)*SCALE_THRESH_TAP );
+    printf("%d(%3.6f g)\r\n", value, ((float)value)*SCALE_THRESH_TAP );
     return axi_adxl_change_thresh_tap(ptr, value);
 }
 
@@ -576,7 +576,7 @@ int selector_axi_adxl_change_dur(axi_adxl *ptr){
     while((*str_ptr++=getchar ()) != 13);
     *str_ptr = '\0';
     uint8_t value = atoi(str);
-    printf("%d(%3.6f s)\r\n", value, (((float)value)+1)*SCALE_DUR);
+    printf("%d(%3.6f s)\r\n", value, (((float)value))*SCALE_DUR);
     return axi_adxl_change_dur(ptr, value);
 }
 
@@ -596,7 +596,7 @@ int selector_axi_adxl_change_latent(axi_adxl *ptr){
 
     uint8_t value = atoi(str);
 
-    printf("%d(%3.6f s)\r\n", value, (((float)value)+1)*SCALE_LATENT);
+    printf("%d(%3.6f s)\r\n", value, (((float)value))*SCALE_LATENT);
 
     return axi_adxl_change_latent(ptr, value);
 
@@ -618,7 +618,7 @@ int selector_axi_adxl_change_window(axi_adxl *ptr){
 
     uint8_t value = atoi(str);
 
-    printf("%d(%3.6f s)\r\n", value, (((float)value)+1)*SCALE_WINDOW);
+    printf("%d(%3.6f s)\r\n", value, ((float)value)*SCALE_WINDOW);
 
     return axi_adxl_change_window(ptr, value);
 
@@ -640,7 +640,7 @@ int selector_axi_adxl_change_thresh_act(axi_adxl *ptr){
 
     uint8_t value = atoi(str);
 
-    printf("%d(%3.6f g)\r\n", value, (((float)value)+1)*SCALE_THRESH_ACT);
+    printf("%d(%3.6f g)\r\n", value, (float)value*SCALE_THRESH_ACT);
 
     return axi_adxl_change_thresh_act(ptr, value);
 
@@ -662,7 +662,7 @@ int selector_axi_adxl_change_thresh_inact(axi_adxl *ptr){
 
     uint8_t value = atoi(str);
 
-    printf("%d(%3.6f g)\r\n", value, (((float)value)+1)*SCALE_THRESH_INACT);
+    printf("%d(%3.6f g)\r\n", value, ((float)value)*SCALE_THRESH_INACT);
 
     return axi_adxl_change_thresh_inact(ptr, value);
 
@@ -683,7 +683,7 @@ int selector_axi_adxl_change_time_inact(axi_adxl *ptr){
 
     uint8_t value = atoi(str);
 
-    printf("%d(%3.6f s)\r\n", value, (((float)value)+1)*SCALE_TIME_INACT);
+    printf("%d(%3.6f s)\r\n", value, ((float)value)*SCALE_TIME_INACT);
 
     return axi_adxl_change_time_inact(ptr, value);
 

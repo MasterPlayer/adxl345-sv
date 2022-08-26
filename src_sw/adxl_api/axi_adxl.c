@@ -1082,7 +1082,7 @@ int axi_adxl_change_thresh_tap(axi_adxl *ptr, uint8_t thresh_tap){
 		return ADXL_LINK_LOST;
 	}
 
-	printf("[ADXL_SET_THRESH_TAP] : thresh tap from %3.3f to %3.3f\r\n", (((float)adxl_dev_get_thresh_tap(ptr->dev)+1) * SCALE_THRESH_TAP), (((float)thresh_tap+1) * SCALE_THRESH_TAP));
+	printf("[ADXL_SET_THRESH_TAP] : thresh tap from %3.3f to %3.3f\r\n", (((float)adxl_dev_get_thresh_tap(ptr->dev)) * SCALE_THRESH_TAP), (((float)thresh_tap) * SCALE_THRESH_TAP));
 
     adxl_dev_set_thresh_tap(ptr->dev, thresh_tap);
 
@@ -1108,7 +1108,7 @@ int axi_adxl_change_dur(axi_adxl *ptr, uint8_t duration){
 		return ADXL_LINK_LOST;
 	}
 
-    printf("\t[ADXL_SET_DUR] : changing duration: %3.6f sec => %3.6f sec\r\n", (((float)adxl_dev_get_dur(ptr->dev)+1) * SCALE_DUR), (((float)duration+1) * SCALE_DUR));
+    printf("\t[ADXL_SET_DUR] : changing duration: %3.6f sec => %3.6f sec\r\n", (((float)adxl_dev_get_dur(ptr->dev)) * SCALE_DUR), (((float)duration) * SCALE_DUR));
     
     adxl_dev_set_dur(ptr->dev, duration);
 
@@ -1147,7 +1147,7 @@ int axi_adxl_change_latent(axi_adxl *ptr, uint8_t latent){
 		return ADXL_LINK_LOST;
 	}
 
-    printf("\t[ADXL_SET_LAT] : changing latency: %3.6f sec => %3.6f sec\r\n", (((float)adxl_dev_get_latent(ptr->dev)+1) * SCALE_LATENT), (((float)latent+1) * SCALE_LATENT));
+    printf("\t[ADXL_SET_LAT] : changing latency: %3.6f sec => %3.6f sec\r\n", (((float)adxl_dev_get_latent(ptr->dev)) * SCALE_LATENT), (((float)latent) * SCALE_LATENT));
 
 	adxl_dev_set_latent(ptr->dev, latent);
 
@@ -1174,7 +1174,7 @@ int axi_adxl_change_window(axi_adxl *ptr, uint8_t window){
 		return ADXL_LINK_LOST;
 	}
 
-    printf("\t[ADXL_SET_WND] : changing window: %3.6f sec => %3.6f sec\r\n", (((float)adxl_dev_get_window(ptr->dev)+1) * SCALE_WINDOW), (((float)window+1) * SCALE_WINDOW));
+    printf("\t[ADXL_SET_WND] : changing window: %3.6f sec => %3.6f sec\r\n", (((float)adxl_dev_get_window(ptr->dev)) * SCALE_WINDOW), (((float)window) * SCALE_WINDOW));
 	
 	adxl_dev_set_window(ptr->dev, window);
 
@@ -1201,7 +1201,7 @@ int axi_adxl_change_thresh_act(axi_adxl *ptr, uint8_t thresh_act){
 		return ADXL_LINK_LOST;
 	}
 
-    printf("\t[ADXL_SET_THRESH_ACT] : changing activity thresold : %3.6f g => %3.6f g\r\n", (((float)adxl_dev_get_thresh_act(ptr->dev)+1) * SCALE_THRESH_ACT), (((float)thresh_act+1) * SCALE_THRESH_ACT));
+    printf("\t[ADXL_SET_THRESH_ACT] : changing activity thresold : %3.6f g => %3.6f g\r\n", (((float)adxl_dev_get_thresh_act(ptr->dev)) * SCALE_THRESH_ACT), (((float)thresh_act) * SCALE_THRESH_ACT));
 	
 	adxl_dev_set_thresh_act(ptr->dev, thresh_act);
 
@@ -1228,7 +1228,7 @@ int axi_adxl_change_thresh_inact(axi_adxl *ptr, uint8_t thresh_inact){
 		return ADXL_LINK_LOST;
 	}
 
-    printf("\t[ADXL_SET_THRESH_INACT] : changing inactivity thresold: %3.6f g => %3.6f g\r\n", (((float)adxl_dev_get_thresh_inact(ptr->dev)+1) * SCALE_THRESH_INACT), (((float)thresh_inact+1) * SCALE_THRESH_INACT));
+    printf("\t[ADXL_SET_THRESH_INACT] : changing inactivity thresold: %3.6f g => %3.6f g\r\n", (((float)adxl_dev_get_thresh_inact(ptr->dev)) * SCALE_THRESH_INACT), (((float)thresh_inact) * SCALE_THRESH_INACT));
 	
 	adxl_dev_set_thresh_inact(ptr->dev, thresh_inact);
 
@@ -1255,7 +1255,7 @@ int axi_adxl_change_time_inact(axi_adxl *ptr, uint8_t time_inact){
 		return ADXL_LINK_LOST;
 	}
 
-    printf("\t[ADXL_SET_TIME_INACT] : changing inactivity time: %3f s => %3f s\r\n", (((float)adxl_dev_get_time_inact(ptr->dev)+1) * SCALE_TIME_INACT), (((float)time_inact+1) * SCALE_TIME_INACT));
+    printf("\t[ADXL_SET_TIME_INACT] : changing inactivity time: %3f s => %3f s\r\n", (((float)adxl_dev_get_time_inact(ptr->dev)) * SCALE_TIME_INACT), (((float)time_inact) * SCALE_TIME_INACT));
 	
 	adxl_dev_set_time_inact(ptr->dev, time_inact);
 
