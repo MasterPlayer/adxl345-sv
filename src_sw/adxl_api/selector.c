@@ -918,17 +918,94 @@ int selector_axi_adxl_inactivity_control_disable(axi_adxl *ptr){
 }
 
 
-int selector_axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask){
 
+int selector_axi_adxl_change_activity_acdc(axi_adxl *ptr){
+
+    char str [256];
+    char *str_ptr = str;
+
+    int status = ADXL_OK;
+
+    printf("\t[MENU] : Selected change AC/DC mode for activity interrupt mode\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, ACT_AC_MASK)){
+        textcolor(DEFAULT, BLACK, RED);
+    }else{
+        textcolor(DEFAULT, BLACK, GREEN);
+    }
+    printf("\t0. DC coupled");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, ACT_AC_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t0. AC coupled");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+
+
+    printf("Enter mode selection : ");
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+    uint8_t value = atoi(str);
+    printf("%d\r\n", value);
+
+
+    switch (value){
+        case 0 : axi_adxl_change_activity_acdc(ptr, 0); break;
+        case 1 : axi_adxl_change_activity_acdc(ptr, 1); break;
+        default : status = ADXL_UNCORRECT_VALUE; break;
+    }
 
 	return status;
 }
 
 
 
-int selector_axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t mask){
+int selector_axi_adxl_change_inactivity_acdc(axi_adxl *ptr){
 
-	return status;
+    char str [256];
+    char *str_ptr = str;
+
+    int status = ADXL_OK;
+
+    printf("\t[MENU] : Selected change AC/DC mode for inactivity interrupt mode\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, INACT_AC_MASK)){
+        textcolor(DEFAULT, BLACK, RED);
+    }else{
+        textcolor(DEFAULT, BLACK, GREEN);
+    }
+    printf("\t0. DC coupled");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_inact_control(ptr, INACT_AC_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t0. AC coupled");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    printf("Enter mode selection : ");
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+    uint8_t value = atoi(str);
+    printf("%d\r\n", value);
+
+    switch (value){
+        case 0 : axi_adxl_change_inactivity_acdc(ptr, 0); break;
+        case 1 : axi_adxl_change_inactivity_acdc(ptr, 1); break;
+        default : status = ADXL_UNCORRECT_VALUE; break;
+    }
+
+    return status;
 }
 
 

@@ -82,6 +82,8 @@ void print_menu(){
     printf("\t    36. \tActivity threshold change [REG_36]\r\n");
     printf("\t    37. \tInactivity threshold change [REG_37]\r\n");
     printf("\t    38. \tInactivity time change [REG_38]\r\n");
+    printf("\t   397. \tChange AC/DC mode for activity mode[REG_38][BIT_7]\r\n");
+    printf("\t   393. \tChange AC/DC mode for inactivity mode[REG_38][BIT_3]\r\n");
     printf("\t396541. \tActivity control enable[REG_38][BIT_6][BIT_5][BIT_4][ENABLE]\r\n");
     printf("\t396540. \tActivity control disable[REG_38][BIT_6][BIT_5][BIT_4][DISABLE]\r\n");
     printf("\t392101. \tInactivity control enable[REG_38][BIT_2][BIT_1][BIT_0][ENABLE]\r\n");
@@ -205,6 +207,14 @@ int menu(axi_adxl *ptr, int mode){
         	status = selector_axi_adxl_change_time_inact(ptr);
         break;
 
+        case 397 :
+            status = int selector_axi_adxl_change_activity_acdc(ptr);
+        break;
+
+        case 393 : 
+            status = selector_axi_adxl_change_inactivity_acdc(ptr);
+        break;
+
         case 396541 : //0x27
         	status = selector_axi_adxl_activity_control_enable(ptr);
 		break;
@@ -220,6 +230,7 @@ int menu(axi_adxl *ptr, int mode){
         case 392100 :
         	status = selector_axi_adxl_inactivity_control_disable(ptr);
 		break;
+
 
 
         

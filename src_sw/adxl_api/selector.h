@@ -36,6 +36,6 @@ int selector_axi_adxl_activity_control_enable(axi_adxl *ptr);
 int selector_axi_adxl_inactivity_control_enable(axi_adxl *ptr);
 int selector_axi_adxl_activity_control_disable(axi_adxl *ptr);
 int selector_axi_adxl_inactivity_control_disable(axi_adxl *ptr);
-int selector_axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask);
-int selector_axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t mask);
+int selector_axi_adxl_change_activity_acdc(axi_adxl *ptr);
+int selector_axi_adxl_change_inactivity_acdc(axi_adxl *ptr);
 

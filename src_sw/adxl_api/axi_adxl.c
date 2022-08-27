@@ -1456,7 +1456,7 @@ int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mas
 }
 
 
-int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask){
+int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t ac_mask){
 
 	if (ptr->init_flaq != 1){
 	    textcolor(DEFAULT, RED, STD);
@@ -1474,18 +1474,27 @@ int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask){
 		return ADXL_LINK_LOST;
 	}
 
-	if (mask == ACT_AC_MASK){
-		adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) | mask));
-	}else{
-		adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) & ~mask));
-	}
+	printf("\t[ADXL_CHNG_ACT_ACDC] : selected ");
+
+	switch (ac_mask) 
+		case 0: 
+			printf("DC mode\r\n");
+			adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) & ~ACT_AC_MASK)); 
+			break;
+		case 1: 
+			printf("AC mode\r\n");
+			adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) | ACT_AC_MASK)); 
+		break;
+
+		default: 
+			return ADXL_UNCORRECT_VALUE;
 
 	return ADXL_OK;
 }
 
 
 
-int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t mask){
+int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t ac_mask){
 
 	if (ptr->init_flaq != 1){
 	    textcolor(DEFAULT, RED, STD);
@@ -1503,10 +1512,25 @@ int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t mask){
 		return ADXL_LINK_LOST;
 	}
 
-	adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) & mask));
+	printf("\t[ADXL_CHNG_INACT_ACDC] : selected ");
+
+	switch (ac_mask)
+		case 0: 
+			printf("DC mode\r\n");
+			adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) & ~INACT_AC_MASK)); 
+			break;
+		case 1: 
+			printf("AC mode\r\n");
+			adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) | INACT_AC_MASK)); 
+		break;
+
+		default: 
+			return ADXL_UNCORRECT_VALUE;
+
 	return ADXL_OK;
 
 }
+
 
 
 int axi_adxl_has_act_inact_control(axi_adxl *ptr, uint8_t mask){
