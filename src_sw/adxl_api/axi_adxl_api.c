@@ -82,12 +82,15 @@ void print_menu(){
     printf("\t    36. \tActivity threshold change [REG_36]\r\n");
     printf("\t    37. \tInactivity threshold change [REG_37]\r\n");
     printf("\t    38. \tInactivity time change [REG_38]\r\n");
-    printf("\t   397. \tChange AC/DC mode for activity mode[REG_38][BIT_7]\r\n");
-    printf("\t   393. \tChange AC/DC mode for inactivity mode[REG_38][BIT_3]\r\n");
-    printf("\t396541. \tActivity control enable[REG_38][BIT_6][BIT_5][BIT_4][ENABLE]\r\n");
-    printf("\t396540. \tActivity control disable[REG_38][BIT_6][BIT_5][BIT_4][DISABLE]\r\n");
-    printf("\t392101. \tInactivity control enable[REG_38][BIT_2][BIT_1][BIT_0][ENABLE]\r\n");
-    printf("\t392100. \tInactivity control disable[REG_38][BIT_2][BIT_1][BIT_0][DISABLE]\r\n");
+    printf("\t   397. \tChange AC/DC mode for activity mode [REG_38][BIT_7]\r\n");
+    printf("\t   393. \tChange AC/DC mode for inactivity mode [REG_38][BIT_3]\r\n");
+    printf("\t396541. \tActivity control enable [REG_39][BIT_6][BIT_5][BIT_4][ENABLE]\r\n");
+    printf("\t396540. \tActivity control disable [REG_39][BIT_6][BIT_5][BIT_4][DISABLE]\r\n");
+    printf("\t392101. \tInactivity control enable [REG_39][BIT_2][BIT_1][BIT_0][ENABLE]\r\n");
+    printf("\t392100. \tInactivity control disable [REG_39][BIT_2][BIT_1][BIT_0][DISABLE]\r\n");
+    printf("\t    40. \tFreefall threshold change [REG_40]\r\n");
+    printf("\t    41. \tFreefall time change [REG_41]\r\n");
+
     printf("\t    44. \tBandwidth rate setup [REG_44]\r\n");
     printf("\t  4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
     printf("\t  4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
@@ -231,7 +234,13 @@ int menu(axi_adxl *ptr, int mode){
         	status = selector_axi_adxl_inactivity_control_disable(ptr);
 		break;
 
+        case 40 :
+            status = selector_axi_adxl_change_thresh_ff(ptr);
+        break;
 
+        case 41 :
+            status = selector_axi_adxl_change_time_ff(ptr);
+        break;
 
         
         /*Debug device*/

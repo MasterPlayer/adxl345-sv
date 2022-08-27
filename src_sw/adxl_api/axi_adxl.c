@@ -1476,7 +1476,7 @@ int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t ac_mask){
 
 	printf("\t[ADXL_CHNG_ACT_ACDC] : selected ");
 
-	switch (ac_mask) 
+	switch (ac_mask) {
 		case 0: 
 			printf("DC mode\r\n");
 			adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) & ~ACT_AC_MASK)); 
@@ -1488,7 +1488,8 @@ int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t ac_mask){
 
 		default: 
 			return ADXL_UNCORRECT_VALUE;
-
+	
+	}
 	return ADXL_OK;
 }
 
@@ -1514,7 +1515,7 @@ int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t ac_mask){
 
 	printf("\t[ADXL_CHNG_INACT_ACDC] : selected ");
 
-	switch (ac_mask)
+	switch (ac_mask){
 		case 0: 
 			printf("DC mode\r\n");
 			adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) & ~INACT_AC_MASK)); 
@@ -1527,6 +1528,7 @@ int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t ac_mask){
 		default: 
 			return ADXL_UNCORRECT_VALUE;
 
+	}
 	return ADXL_OK;
 
 }
@@ -1534,5 +1536,60 @@ int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t ac_mask){
 
 
 int axi_adxl_has_act_inact_control(axi_adxl *ptr, uint8_t mask){
+
 	return (adxl_dev_get_act_inact_ctl(ptr->dev) & mask) ? TRUE : FALSE;
+}
+
+
+
+int axi_adxl_change_thresh_ff(axi_adxl *ptr, uint8_t thresh_ff){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_THRESH_FF] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_THRESH_FF] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+    printf("\t[ADXL_CHNG_THRESH_FF] : changing freefall threshold : %3.6f g => %3.6f g\r\n", (((float)adxl_dev_get_thresh_ff(ptr->dev)) * SCALE_THRESH_FF), (((float)thresh_ff) * SCALE_THRESH_FF));
+	
+	adxl_dev_set_thresh_ff(ptr->dev, thresh_ff);
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_change_time_ff(axi_adxl *ptr, uint8_t time_ff){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_TIME_FF] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_TIME_FF] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+    printf("\t[ADXL_CHNG_TIME_FF] : changing freefall time : %3.6f s => %3.6f s\r\n", (((float)adxl_dev_get_time_ff(ptr->dev)) * SCALE_TIME_FF), (((float)time_ff) * SCALE_TIME_FF));
+	
+	adxl_dev_set_time_ff(ptr->dev, time_ff);
+
+	return status;
 }

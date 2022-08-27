@@ -176,3 +176,7 @@ int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t ac_mask);
 int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t ac_mask);
 
 int axi_adxl_has_act_inact_control(axi_adxl *ptr, uint8_t mask);
+
+// 0x28 
+int axi_adxl_change_thresh_ff(axi_adxl *ptr, uint8_t thresh_ff);
+int axi_adxl_change_time_ff(axi_adxl *ptr, uint8_t time_ff);

@@ -942,7 +942,7 @@ int selector_axi_adxl_change_activity_acdc(axi_adxl *ptr){
     }else{
         textcolor(DEFAULT, BLACK, RED);
     }
-    printf("\t0. AC coupled");
+    printf("\t1. AC coupled");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
@@ -989,7 +989,7 @@ int selector_axi_adxl_change_inactivity_acdc(axi_adxl *ptr){
     }else{
         textcolor(DEFAULT, BLACK, RED);
     }
-    printf("\t0. AC coupled");
+    printf("\t1. AC coupled");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
@@ -1006,6 +1006,48 @@ int selector_axi_adxl_change_inactivity_acdc(axi_adxl *ptr){
     }
 
     return status;
+}
+
+
+
+int selector_axi_adxl_change_thresh_ff(axi_adxl *ptr){
+
+    char str [256];
+    char *str_ptr = str;
+    printf("[MENU] : Selected changing freefall threshold\r\n");
+    printf("Enter new value of inactivity threshold <precision : %d LSB=%3.6f s>: ", 1, SCALE_THRESH_FF);
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+
+    printf("%d(%3.6fg)\r\n", value, ((float)value)*SCALE_THRESH_FF);
+
+    return axi_adxl_change_time_inact(ptr, value);
+
+}
+
+
+
+int selector_axi_adxl_change_time_ff(axi_adxl *ptr){
+
+    char str [256];
+    char *str_ptr = str;
+    printf("[MENU] : Selected changing freefall time\r\n");
+    printf("Enter new value of inactivity threshold <precision : %d LSB=%3.6f s>: ", 1, SCALE_TIME_FF);
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+
+    printf("%d(%3.6f s)\r\n", value, ((float)value)*SCALE_TIME_FF);
+
+    return axi_adxl_change_time_inact(ptr, value);
+
 }
 
 
