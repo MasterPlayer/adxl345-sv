@@ -1592,3 +1592,26 @@ int axi_adxl_change_time_ff(axi_adxl *ptr, uint8_t time_ff){
     return adxl_dev_set_time_ff(ptr->dev, time_ff);
 
 }
+
+
+
+int axi_adxl_change_tap_axes(axi_adxl *ptr){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_TAP_AXES] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_TAP_AXES] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	return 
+}

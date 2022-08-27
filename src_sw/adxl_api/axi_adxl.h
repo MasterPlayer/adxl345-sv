@@ -179,4 +179,7 @@ int axi_adxl_has_act_inact_control(axi_adxl *ptr, uint8_t mask);
 
 // 0x28 
 int axi_adxl_change_thresh_ff(axi_adxl *ptr, uint8_t thresh_ff);
+// 0x29
 int axi_adxl_change_time_ff(axi_adxl *ptr, uint8_t time_ff);
+// 0x2A 
+int axi_adxl_change_tap_axes(axi_adxl *ptr);
