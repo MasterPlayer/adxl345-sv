@@ -83,15 +83,14 @@ enum range_enum{
     RANGE_16G_FULL = 0x0B
 };
 
-
 enum act_enum {
     ACT_X_MASK      = 0x40, 
     ACT_Y_MASK      = 0x20, 
     ACT_Z_MASK      = 0x10
 };
 
-#define ACT_AC_MASK = 0x80
-
+#define ACT_AC_MASK 	0x80
+#define INACT_AC_MASK 	0x08
 
 enum inact_enum {
     INACT_X_MASK    = 0x04, 

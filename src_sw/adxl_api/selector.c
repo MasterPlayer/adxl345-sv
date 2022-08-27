@@ -916,3 +916,19 @@ int selector_axi_adxl_inactivity_control_disable(axi_adxl *ptr){
     
     return status;
 }
+
+
+int selector_axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask){
+
+
+	return status;
+}
+
+
+
+int selector_axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t mask){
+
+	return status;
+}
+
+

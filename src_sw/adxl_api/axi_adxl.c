@@ -1458,7 +1458,6 @@ int axi_adxl_inactivity_control_disable(axi_adxl *ptr, enum inact_enum inact_mas
 
 int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask){
 
-
 	if (ptr->init_flaq != 1){
 	    textcolor(DEFAULT, RED, STD);
 		printf("\t[ADXL_CHNG_ACT_ACDC] : has no init device");
@@ -1475,7 +1474,11 @@ int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask){
 		return ADXL_LINK_LOST;
 	}
 
-	adxl_dev_set_act_inact_ctl(ptr->dev, adxl_dev_get_act_inact_ctl(ptr->dev) & )
+	if (mask == ACT_AC_MASK){
+		adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) | mask));
+	}else{
+		adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) & ~mask));
+	}
 
 	return ADXL_OK;
 }
@@ -1483,6 +1486,25 @@ int axi_adxl_change_activity_acdc(axi_adxl *ptr, uint8_t mask){
 
 
 int axi_adxl_change_inactivity_acdc(axi_adxl *ptr, uint8_t mask){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_INACT_ACDC] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_INACT_ACDC] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_act_inact_ctl(ptr->dev, (adxl_dev_get_act_inact_ctl(ptr->dev) & mask));
+	return ADXL_OK;
 
 }
 
