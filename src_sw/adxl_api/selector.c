@@ -1025,7 +1025,7 @@ int selector_axi_adxl_change_thresh_ff(axi_adxl *ptr){
 
     printf("%d(%3.6fg)\r\n", value, ((float)value)*SCALE_THRESH_FF);
 
-    return axi_adxl_change_time_inact(ptr, value);
+    return axi_adxl_change_thresh_ff(ptr, value);
 
 }
 
@@ -1046,7 +1046,7 @@ int selector_axi_adxl_change_time_ff(axi_adxl *ptr){
 
     printf("%d(%3.6f s)\r\n", value, ((float)value)*SCALE_TIME_FF);
 
-    return axi_adxl_change_time_inact(ptr, value);
+    return axi_adxl_change_time_ff(ptr, value);
 
 }
 

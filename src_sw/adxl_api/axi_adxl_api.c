@@ -211,7 +211,7 @@ int menu(axi_adxl *ptr, int mode){
         break;
 
         case 397 :
-            status = int selector_axi_adxl_change_activity_acdc(ptr);
+            status = selector_axi_adxl_change_activity_acdc(ptr);
         break;
 
         case 393 : 

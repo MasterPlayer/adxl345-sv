@@ -1562,9 +1562,9 @@ int axi_adxl_change_thresh_ff(axi_adxl *ptr, uint8_t thresh_ff){
 
     printf("\t[ADXL_CHNG_THRESH_FF] : changing freefall threshold : %3.6f g => %3.6f g\r\n", (((float)adxl_dev_get_thresh_ff(ptr->dev)) * SCALE_THRESH_FF), (((float)thresh_ff) * SCALE_THRESH_FF));
 	
-	adxl_dev_set_thresh_ff(ptr->dev, thresh_ff);
+	return adxl_dev_set_thresh_ff(ptr->dev, thresh_ff);
 
-	return ADXL_OK;
+
 }
 
 
@@ -1589,7 +1589,6 @@ int axi_adxl_change_time_ff(axi_adxl *ptr, uint8_t time_ff){
 
     printf("\t[ADXL_CHNG_TIME_FF] : changing freefall time : %3.6f s => %3.6f s\r\n", (((float)adxl_dev_get_time_ff(ptr->dev)) * SCALE_TIME_FF), (((float)time_ff) * SCALE_TIME_FF));
 	
-	adxl_dev_set_time_ff(ptr->dev, time_ff);
+    return adxl_dev_set_time_ff(ptr->dev, time_ff);
 
-	return status;
 }
