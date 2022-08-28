@@ -1860,3 +1860,26 @@ int axi_adxl_change_int_map(axi_adxl *ptr, uint8_t int_mask){
 int axi_adxl_get_int_map(axi_adxl *ptr, uint8_t mask){
 	return (adxl_dev_get_int_map(ptr->dev) & mask);
 }
+
+
+
+int axi_adxl_get_int_source(axi_adxl *ptr, uint8_t *interrupt_mask){
+
+	if (ptr->init_flaq != 1){
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+		return ADXL_LINK_LOST;
+	}
+
+	*interrupt_mask = adxl_dev_get_int_source(ptr);
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask){
+	return (adxl_dev_get_int_source(ptr) & interrupt_mask) ? TRUE : FALSE;
+}

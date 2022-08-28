@@ -208,3 +208,7 @@ int axi_adxl_set_ofsz(axi_adxl *ptr, int8_t ofsz);
 //0x2F
 int axi_adxl_change_int_map(axi_adxl *ptr, uint8_t int_mask);
 int axi_adxl_get_int_map(axi_adxl *ptr, uint8_t mask);
+
+// 0x30 
+int axi_adxl_get_int_source(axi_adxl *ptr, uint8_t *interrupt_mask);
+int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask);

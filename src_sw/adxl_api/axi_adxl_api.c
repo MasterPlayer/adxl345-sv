@@ -72,7 +72,7 @@ void print_menu(){
     printf("\t9. Set iic address\r\n");
 
     textcolor(REVERSE, STD, STD);
-    printf("====================<Device space>====================");
+    printf("=======================<Device space>========================");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
     printf("\t    29. \tThreshold tap change [REG_29]\r\n");
@@ -105,7 +105,7 @@ void print_menu(){
 
 
     textcolor(REVERSE, STD, STD);
-    printf("====================<Show statistics>====================");
+    printf("======================<Show statistics>======================");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
     printf("\t100. Dump device register space\r\n");
@@ -331,10 +331,48 @@ int irq_indexator = 0;
 
 void adxl_intr_handler(void *callback){
     axi_adxl *ptr = (axi_adxl*)callback;
-    printf("IRQ %d\r\n", irq_indexator);
+    uint8_t interrupt_mask;
+    
+    status = axi_adxl_get_int_source(ptr, &interrupt_mask);
+    if (status != ADXL_OK){
+        printf("[IRQ] : bad returning status : %d", status);
+    }
+
+
+    if (axi_adxl_has_int_source(ptr, DATA_READY)){
+        printf("[DR] %6d\r\n", irq_indexator);
+    }
+
+    if (axi_adxl_has_int_source(ptr, SINGLE_TAP)){
+        printf("[ST] %6d\r\n", irq_indexator);
+    }
+
+    if (axi_adxl_has_int_source(ptr, DOUBLE_TAP)){
+        printf("[DT] %6d\r\n", irq_indexator);
+    }
+
+    if (axi_adxl_has_int_source(ptr, ACTIVITY)){
+        printf("[AC] %6d\r\n", irq_indexator);
+    }
+
+    if (axi_adxl_has_int_source(ptr, INACTIVITY)){
+        printf("[IA] %6d\r\n", irq_indexator);
+    }
+
+    if (axi_adxl_has_int_source(ptr, FREE_FALL)){
+        printf("[FF] %6d\r\n", irq_indexator);
+    }
+
+    if (axi_adxl_has_int_source(ptr, WATERMARK)){
+        printf("[WM] %6d\r\n", irq_indexator);
+    }
+
+    if (axi_adxl_has_int_source(ptr, OVERRUN)){
+        printf("[OV] %6d\r\n", irq_indexator);
+    }
+
     irq_indexator++;
     axi_adxl_irq_ack(ptr);
 
     return;
 }
-

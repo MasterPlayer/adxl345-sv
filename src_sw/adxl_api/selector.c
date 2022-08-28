@@ -1229,69 +1229,93 @@ int selector_axi_adxl_change_int_map(axi_adxl *ptr){
 	int status = ADXL_OK;
 
     printf("[MENU] : selected changing interrupt map : \r\n");
-    printf("\tWhich interrupt map was changed?");
+    printf("\tWhich interrupt map was changed?\r\n");
 
-    printf("1. DATA_READY [currently mapped <");
+    printf("1. DATA_READY [currently mapped ");
     if (axi_adxl_get_int_map(ptr, DATA_READY)){
-        printf("INT1>]\r\n");
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<INT1>]\r\n");
     }else{
-        printf("INT0>]\r\n");
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<INT0>]\r\n");
     }
+    textcolor(DEFAULT, STD, STD);
 
-    printf("2. SINGLE_TAP [currently mapped <");
+    printf("2. SINGLE_TAP [currently mapped ");
     if (axi_adxl_get_int_map(ptr, SINGLE_TAP)){
-        printf("INT1>]\r\n");
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<INT1>]\r\n");
     }else{
-        printf("INT0>]\r\n");
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<INT0>]\r\n");
     }
+    textcolor(DEFAULT, STD, STD);
 
 
-    printf("3. DOUBLE_TAP [currently mapped <");
+    printf("3. DOUBLE_TAP [currently mapped ");
     if (axi_adxl_get_int_map(ptr, DOUBLE_TAP)){
-        printf("INT1>]\r\n");
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<INT1>]\r\n");
     }else{
-        printf("INT0>]\r\n");
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<INT0>]\r\n");
     }
+    textcolor(DEFAULT, STD, STD);
 
 
-    printf("4. ACTIVITY [currently mapped <");
+    printf("4. ACTIVITY [currently mapped ");
     if (axi_adxl_get_int_map(ptr, ACTIVITY)){
-        printf("INT1>]\r\n");
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<INT1>]\r\n");
     }else{
-        printf("INT0>]\r\n");
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<INT0>]\r\n");
     }
+    textcolor(DEFAULT, STD, STD);
 
 
-    printf("5. INACTIVITY [currently mapped <");
+    printf("5. INACTIVITY [currently mapped ");
     if (axi_adxl_get_int_map(ptr, INACTIVITY)){
-        printf("INT1>]\r\n");
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<INT1>]\r\n");
     }else{
-        printf("INT0>]\r\n");
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<INT0>]\r\n");
     }
+    textcolor(DEFAULT, STD, STD);
 
 
-    printf("6. FREE_FALL [currently mapped <");
+    printf("6. FREE_FALL [currently mapped ");
     if (axi_adxl_get_int_map(ptr, FREE_FALL)){
-        printf("INT1>]\r\n");
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<INT1>]\r\n");
     }else{
-        printf("INT0>]\r\n");
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<INT0>]\r\n");
     }
+    textcolor(DEFAULT, STD, STD);
 
 
-    printf("7. WATERMARK [currently mapped <");
+    printf("7. WATERMARK [currently mapped ");
     if (axi_adxl_get_int_map(ptr, WATERMARK)){
-        printf("INT1>]\r\n");
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<INT1>]\r\n");
     }else{
-        printf("INT0>]\r\n");
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<INT0>]\r\n");
     }
+    textcolor(DEFAULT, STD, STD);
 
 
-    printf("8. OVERRUN [currently mapped <");
+    printf("8. OVERRUN [currently mapped ");
     if (axi_adxl_get_int_map(ptr, OVERRUN)){
-        printf("INT1>]\r\n");
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<INT1>]\r\n");
     }else{
-        printf("INT0>]\r\n");
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<INT0>]\r\n");
     }
+    textcolor(DEFAULT, STD, STD);
 
 
     char str [256];
