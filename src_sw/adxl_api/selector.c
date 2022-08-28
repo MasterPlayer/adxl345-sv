@@ -1051,3 +1051,176 @@ int selector_axi_adxl_change_time_ff(axi_adxl *ptr){
 }
 
 
+int selector_axi_adxl_change_tap_axes(axi_adxl *ptr){
+
+	int status = 0;
+	char str [256];
+    char *str_ptr = str;
+
+    printf("[MENU] : Selected changing TAP AXES statement\r\n");
+
+    if (axi_adxl_tap_axes_actived(ptr, TAP_SUPRESS_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t0. SUPRESS");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_tap_axes_actived(ptr, TAP_X_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t1. TAP_X");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_tap_axes_actived(ptr, TAP_Y_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t2. TAP_Y");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_tap_axes_actived(ptr, TAP_Z_MASK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t3. TAP_Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+    switch(value){
+    	case 0 : status = axi_adxl_change_tap_axes(ptr, TAP_SUPRESS_MASK); break;
+    	case 1 : status = axi_adxl_change_tap_axes(ptr, TAP_X_MASK); break;
+    	case 2 : status = axi_adxl_change_tap_axes(ptr, TAP_Y_MASK); break;
+    	case 3 : status = axi_adxl_change_tap_axes(ptr, TAP_Z_MASK); break;
+    	default : status = ADXL_UNCORRECT_VALUE;
+    }
+
+
+	return status;
+
+}
+
+int selector_axi_adxl_get_offsets(axi_adxl *ptr){
+
+	int status = ADXL_OK;
+
+	printf("[MAIN] : selecting offsets for coord x, y, z from device\r\n");
+
+	textcolor(DIM, STD, STD);
+
+	printf("\trequesting offset x : status ");
+	status = axi_adxl_get_ofsx(ptr, &(ptr->offset.ofsx));
+	printf("%d\r\n", status);
+
+	printf("\trequesting offset y : status ");
+	status = axi_adxl_get_ofsy(ptr, &(ptr->offset.ofsy));
+	printf("%d\r\n", status);
+
+	printf("\trequesting offset z : status ");
+	status = axi_adxl_get_ofsz(ptr, &(ptr->offset.ofsz));
+	printf("%d\r\n", status);
+
+    textcolor(DEFAULT, STD, STD);
+
+	printf("\tOFSX : %3.6f [0x%02x]\r\n", ((float)ptr->offset.ofsx * SCALE_OFS), ptr->offset.ofsx);
+	printf("\tOFSY : %3.6f [0x%02x]\r\n", ((float)ptr->offset.ofsy * SCALE_OFS), ptr->offset.ofsy);
+	printf("\tOFSZ : %3.6f [0x%02x]\r\n", ((float)ptr->offset.ofsz * SCALE_OFS), ptr->offset.ofsz);
+
+	return status;
+}
+
+
+int selector_axi_adxl_set_ofsx(axi_adxl *ptr){
+
+	printf("[MENU] : selected manual changing of offset X\r\n");
+
+	int status = 0;
+	char str [256];
+    char *str_ptr = str;
+    printf("Enter new offset for X [resolution : %3.6f/LSB]\r\n", SCALE_OFS);
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    int8_t value = atoi(str);
+
+    status = axi_adxl_get_ofsx(ptr, &(ptr->offset.ofsx));
+    if (status != ADXL_OK){
+    	return status;
+    }
+    printf("Changing from value from %3.6f g to %3.6f g", (float)ptr->offset.ofsx * SCALE_OFS, (float)value * SCALE_OFS);
+
+    status = axi_adxl_set_ofsx(ptr, value);
+
+    return status;
+
+}
+
+
+
+int selector_axi_adxl_set_ofsy(axi_adxl *ptr){
+
+	printf("[MENU] : selected manual changing of offset Y\r\n");
+
+	int status = 0;
+	char str [256];
+    char *str_ptr = str;
+    printf("Enter new offset for Y [resolution : %3.6f g/LSB]\r\n", SCALE_OFS);
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    int8_t value = atoi(str);
+
+    status = axi_adxl_get_ofsy(ptr, &(ptr->offset.ofsy));
+    if (status != ADXL_OK){
+    	return status;
+    }
+    printf("Changing from value from %3.6f g to %3.6f g", (float)ptr->offset.ofsy * SCALE_OFS, (float)value * SCALE_OFS);
+
+    status = axi_adxl_set_ofsy(ptr, value);
+
+    return status;
+}
+
+
+
+int selector_axi_adxl_set_ofsz(axi_adxl *ptr){
+	printf("[MENU] : selected manual changing of offset Z\r\n");
+
+	int status = 0;
+	char str [256];
+    char *str_ptr = str;
+    printf("Enter new offset for Z [resolution : %3.6f g/LSB]\r\n", SCALE_OFS);
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    int8_t value = atoi(str);
+
+    status = axi_adxl_get_ofsz(ptr, &(ptr->offset.ofsz));
+    if (status != ADXL_OK){
+    	return status;
+    }
+    printf("Changing from value from %3.6f g to %3.6f g", ((float)(ptr->offset.ofsz)) * SCALE_OFS, (float)value * SCALE_OFS);
+
+    status = axi_adxl_set_ofsz(ptr, value);
+
+    return status;
+}
+
+
+

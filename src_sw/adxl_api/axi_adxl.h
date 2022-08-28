@@ -26,10 +26,17 @@ static int reserved_address_const[ADXL_DEV_RESERVED_COUNT] = {1,2,3,4,5,6,7,8,9,
 
 
 typedef struct {
+	int8_t ofsx;
+	int8_t ofsy;
+	int8_t ofsz;
+}adxl_offset;
+
+typedef struct {
     int has_init;
     adxl_cfg *cfg;
     adxl_dev *dev;
     int init_flaq;
+    adxl_offset offset;
 } axi_adxl;
 
 
@@ -98,13 +105,19 @@ enum inact_enum {
     INACT_Z_MASK    = 0x01
 };
 
+enum tap_axes_enum{
+	TAP_SUPRESS_MASK = 0x08,
+	TAP_X_MASK = 0x04,
+	TAP_Y_MASK = 0x02,
+	TAP_Z_MASK = 0x01
+};
 
 
 
 
 // measure precision in G or Seconds
 #define SCALE_THRESH_TAP        (0.0625)
-#define SCALE_OFS               (0.0156)        //15.6 us
+#define SCALE_OFS               (0.015625)        //15.6 us
 #define SCALE_DUR               (0.000625)      // 625us
 #define SCALE_LATENT            (0.00125)       //1.25 ms
 #define SCALE_WINDOW            (0.00125)       //1.25 ms
@@ -182,4 +195,13 @@ int axi_adxl_change_thresh_ff(axi_adxl *ptr, uint8_t thresh_ff);
 // 0x29
 int axi_adxl_change_time_ff(axi_adxl *ptr, uint8_t time_ff);
 // 0x2A 
-int axi_adxl_change_tap_axes(axi_adxl *ptr);
+int axi_adxl_change_tap_axes(axi_adxl *ptr, uint8_t mask);
+int axi_adxl_tap_axes_actived(axi_adxl *ptr, uint8_t mask);
+// 0x1E
+int axi_adxl_get_ofsx(axi_adxl *ptr, int8_t *ofsx);
+int axi_adxl_get_ofsy(axi_adxl *ptr, int8_t *ofsy);
+int axi_adxl_get_ofsz(axi_adxl *ptr, int8_t *ofsz);
+int axi_adxl_set_ofsx(axi_adxl *ptr, int8_t ofsx);
+int axi_adxl_set_ofsy(axi_adxl *ptr, int8_t ofsy);
+int axi_adxl_set_ofsz(axi_adxl *ptr, int8_t ofsz);
+

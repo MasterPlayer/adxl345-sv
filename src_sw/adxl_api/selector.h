@@ -40,3 +40,9 @@ int selector_axi_adxl_change_activity_acdc(axi_adxl *ptr);
 int selector_axi_adxl_change_inactivity_acdc(axi_adxl *ptr);
 int selector_axi_adxl_change_thresh_ff(axi_adxl *ptr);
 int selector_axi_adxl_change_time_ff(axi_adxl *ptr);
+int selector_axi_adxl_change_tap_axes(axi_adxl *ptr);
+
+int selector_axi_adxl_get_offsets(axi_adxl *ptr);
+int selector_axi_adxl_set_ofsx(axi_adxl *ptr);
+int selector_axi_adxl_set_ofsy(axi_adxl *ptr);
+int selector_axi_adxl_set_ofsz(axi_adxl *ptr);

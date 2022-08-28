@@ -1595,7 +1595,7 @@ int axi_adxl_change_time_ff(axi_adxl *ptr, uint8_t time_ff){
 
 
 
-int axi_adxl_change_tap_axes(axi_adxl *ptr){
+int axi_adxl_change_tap_axes(axi_adxl *ptr, uint8_t mask){
 
 	if (ptr->init_flaq != 1){
 	    textcolor(DEFAULT, RED, STD);
@@ -1613,5 +1613,182 @@ int axi_adxl_change_tap_axes(axi_adxl *ptr){
 		return ADXL_LINK_LOST;
 	}
 
-	return 
+	printf("[ADXL_CHNG_TAP_AXES] : change statement of ");
+
+	if (mask & TAP_AXES_SUPRESS_MASK){
+		printf("SUPRESS ");
+	}
+
+	if (mask & TAP_AXES_TAP_X_EN_MASK){
+		printf("X ");
+	}
+
+	if (mask & TAP_AXES_TAP_Y_EN_MASK){
+		printf("Y ");
+	}
+
+	if (mask & TAP_AXES_TAP_Z_EN_MASK){
+		printf("Z ");
+	}
+
+	printf("\r\n");
+
+	adxl_dev_set_tap_axes(ptr->dev, adxl_dev_get_tap_axes(ptr->dev) ^ (mask));
+
+	return ADXL_OK;
 }
+
+
+int axi_adxl_tap_axes_actived(axi_adxl *ptr, uint8_t mask){
+	return (adxl_dev_get_tap_axes(ptr->dev) & mask);
+}
+
+
+int axi_adxl_get_ofsx(axi_adxl *ptr, int8_t *ofsx){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_OFSX] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_OFSX] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*ofsx = adxl_dev_get_ofsx(ptr->dev);
+
+	return ADXL_OK;
+}
+
+
+int axi_adxl_get_ofsy(axi_adxl *ptr, int8_t *ofsy){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_OFSY] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_OFSY] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*ofsy = adxl_dev_get_ofsy(ptr->dev);
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_get_ofsz(axi_adxl *ptr, int8_t *ofsz){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_OFSZ] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_OFSZ] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*ofsz = adxl_dev_get_ofsz(ptr->dev);
+
+	return ADXL_OK;
+}
+
+
+int axi_adxl_set_ofsx(axi_adxl *ptr, int8_t ofsx){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_OFSX] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_OFSX] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_ofsx(ptr->dev, ofsx);
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_set_ofsy(axi_adxl *ptr, int8_t ofsy){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_OFSY] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_OFSY] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_ofsy(ptr->dev, ofsy);
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_set_ofsz(axi_adxl *ptr, int8_t ofsz){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_OFSZ] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_OFSZ] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_ofsz(ptr->dev, ofsz);
+
+	return ADXL_OK;
+}
+

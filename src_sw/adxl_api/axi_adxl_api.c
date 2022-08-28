@@ -76,6 +76,9 @@ void print_menu(){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
     printf("\t    29. \tThreshold tap change [REG_29]\r\n");
+    printf("\t    30. \tSet offset X\r\n");
+    printf("\t    31. \tSet offset Y\r\n");
+    printf("\t    32. \tSet offset Z\r\n");
     printf("\t    33. \tDuration change [REG_33]\r\n");
     printf("\t    34. \tLatent change [REG_34]\r\n");
     printf("\t    35. \tWindow change [REG_35]\r\n");
@@ -90,6 +93,7 @@ void print_menu(){
     printf("\t392100. \tInactivity control disable [REG_39][BIT_2][BIT_1][BIT_0][DISABLE]\r\n");
     printf("\t    40. \tFreefall threshold change [REG_40]\r\n");
     printf("\t    41. \tFreefall time change [REG_41]\r\n");
+    printf("\t    42. \tTAP axes control[REG_42]\r\n");
 
     printf("\t    44. \tBandwidth rate setup [REG_44]\r\n");
     printf("\t  4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
@@ -104,6 +108,7 @@ void print_menu(){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
     printf("\t100. Dump device register space\r\n");
+    printf("\t101. Get offsets X Y Z to structure");
 }
 
 
@@ -186,6 +191,18 @@ int menu(axi_adxl *ptr, int mode){
             status = selector_axi_adxl_change_thresh_tap(ptr);
         break;
 
+        case 30 :
+        	status = selector_axi_adxl_set_ofsx(ptr);
+        break;
+
+        case 31 :
+        	status = selector_axi_adxl_set_ofsy(ptr);
+        break;
+
+        case 32 :
+        	status = selector_axi_adxl_set_ofsz(ptr);
+        break;
+
         case 33 : //0x21 
             status = selector_axi_adxl_change_dur(ptr);
         break;
@@ -242,12 +259,20 @@ int menu(axi_adxl *ptr, int mode){
             status = selector_axi_adxl_change_time_ff(ptr);
         break;
 
+        case 42 :
+        	status = selector_axi_adxl_change_tap_axes(ptr);
+		break;
         
         /*Debug device*/
 
         case 100 :
             status = selector_axi_adxl_dev_debug_register_space(ptr);
         break;
+
+        case 101 :
+        	status = selector_axi_adxl_get_offsets(ptr);
+		break;
+
 
         default :
             printf("[MENU] : incorrect selection : 0x%02x\r\n", mode);
