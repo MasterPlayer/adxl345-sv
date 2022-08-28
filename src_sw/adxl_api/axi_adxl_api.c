@@ -55,9 +55,9 @@ int main() {
 
 void print_menu(){
 
-    printf(" ***** ADXL345 DEMO APP ***** \r\n");
+    printf(" >>>>>>>>>>>>>>>>>>>>>>>>> ADXL345 DEMO APP <<<<<<<<<<<<<<<<<<<<<<<<< \r\n");
     textcolor(REVERSE, STD, STD);
-    printf("=====<Configuration space>=====");
+    printf("====================<Configuration space>====================");
     textcolor(DEFAULT, STD, STD);   
     printf("\r\n");
     printf("\t0. Debug log output\r\n");
@@ -72,7 +72,7 @@ void print_menu(){
     printf("\t9. Set iic address\r\n");
 
     textcolor(REVERSE, STD, STD);
-    printf("=====<Device space>=====");
+    printf("====================<Device space>====================");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
     printf("\t    29. \tThreshold tap change [REG_29]\r\n");
@@ -100,11 +100,12 @@ void print_menu(){
     printf("\t  4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
     printf("\t   461. \tInterrupt enable [REG_46][ENABLE]\r\n");
     printf("\t   460. \tInterrupt disable [REG_46][DISABLE]\r\n");
+    printf("\t    47. \tInterrupt map changing [REG_47]\r\n");
     printf("\t 49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
 
 
     textcolor(REVERSE, STD, STD);
-    printf("=====<Show statistics>=====");
+    printf("====================<Show statistics>====================");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
     printf("\t100. Dump device register space\r\n");
@@ -263,6 +264,9 @@ int menu(axi_adxl *ptr, int mode){
         	status = selector_axi_adxl_change_tap_axes(ptr);
 		break;
         
+        case 47 : 
+            status = selector_axi_adxl_change_int_map(ptr);
+        break;
         /*Debug device*/
 
         case 100 :

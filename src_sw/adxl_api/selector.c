@@ -1224,3 +1224,93 @@ int selector_axi_adxl_set_ofsz(axi_adxl *ptr){
 
 
 
+int selector_axi_adxl_change_int_map(axi_adxl *ptr){
+
+    printf("[MENU] : selected changing interrupt map : \r\n");
+    printf("\tWhich interrupt map was changed?");
+
+    printf("1. DATA_READY [currently mapped <");
+    if (axi_adxl_get_int_map(ptr, DATA_READY)){
+        printf("INT1>]\r\n");
+    }else{
+        printf("INT0>]\r\n");
+    }
+
+    printf("2. SINGLE_TAP [currently mapped <");
+    if (axi_adxl_get_int_map(ptr, SINGLE_TAP)){
+        printf("INT1>]\r\n");
+    }else{
+        printf("INT0>]\r\n");
+    }
+
+
+    printf("3. DOUBLE_TAP [currently mapped <");
+    if (axi_adxl_get_int_map(ptr, DOUBLE_TAP)){
+        printf("INT1>]\r\n");
+    }else{
+        printf("INT0>]\r\n");
+    }
+
+
+    printf("4. ACTIVITY [currently mapped <");
+    if (axi_adxl_get_int_map(ptr, ACTIVITY)){
+        printf("INT1>]\r\n");
+    }else{
+        printf("INT0>]\r\n");
+    }
+
+
+    printf("5. INACTIVITY [currently mapped <");
+    if (axi_adxl_get_int_map(ptr, INACTIVITY)){
+        printf("INT1>]\r\n");
+    }else{
+        printf("INT0>]\r\n");
+    }
+
+
+    printf("6. FREE_FALL [currently mapped <");
+    if (axi_adxl_get_int_map(ptr, FREE_FALL)){
+        printf("INT1>]\r\n");
+    }else{
+        printf("INT0>]\r\n");
+    }
+
+
+    printf("7. WATERMARK [currently mapped <");
+    if (axi_adxl_get_int_map(ptr, WATERMARK)){
+        printf("INT1>]\r\n");
+    }else{
+        printf("INT0>]\r\n");
+    }
+
+
+    printf("8. OVERRUN [currently mapped <");
+    if (axi_adxl_get_int_map(ptr, OVERRUN)){
+        printf("INT1>]\r\n");
+    }else{
+        printf("INT0>]\r\n");
+    }
+
+
+    char str [256];
+    char *str_ptr = str;
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+    uint8_t value = atoi(str);
+    switch(value){
+        case 1 : status = axi_adxl_change_int_map(ptr, DATA_READY); break;
+        case 2 : status = axi_adxl_change_int_map(ptr, SINGLE_TAP); break;
+        case 3 : status = axi_adxl_change_int_map(ptr, DOUBLE_TAP); break;
+        case 4 : status = axi_adxl_change_int_map(ptr, ACTIVITY  ); break;
+        case 5 : status = axi_adxl_change_int_map(ptr, INACTIVITY); break;
+        case 6 : status = axi_adxl_change_int_map(ptr, FREE_FALL ); break;
+        case 7 : status = axi_adxl_change_int_map(ptr, WATERMARK ); break;
+        case 8 : status = axi_adxl_change_int_map(ptr, OVERRUN   ); break;
+        default : return ADXL_UNCORRECT_VALUE;
+    return status;
+}
+
+
+

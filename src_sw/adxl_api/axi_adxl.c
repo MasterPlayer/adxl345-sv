@@ -1640,6 +1640,7 @@ int axi_adxl_change_tap_axes(axi_adxl *ptr, uint8_t mask){
 
 
 int axi_adxl_tap_axes_actived(axi_adxl *ptr, uint8_t mask){
+
 	return (adxl_dev_get_tap_axes(ptr->dev) & mask);
 }
 
@@ -1792,3 +1793,70 @@ int axi_adxl_set_ofsz(axi_adxl *ptr, int8_t ofsz){
 	return ADXL_OK;
 }
 
+
+
+int axi_adxl_change_int_map(axi_adxl *ptr, uint8_t int_mask){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_INT_MAP] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_CHNG_INT_MAP] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("[ADXL_CHNG_INT_MAP] changing map of \r\n");
+
+	if (int_mask & DATA_READY){
+		printf("DATA_READY ");
+	}
+
+	if (int_mask & SINGLE_TAP){
+		printf("SINGLE_TAP ");
+	}
+
+	if (int_mask & DOUBLE_TAP){
+		printf("DOUBLE_TAP ");
+	}
+	
+	if (int_mask & ACTIVITY){
+		printf("ACTIVITY ");
+	}
+
+	if (int_mask & INACTIVITY){
+		printf("INACTIVITY ");
+	}
+
+	if (int_mask & FREE_FALL){
+		printf("FREE_FALL ");
+	}
+
+	if (int_mask & WATERMARK){
+		printf("WATERMARK ");
+	}
+
+	if (int_mask & OVERRUN){
+		printf("OVERRUN ");
+	}
+
+	printf("\r\n");
+
+	adxl_dev_set_int_map(ptr->dev, adxl_dev_get_int_map(ptr->dev) ^ (mask));
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_get_int_map(axi_adxl *ptr, uint8_t mask){
+	return (adxl_dev_get_int_map(ptr->dev) & mask);
+}

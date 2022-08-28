@@ -205,3 +205,6 @@ int axi_adxl_set_ofsx(axi_adxl *ptr, int8_t ofsx);
 int axi_adxl_set_ofsy(axi_adxl *ptr, int8_t ofsy);
 int axi_adxl_set_ofsz(axi_adxl *ptr, int8_t ofsz);
 
+//0x2F
+int axi_adxl_change_int_map(axi_adxl *ptr, uint8_t int_mask);
+int axi_adxl_get_int_map(axi_adxl *ptr, uint8_t mask);
