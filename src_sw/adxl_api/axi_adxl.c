@@ -1883,3 +1883,6 @@ int axi_adxl_get_int_source(axi_adxl *ptr, uint8_t *interrupt_mask){
 int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask){
 	return (adxl_dev_get_int_source(ptr) & interrupt_mask) ? TRUE : FALSE;
 }
+
+
+

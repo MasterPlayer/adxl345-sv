@@ -1341,3 +1341,105 @@ int selector_axi_adxl_change_int_map(axi_adxl *ptr){
 
 
 
+int selector_axi_adxl_get_int_source(axi_adxl *ptr){
+
+    uint8_t interrupt_mask = 0x00;
+
+    int status = axi_adxl_get_int_source(ptr, &interrupt_mask);
+    if (status != ADXL_OK){
+        return status;
+    }
+
+    printf("[MENU] : selected show which interrupt last asserted\r\n");
+
+    if (axi_adxl_has_int_source(ptr, DATA_READY)){
+        textcolor(DEFAULT, BLACK, GREEN);
+
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+
+    }
+    printf("DATA_READY");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_int_source(ptr, SINGLE_TAP)){
+        textcolor(DEFAULT, BLACK, GREEN);
+
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+
+    }
+    printf("SINGLE_TAP");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_int_source(ptr, DOUBLE_TAP)){
+        textcolor(DEFAULT, BLACK, GREEN);
+
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+
+    }
+    printf("DOUBLE_TAP");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_int_source(ptr, ACTIVITY)){
+        textcolor(DEFAULT, BLACK, GREEN);
+
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+
+    }
+    printf("ACTIVITY");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_int_source(ptr, INACTIVITY)){
+        textcolor(DEFAULT, BLACK, GREEN);
+
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+
+    }
+    printf("INACTIVITY");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_int_source(ptr, FREE_FALL)){
+        textcolor(DEFAULT, BLACK, GREEN);
+
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+
+    }
+    printf("FREE_FALL");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_int_source(ptr, WATERMARK)){
+        textcolor(DEFAULT, BLACK, GREEN);
+
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+
+    }
+    printf("WATERMARK");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_int_source(ptr, OVERRUN)){
+        textcolor(DEFAULT, BLACK, GREEN);
+
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+
+    }
+    printf("OVERRUN");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    return status;
+}
+

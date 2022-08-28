@@ -101,6 +101,7 @@ void print_menu(){
     printf("\t   461. \tInterrupt enable [REG_46][ENABLE]\r\n");
     printf("\t   460. \tInterrupt disable [REG_46][DISABLE]\r\n");
     printf("\t    47. \tInterrupt map changing [REG_47]\r\n");
+    printf("\t    48. \tGet last actived interrupt [REG_48]\r\n");
     printf("\t 49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
 
 
@@ -268,6 +269,11 @@ int menu(axi_adxl *ptr, int mode){
             status = selector_axi_adxl_change_int_map(ptr);
         break;
         /*Debug device*/
+
+        case 48 : 
+            status = selector_axi_adxl_get_int_source(ptr);
+        break;
+
 
         case 100 :
             status = selector_axi_adxl_dev_debug_register_space(ptr);
