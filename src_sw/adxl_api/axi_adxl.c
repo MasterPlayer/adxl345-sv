@@ -1849,7 +1849,7 @@ int axi_adxl_change_int_map(axi_adxl *ptr, uint8_t int_mask){
 
 	printf("\r\n");
 
-	adxl_dev_set_int_map(ptr->dev, adxl_dev_get_int_map(ptr->dev) ^ (mask));
+	adxl_dev_set_int_map(ptr->dev, adxl_dev_get_int_map(ptr->dev) ^ (int_mask));
 
 	return ADXL_OK;
 

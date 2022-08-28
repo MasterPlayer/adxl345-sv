@@ -1226,6 +1226,8 @@ int selector_axi_adxl_set_ofsz(axi_adxl *ptr){
 
 int selector_axi_adxl_change_int_map(axi_adxl *ptr){
 
+	int status = ADXL_OK;
+
     printf("[MENU] : selected changing interrupt map : \r\n");
     printf("\tWhich interrupt map was changed?");
 
@@ -1309,6 +1311,7 @@ int selector_axi_adxl_change_int_map(axi_adxl *ptr){
         case 7 : status = axi_adxl_change_int_map(ptr, WATERMARK ); break;
         case 8 : status = axi_adxl_change_int_map(ptr, OVERRUN   ); break;
         default : return ADXL_UNCORRECT_VALUE;
+    }
     return status;
 }
 
