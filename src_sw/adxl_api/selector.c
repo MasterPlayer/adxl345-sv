@@ -1736,10 +1736,10 @@ int selector_axi_adxl_has_sleep_status(axi_adxl *ptr){
 int selector_axi_adxl_set_linking_mode(axi_adxl *ptr){
     printf("[MENU] : selected linking mode change\r\n");
 
-    int status = 0
+    int status = 0;
 
     printf("Current state of linking mode is ");
-    if (axi_adxl_get_linking_mode(ptr)){
+    if (axi_adxl_has_linking_mode(ptr)){
         textcolor(DEFAULT, BLACK, RED);
         printf("actived");
     }else{
@@ -1753,10 +1753,13 @@ int selector_axi_adxl_set_linking_mode(axi_adxl *ptr){
     char *str_ptr = str;
     while((*str_ptr++=getchar ()) != 13);
     *str_ptr = '\0';
-
     uint8_t value = atoi(str);
+
+    uint8_t linking_mode;
+    axi_adxl_get_linking_mode(ptr, &linking_mode);
+
     if (value){
-        status = axi_adxl_set_linking_mode(ptr, (~axi_adxl_get_linking_mode(ptr)) & POWER_CTL_LINK_MASK);
+        status = axi_adxl_set_linking_mode(ptr, (~linking_mode) & POWER_CTL_LINK_MASK);
     }
 
     return status;
@@ -1768,7 +1771,7 @@ int selector_axi_adxl_has_linking_mode(axi_adxl *ptr){
     printf("[MENU] : selected check linking mode");
 
     printf("Current state of linking mode is ");
-    if (axi_adxl_get_linking_mode(ptr)){
+    if (axi_adxl_has_linking_mode(ptr)){
         textcolor(DEFAULT, BLACK, RED);
         printf("actived");
     }else{

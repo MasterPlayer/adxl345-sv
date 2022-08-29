@@ -2259,6 +2259,29 @@ int axi_adxl_set_linking_mode(axi_adxl *ptr, int state){
 }
 
 
+int axi_adxl_get_linking_mode(axi_adxl *ptr, int *state){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_LINKING] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_LINKING] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*state = adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_LINK_MASK;
+
+	return ADXL_OK;
+}
+
 
 int axi_adxl_has_linking_mode(axi_adxl *ptr){
 	return (adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_LINK_MASK)? TRUE : FALSE;
