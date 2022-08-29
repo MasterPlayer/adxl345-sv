@@ -133,6 +133,13 @@ enum tap_axes_enum{
 	TAP_Z_MASK = 0x01
 };
 
+enum fifo_mode_enum {
+    FIFO_MODE_BYPASS  = 0x00, 
+    FIFO_MODE_FIFO    = 0x40,
+    FIFO_MODE_STREAM  = 0x80, 
+    FIFO_MODE_TRIGGER = 0xC0
+}
+
 
 
 
@@ -240,3 +247,9 @@ int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask);
 
 int axi_adxl_get_data(axi_adxl *ptr, adxl_data *data);
 int axi_adxl_get_data_float(axi_adxl *ptr, adxl_data_float *data_float);
+
+int axi_adxl_set_fifo_mode(axi_adxl *ptr, enum fifo_mode_enum fifo_mode);
+int axi_adxl_has_fifo_mode(axi_adxl *ptr, enum fifo_mode_enum fifo_mode);
+
+int axi_adxl_set_samples(axi_adxl *ptr, uint8_t samples);
+int axi_adxl_get_samples(axi_adxl *ptr, uint8_t *samples);

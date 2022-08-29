@@ -75,36 +75,39 @@ void print_menu(){
     printf("=======================<Device space>========================");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
-    printf("\t    29. \tThreshold tap change [REG_29]\r\n");
-    printf("\t    30. \tSet offset X\r\n");
-    printf("\t    31. \tSet offset Y\r\n");
-    printf("\t    32. \tSet offset Z\r\n");
-    printf("\t    33. \tDuration change [REG_33]\r\n");
-    printf("\t    34. \tLatent change [REG_34]\r\n");
-    printf("\t    35. \tWindow change [REG_35]\r\n");
-    printf("\t    36. \tActivity threshold change [REG_36]\r\n");
-    printf("\t    37. \tInactivity threshold change [REG_37]\r\n");
-    printf("\t    38. \tInactivity time change [REG_38]\r\n");
-    printf("\t   397. \tChange AC/DC mode for activity mode [REG_38][BIT_7]\r\n");
-    printf("\t   393. \tChange AC/DC mode for inactivity mode [REG_38][BIT_3]\r\n");
-    printf("\t396541. \tActivity control enable [REG_39][BIT_6][BIT_5][BIT_4][ENABLE]\r\n");
-    printf("\t396540. \tActivity control disable [REG_39][BIT_6][BIT_5][BIT_4][DISABLE]\r\n");
-    printf("\t392101. \tInactivity control enable [REG_39][BIT_2][BIT_1][BIT_0][ENABLE]\r\n");
-    printf("\t392100. \tInactivity control disable [REG_39][BIT_2][BIT_1][BIT_0][DISABLE]\r\n");
-    printf("\t    40. \tFreefall threshold change [REG_40]\r\n");
-    printf("\t    41. \tFreefall time change [REG_41]\r\n");
-    printf("\t    42. \tTAP axes control[REG_42]\r\n");
-    printf("\t    44. \tBandwidth rate setup [REG_44]\r\n");
-    printf("\t  4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
-    printf("\t  4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
-    printf("\t   461. \tInterrupt enable [REG_46][ENABLE]\r\n");
-    printf("\t   460. \tInterrupt disable [REG_46][DISABLE]\r\n");
-    printf("\t    47. \tInterrupt map changing [REG_47]\r\n");
-    printf("\t    48. \tGet last actived interrupt [REG_48]\r\n");
-    printf("\t 49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
-    printf("\t   500. \tPrint data from data registers [REG_50]\r\n");
-    printf("\t   501. \tPrint float data from data registers [REG_50]\r\n");
-
+    printf("\t      29. \tThreshold tap change [REG_29]\r\n");
+    printf("\t      30. \tSet offset X\r\n");
+    printf("\t      31. \tSet offset Y\r\n");
+    printf("\t      32. \tSet offset Z\r\n");
+    printf("\t      33. \tDuration change [REG_33]\r\n");
+    printf("\t      34. \tLatent change [REG_34]\r\n");
+    printf("\t      35. \tWindow change [REG_35]\r\n");
+    printf("\t      36. \tActivity threshold change [REG_36]\r\n");
+    printf("\t      37. \tInactivity threshold change [REG_37]\r\n");
+    printf("\t      38. \tInactivity time change [REG_38]\r\n");
+    printf("\t     397. \tChange AC/DC mode for activity mode [REG_38][BIT_7]\r\n");
+    printf("\t     393. \tChange AC/DC mode for inactivity mode [REG_38][BIT_3]\r\n");
+    printf("\t  396541. \tActivity control enable [REG_39][BIT_6][BIT_5][BIT_4][ENABLE]\r\n");
+    printf("\t  396540. \tActivity control disable [REG_39][BIT_6][BIT_5][BIT_4][DISABLE]\r\n");
+    printf("\t  392101. \tInactivity control enable [REG_39][BIT_2][BIT_1][BIT_0][ENABLE]\r\n");
+    printf("\t  392100. \tInactivity control disable [REG_39][BIT_2][BIT_1][BIT_0][DISABLE]\r\n");
+    printf("\t      40. \tFreefall threshold change [REG_40]\r\n");
+    printf("\t      41. \tFreefall time change [REG_41]\r\n");
+    printf("\t      42. \tTAP axes control[REG_42]\r\n");
+    printf("\t      44. \tBandwidth rate setup [REG_44]\r\n");
+    printf("\t    4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
+    printf("\t    4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
+    printf("\t     461. \tInterrupt enable [REG_46][ENABLE]\r\n");
+    printf("\t     460. \tInterrupt disable [REG_46][DISABLE]\r\n");
+    printf("\t      47. \tInterrupt map changing [REG_47]\r\n");
+    printf("\t      48. \tGet last actived interrupt [REG_48]\r\n");
+    printf("\t   49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
+    printf("\t     500. \tPrint data from data registers [REG_50]\r\n");
+    printf("\t     501. \tPrint float data from data registers [REG_50]\r\n");
+    printf("\t    5678. \tFIFO mode setup [REG_56][BIT_7][BIT_6]\r\n");
+    printf("\t56432100. \tSamples set [REG_56][BIT_4][BIT_3][BIT_2][BIT_1][BIT_0]\r\n"); 
+    printf("\t56432101. \tSamples get [REG_56][BIT_4][BIT_3][BIT_2][BIT_1][BIT_0]\r\n"); 
+    
     textcolor(REVERSE, STD, STD);
     printf("======================<Show statistics>======================");
     textcolor(DEFAULT, STD, STD);
@@ -282,6 +285,18 @@ int menu(axi_adxl *ptr, int mode){
         	status = selector_axi_adxl_get_data_float(ptr);
 		break;
 
+        case 5678:
+            status = selector_axi_adxl_set_fifo_mode(ptr);
+        break;
+
+        case 56432100 : 
+            status = selector_axi_adxl_set_samples(ptr);
+        break;
+
+        case 56432101 : 
+            status = selector_axi_adxl_get_samples(ptr);
+        break;
+
         case 100 :
             status = selector_axi_adxl_dev_debug_register_space(ptr);
         break;
@@ -338,10 +353,6 @@ int gic_init(XScuGic *ptr, axi_adxl* adxl_ptr){
 
 
 
-int irq_indexator = 0;
-
-
-
 void adxl_intr_handler(void *callback){
     axi_adxl *ptr = (axi_adxl*)callback;
     uint8_t interrupt_mask;
@@ -388,8 +399,6 @@ void adxl_intr_handler(void *callback){
 
     printf("X : %4.6f \tY : %4.6f \tZ : %4.6f\r\n", data.x, data.y, data.z);
 
-
-    irq_indexator++;
     axi_adxl_irq_ack(ptr);
 
     return;

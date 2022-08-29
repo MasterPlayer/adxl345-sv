@@ -1979,3 +1979,148 @@ int axi_adxl_get_data_float(axi_adxl *ptr, adxl_data_float *data_float){
 	return ADXL_OK;
 }
 
+
+
+int axi_adxl_set_fifo_mode(axi_adxl *ptr, enum fifo_mode_enum fifo_mode){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_FIFO_MODE] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_FIFO_MODE] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("[ADXL_SET_FIFO_MODE] : changing FIFO mode from ");
+
+	switch(adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_FIFO_MODE){
+		case FIFO_MODE_BYPASS : 
+			printf("BYPASS ");
+		break;
+
+		case FIFO_MODE_FIFO : 
+			printf("FIFO ");
+		break;
+
+		case FIFO_MODE_STREAM : 
+			printf("STREAM ");
+		break;
+
+		case FIFO_MODE_TRIGGER : 
+			printf("TRIGGER ");
+		break;
+
+		default : 
+			printf("<undefined> ");
+			return ADXL_UNCORRECT_VALUE;
+		break;
+
+	}
+
+	printf("to ");
+
+	switch(fifo_mode){
+		case FIFO_MODE_BYPASS : 
+			printf("BYPASS\r\n");
+		break;
+
+		case FIFO_MODE_FIFO : 
+			printf("FIFO\r\n");
+		break;
+
+		case FIFO_MODE_STREAM : 
+			printf("STREAM\r\n");
+		break;
+
+		case FIFO_MODE_TRIGGER : 
+			printf("TRIGGER\r\n");
+		break;
+
+		default : 
+			printf("<undefined> ");
+			return ADXL_UNCORRECT_VALUE;
+		break;
+
+	}
+
+
+	adxl_dev_set_fifo_ctl(ptr->dev, (adxl_dev_get_fifo_ctl(ptr->dev) & ~FIFO_CTL_FIFO_MODE) | fifo_mode);
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_has_fifo_mode(axi_adxl *ptr, enum fifo_mode_enum fifo_mode){
+	return ((adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_FIFO_MODE) == fifo_mode) ? TRUE : FALSE;
+}
+
+
+
+int axi_adxl_set_samples(axi_adxl *ptr, uint8_t samples){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_SAMPLES] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_SAMPLES] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	if (samples > 31){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_SAMPLES] : incorrect value %d", samples);
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNCORRECT_VALUE;		
+	}
+
+	printf("[ADXL_SET_SAMPLES] : changing value from %d samples to %d samples", adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_SAMPLES, samples);
+
+	adxl_dev_set_fifo_ctl(ptr->dev, (adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_SAMPLES) | samples);
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_get_samples(axi_adxl *ptr, uint8_t *samples){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_SAMPLES] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_SAMPLES] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*samples = (adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_SAMPLES);
+
+	return ADXL_OK;
+}
+
+

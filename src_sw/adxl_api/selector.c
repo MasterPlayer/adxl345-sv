@@ -1464,3 +1464,101 @@ int selector_axi_adxl_get_data_float(axi_adxl *ptr){
 	return status;
 
 }
+
+
+
+int selector_axi_adxl_set_fifo_mode(axi_adxl *ptr){
+    printf("[MENU] : selected changing fifo_mode\r\n");
+    int status = 0;
+    char str [256];
+    char *str_ptr = str;
+    printf("Enter new FIFO mode\r\n");
+    
+    if (axi_adxl_has_fifo_mode(ptr, FIFO_MODE_BYPASS)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("1. BYPASS");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_fifo_mode(ptr, FIFO_MODE_FIFO)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("2. FIFO");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_fifo_mode(ptr, FIFO_MODE_STREAM)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("3. STREAM");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_fifo_mode(ptr, FIFO_MODE_TRIGGER)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("3. TRIGGER");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+
+    switch (value){
+        case 1 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_BYPASS);
+        case 2 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_FIFO);
+        case 3 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_STREAM);
+        case 4 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_TRIGGER);
+        default : return ADXL_UNCORRECT_VALUE
+    }
+
+    return status;
+}
+
+
+
+int selector_axi_adxl_set_samples(axi_adxl *ptr){
+    int status;
+    printf("[MENU] : selected changing samples of internal fifo\r\n");
+
+    uint8_t samples;
+
+    axi_adxl_get_samples(ptr, &samples);
+
+    printf("Enter number of samples[0-31] : ");
+
+    char str [256];
+    char *str_ptr = str;
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+    status = axi_adxl_set_samples(ptr, value);
+
+    return status;
+}
+
+
+
+int selector_axi_adxl_get_samples(axi_adxl *ptr){
+    int status;
+    printf("[MENU] : selected changing samples of internal fifo\r\n");
+    uint8_t samples;
+    status = axi_adxl_get_samples(ptr, &samples);
+    printf("\t Current number of samples is %d\r\n", samples);
+    return status;
+}
+
+
