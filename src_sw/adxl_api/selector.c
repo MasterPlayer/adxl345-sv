@@ -1562,3 +1562,30 @@ int selector_axi_adxl_get_samples(axi_adxl *ptr){
 }
 
 
+
+int selector_axi_adxl_get_fifo_sts_entries(axi_adxl *ptr){
+    printf("[MENU] : selected show entries of FIFO\r\n");
+    uint8_t entries = 0;
+    axi_adxl_get_fifo_sts_entries(ptr, &entries);
+    printf("Number of entries : %d\r\n", entries);
+    return ADXL_OK;
+
+}
+
+
+
+int selector_axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr){
+    printf("[MENU] : selected show trigger of FIFO status\r\n");
+    printf("Trigger status : ");
+    if (axi_adxl_has_fifo_sts_trigger(ptr)) {
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("Triggered");
+    }else{
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("Clear");
+    }
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    return ADXL_OK;
+}

@@ -140,7 +140,8 @@ typedef struct {
 #define FIFO_CTL_TRIGGER                0x40 // 00x00000
 #define FIFO_CTL_SAMPLES                0x1F // 000xxxxx
 
-#define FIFO_STATUS_ENTRIES_MASK 		0x7F
+#define FIFO_STATUS_ENTRIES_MASK 		0x3F
+#define FIFO_STATUS_TRIGGER_MASK        0x80
 
 #define DATA_FORMAT_FULL_RES 			0x08
 

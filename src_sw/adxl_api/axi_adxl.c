@@ -2123,3 +2123,33 @@ int axi_adxl_get_samples(axi_adxl *ptr, uint8_t *samples){
 }
 
 
+
+int axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_ENTRIES] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_SAMPLES] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*entries = adxl_dev_get_fifo_status(adxl->dev) & FIFO_STATUS_ENTRIES_MASK;
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr){
+	return (adxl_dev_get_fifo_status(adxl->dev) & FIFO_STATUS_TRIGGER_MASK)	? TRUE : FALSE;
+}

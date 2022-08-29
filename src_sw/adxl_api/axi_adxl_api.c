@@ -110,7 +110,9 @@ void print_menu(){
     printf("\t    5678. \tFIFO mode setup [REG_56][BIT_7][BIT_6]\r\n");
     printf("\t56432100. \tSamples set [REG_56][BIT_4][BIT_3][BIT_2][BIT_1][BIT_0]\r\n"); 
     printf("\t56432101. \tSamples get [REG_56][BIT_4][BIT_3][BIT_2][BIT_1][BIT_0]\r\n"); 
-    
+    printf("\t    5750. \tFIFO entries get [REG_57][BIT_5][BIT_4][BIT_3][BIT_2][BIT_1][BIT_0]\r\n");
+    printf("\t     578. \tFIFO trigger get [REG_57][BIT_7]\r\n");
+
     textcolor(REVERSE, STD, STD);
     printf("======================<Show statistics>======================");
     textcolor(DEFAULT, STD, STD);
@@ -299,6 +301,15 @@ int menu(axi_adxl *ptr, int mode){
         case 56432101 : 
             status = selector_axi_adxl_get_samples(ptr);
         break;
+
+        case 5750: 
+            status = selector_axi_adxl_get_fifo_sts_entries(ptr);
+        break;
+
+        case 578: 
+            status = selector_axi_adxl_has_fifo_sts_trigger(ptr);
+        break;
+
 
         case 100 :
             status = selector_axi_adxl_dev_debug_register_space(ptr);
