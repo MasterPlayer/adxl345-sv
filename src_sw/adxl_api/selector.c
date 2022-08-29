@@ -1726,5 +1726,6 @@ int selector_axi_adxl_has_sleep_status(axi_adxl *ptr){
         printf("<inactived>");
     }
     textcolor(DEFAULT, BLACK, RED);
-    printf("\r\n")
+    printf("\r\n");
+    return ADXL_OK;
 }
