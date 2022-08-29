@@ -45,6 +45,9 @@ int main() {
             textcolor(DEFAULT, STD, STD);
             printf("\r\n");
         }
+        while(!getchar()){
+
+        }
     }
 
     cleanup_platform();

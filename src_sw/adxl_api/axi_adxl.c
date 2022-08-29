@@ -2051,7 +2051,6 @@ int axi_adxl_set_fifo_mode(axi_adxl *ptr, enum fifo_mode_enum fifo_mode){
 
 	}
 
-
 	adxl_dev_set_fifo_ctl(ptr->dev, (adxl_dev_get_fifo_ctl(ptr->dev) & ~FIFO_CTL_FIFO_MODE) | fifo_mode);
 
 	return ADXL_OK;
@@ -2091,9 +2090,9 @@ int axi_adxl_set_samples(axi_adxl *ptr, uint8_t samples){
 		return ADXL_UNCORRECT_VALUE;		
 	}
 
-	printf("[ADXL_SET_SAMPLES] : changing value from %d samples to %d samples", adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_SAMPLES, samples);
+	printf("[ADXL_SET_SAMPLES] : changing value from %d samples to %d samples\r\n", adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_SAMPLES, samples);
 
-	adxl_dev_set_fifo_ctl(ptr->dev, (adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_SAMPLES) | samples);
+	adxl_dev_set_fifo_ctl(ptr->dev, (adxl_dev_get_fifo_ctl(ptr->dev) & ~FIFO_CTL_SAMPLES) | samples);
 
 	return ADXL_OK;
 }

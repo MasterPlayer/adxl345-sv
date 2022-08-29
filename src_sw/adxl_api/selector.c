@@ -1506,7 +1506,7 @@ int selector_axi_adxl_set_fifo_mode(axi_adxl *ptr){
     }else{
         textcolor(DEFAULT, BLACK, RED);
     }
-    printf("3. TRIGGER");
+    printf("4. TRIGGER");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
@@ -1517,11 +1517,11 @@ int selector_axi_adxl_set_fifo_mode(axi_adxl *ptr){
     uint8_t value = atoi(str);
 
     switch (value){
-        case 1 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_BYPASS);
-        case 2 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_FIFO);
-        case 3 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_STREAM);
-        case 4 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_TRIGGER);
-        default : return ADXL_UNCORRECT_VALUE
+        case 1 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_BYPASS); break;
+        case 2 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_FIFO); break;
+        case 3 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_STREAM); break;
+        case 4 : status = axi_adxl_set_fifo_mode(ptr, FIFO_MODE_TRIGGER); break;
+        default : return ADXL_UNCORRECT_VALUE;
     }
 
     return status;

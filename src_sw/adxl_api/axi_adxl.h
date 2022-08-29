@@ -138,7 +138,7 @@ enum fifo_mode_enum {
     FIFO_MODE_FIFO    = 0x40,
     FIFO_MODE_STREAM  = 0x80, 
     FIFO_MODE_TRIGGER = 0xC0
-}
+};
 
 
 
