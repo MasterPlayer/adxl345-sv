@@ -100,6 +100,7 @@ void print_menu(){
     printf("\t      44. \tBandwidth rate setup [REG_44]\r\n");
     printf("\t    4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
     printf("\t    4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
+    printf("\t     455. \tSwitch linking mode\r\n");
     printf("\t     461. \tInterrupt enable [REG_46][ENABLE]\r\n");
     printf("\t     460. \tInterrupt disable [REG_46][DISABLE]\r\n");
     printf("\t      47. \tInterrupt map changing [REG_47]\r\n");
@@ -124,6 +125,7 @@ void print_menu(){
     printf("\t102. Get ACT status\r\n");
     printf("\t103. Get TAP status\r\n");
     printf("\t104. Get SLEEP status\r\n");
+    printf("\t105. Get Linking mode\r\n");
 
 }
 
@@ -189,6 +191,10 @@ int menu(axi_adxl *ptr, int mode){
 
         case 4530 : 
             status = selector_axi_adxl_measurement_stop(ptr); 
+        break;
+
+        case 455 : 
+            status = selector_axi_adxl_set_linking_mode(ptr);
         break;
 
         case 461 : 
@@ -345,6 +351,10 @@ int menu(axi_adxl *ptr, int mode){
 
         case 104 : 
             status = selector_axi_adxl_has_sleep_status(ptr);
+        break;
+
+        case 105 : 
+            selector_axi_adxl_has_linking_mode(ptr);
         break;
 
         default :

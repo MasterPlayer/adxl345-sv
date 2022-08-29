@@ -61,3 +61,7 @@ int selector_axi_adxl_get_trigger(axi_adxl *ptr);
 int selector_axi_adxl_has_act_status(axi_adxl *ptr);
 int selector_axi_adxl_has_tap_status(axi_adxl *ptr);
 int selector_axi_adxl_has_sleep_status(axi_adxl *ptr);
+
+
+int selector_axi_adxl_set_linking_mode(axi_adxl *ptr);
+int selector_axi_adxl_has_linking_mode(axi_adxl *ptr);

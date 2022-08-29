@@ -270,3 +270,7 @@ int axi_adxl_get_samples(axi_adxl *ptr, uint8_t *samples);
 // 0x39
 int axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries);
 int axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr);
+
+
+int axi_adxl_set_linking_mode(axi_adxl *ptr, int state);
+int axi_adxl_has_linking_mode(axi_adxl *ptr);
