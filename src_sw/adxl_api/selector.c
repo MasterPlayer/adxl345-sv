@@ -1639,3 +1639,92 @@ int selector_axi_adxl_get_trigger(axi_adxl *ptr){
     return status;
 
 }
+
+
+
+int selector_axi_adxl_has_act_status(axi_adxl *ptr){
+    printf("[MENU] : selected checking for ACT status\r\n");
+
+    if (axi_adxl_has_act_status(ptr, ACT_X_SRC)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("ACTIVITY X");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_status(ptr, ACT_Y_SRC)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("ACTIVITY Y");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_status(ptr, ACT_Z_SRC)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("ACTIVITY Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    return ADXL_OK;
+
+}
+
+
+
+int selector_axi_adxl_has_tap_status(axi_adxl *ptr){
+    printf("[MENU] : selected checking for TAP status\r\n");
+
+    if (axi_adxl_has_act_status(ptr, TAP_X_SRC)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("TAP X");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_status(ptr, TAP_Y_SRC)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("TAP Y");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_act_status(ptr, TAP_Z_SRC)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("TAP Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    return ADXL_OK;
+
+}
+
+
+
+int selector_axi_adxl_has_sleep_status(axi_adxl *ptr){
+    printf("[MENU] : selected checking for SLEEP status\r\n");
+
+    printf("SLEEP MODE ");
+    if (axi_adxl_has_sleep_status(ptr)){
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("<actived>");
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+        printf("<inactived>");
+    }
+    textcolor(DEFAULT, BLACK, RED);
+    printf("\r\n")
+}

@@ -2204,3 +2204,20 @@ int axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries){
 int axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr){
 	return (adxl_dev_get_fifo_status(ptr->dev) & FIFO_STATUS_TRIGGER_MASK)	? TRUE : FALSE;
 }
+
+
+
+int axi_adxl_has_act_status(axi_adxl *ptr, enum act_tap_status_enum act){
+	return (adxl_dev_get_act_tap_status(ptr->dev) & act) ? TRUE : FALSE;
+}
+
+
+
+int axi_adxl_has_tap_status(axi_adxl *ptr, enum act_tap_status_enum tap){
+	return (adxl_dev_get_act_tap_status(ptr->dev) & tap) ? TRUE : FALSE;
+}
+
+
+int axi_adxl_has_sleep_status(axi_adxl *ptr){
+	return (adxl_dev_get_act_tap_status(ptr->dev) & ASLEEP) ? TRUE : FALSE;
+}

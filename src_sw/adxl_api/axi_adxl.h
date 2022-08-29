@@ -140,7 +140,15 @@ enum fifo_mode_enum {
     FIFO_MODE_TRIGGER = 0xC0
 };
 
-
+enum act_tap_status_enum{
+    ACT_X_SRC = 0x40,
+    ACT_Y_SRC = 0x20,
+    ACT_Z_SRC = 0x10,
+    ASLEEP    = 0x08,
+    TAP_X_SRC = 0x04,
+    TAP_Y_SRC = 0x02,
+    TAP_Z_SRC = 0x01
+};
 
 
 // measure precision in G or Seconds
@@ -225,6 +233,11 @@ int axi_adxl_change_time_ff(axi_adxl *ptr, uint8_t time_ff);
 // 0x2A 
 int axi_adxl_change_tap_axes(axi_adxl *ptr, uint8_t mask);
 int axi_adxl_tap_axes_actived(axi_adxl *ptr, uint8_t mask);
+// 0x2B
+int axi_adxl_has_act_status(axi_adxl *ptr, enum act_tap_status_enum act);
+int axi_adxl_has_tap_status(axi_adxl *ptr, enum act_tap_status_enum tap);
+int axi_adxl_has_sleep_status(axi_adxl *ptr);
+
 // 0x1E
 int axi_adxl_get_ofsx(axi_adxl *ptr, int8_t *ofsx);
 int axi_adxl_get_ofsy(axi_adxl *ptr, int8_t *ofsy);

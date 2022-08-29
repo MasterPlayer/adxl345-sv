@@ -119,6 +119,10 @@ void print_menu(){
     printf("\r\n");
     printf("\t100. Dump device register space\r\n");
     printf("\t101. Get offsets X Y Z to structure\r\n");
+    printf("\t102. Get ACT status\r\n");
+    printf("\t103. Get TAP status\r\n");
+    printf("\t104. Get SLEEP status\r\n");
+
 }
 
 
@@ -310,6 +314,9 @@ int menu(axi_adxl *ptr, int mode){
             status = selector_axi_adxl_has_fifo_sts_trigger(ptr);
         break;
 
+
+
+
         case 100 :
             status = selector_axi_adxl_dev_debug_register_space(ptr);
         break;
@@ -317,6 +324,18 @@ int menu(axi_adxl *ptr, int mode){
         case 101 :
         	status = selector_axi_adxl_get_offsets(ptr);
 		break;
+
+        case 102 :
+            status = selector_axi_adxl_has_act_status(ptr);
+        break;
+    
+        case 103 :
+            status = selector_axi_adxl_has_tap_status(ptr);
+        break;
+
+        case 104 : 
+            status = selector_axi_adxl_has_sleep_status(ptr);
+        break;
 
         default :
             printf("[MENU] : incorrect selection : 0x%02x\r\n", mode);
