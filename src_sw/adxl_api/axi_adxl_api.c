@@ -94,7 +94,6 @@ void print_menu(){
     printf("\t    40. \tFreefall threshold change [REG_40]\r\n");
     printf("\t    41. \tFreefall time change [REG_41]\r\n");
     printf("\t    42. \tTAP axes control[REG_42]\r\n");
-
     printf("\t    44. \tBandwidth rate setup [REG_44]\r\n");
     printf("\t  4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
     printf("\t  4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
@@ -103,14 +102,15 @@ void print_menu(){
     printf("\t    47. \tInterrupt map changing [REG_47]\r\n");
     printf("\t    48. \tGet last actived interrupt [REG_48]\r\n");
     printf("\t 49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
-
+    printf("\t   500. \tPrint data from data registers [REG_50]\r\n");
+    printf("\t   501. \tPrint float data from data registers [REG_50]\r\n");
 
     textcolor(REVERSE, STD, STD);
     printf("======================<Show statistics>======================");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
     printf("\t100. Dump device register space\r\n");
-    printf("\t101. Get offsets X Y Z to structure");
+    printf("\t101. Get offsets X Y Z to structure\r\n");
 }
 
 
@@ -274,6 +274,13 @@ int menu(axi_adxl *ptr, int mode){
             status = selector_axi_adxl_get_int_source(ptr);
         break;
 
+        case 500 :
+        	status = selector_axi_adxl_get_data(ptr);
+        break;
+
+        case 501:
+        	status = selector_axi_adxl_get_data_float(ptr);
+		break;
 
         case 100 :
             status = selector_axi_adxl_dev_debug_register_space(ptr);
@@ -339,43 +346,48 @@ void adxl_intr_handler(void *callback){
     axi_adxl *ptr = (axi_adxl*)callback;
     uint8_t interrupt_mask;
     
-    status = axi_adxl_get_int_source(ptr, &interrupt_mask);
+    int status = axi_adxl_get_int_source(ptr, &interrupt_mask);
     if (status != ADXL_OK){
         printf("[IRQ] : bad returning status : %d", status);
     }
 
+    adxl_data_float data;
+    axi_adxl_get_data_float(ptr, &data);
 
-    if (axi_adxl_has_int_source(ptr, DATA_READY)){
-        printf("[DR] %6d\r\n", irq_indexator);
+    if ((axi_adxl_has_int_source(ptr, DATA_READY)) && (axi_adxl_interrupt_enabled(ptr, DATA_READY))){
+        printf("[DR] ");
     }
 
-    if (axi_adxl_has_int_source(ptr, SINGLE_TAP)){
-        printf("[ST] %6d\r\n", irq_indexator);
+    if ((axi_adxl_has_int_source(ptr, SINGLE_TAP)) && (axi_adxl_interrupt_enabled(ptr, SINGLE_TAP))){
+        printf("[ST] ");
     }
 
-    if (axi_adxl_has_int_source(ptr, DOUBLE_TAP)){
-        printf("[DT] %6d\r\n", irq_indexator);
+    if ((axi_adxl_has_int_source(ptr, DOUBLE_TAP)) && (axi_adxl_interrupt_enabled(ptr, DOUBLE_TAP))){
+        printf("[DT] ");
     }
 
-    if (axi_adxl_has_int_source(ptr, ACTIVITY)){
-        printf("[AC] %6d\r\n", irq_indexator);
+    if ((axi_adxl_has_int_source(ptr, ACTIVITY)) && (axi_adxl_interrupt_enabled(ptr, ACTIVITY))){
+        printf("[AC] ");
     }
 
-    if (axi_adxl_has_int_source(ptr, INACTIVITY)){
-        printf("[IA] %6d\r\n", irq_indexator);
+    if ((axi_adxl_has_int_source(ptr, INACTIVITY)) && (axi_adxl_interrupt_enabled(ptr, INACTIVITY))){
+        printf("[IA] ");
     }
 
-    if (axi_adxl_has_int_source(ptr, FREE_FALL)){
-        printf("[FF] %6d\r\n", irq_indexator);
+    if ((axi_adxl_has_int_source(ptr, FREE_FALL)) && (axi_adxl_interrupt_enabled(ptr, FREE_FALL))){
+        printf("[FF] ");
     }
 
-    if (axi_adxl_has_int_source(ptr, WATERMARK)){
-        printf("[WM] %6d\r\n", irq_indexator);
+    if ((axi_adxl_has_int_source(ptr, WATERMARK)) && (axi_adxl_interrupt_enabled(ptr, WATERMARK))){
+        printf("[WM] ");
     }
 
-    if (axi_adxl_has_int_source(ptr, OVERRUN)){
-        printf("[OV] %6d\r\n", irq_indexator);
+    if ((axi_adxl_has_int_source(ptr, OVERRUN)) && (axi_adxl_interrupt_enabled(ptr, OVERRUN))){
+        printf("[OV] ");
     }
+
+    printf("X : %4.6f \tY : %4.6f \tZ : %4.6f\r\n", data.x, data.y, data.z);
+
 
     irq_indexator++;
     axi_adxl_irq_ack(ptr);

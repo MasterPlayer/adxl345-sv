@@ -20,6 +20,13 @@
 #define ADXL_DEV_RO_COUNT 10
 #define ADXL_DEV_RESERVED_COUNT 34
 
+#define SENSITIVITY_FULL_RES 256
+#define SENSITIVITY_2G 256
+#define SENSITIVITY_4G 128
+#define SENSITIVITY_8G 64
+#define SENSITIVITY_16G 32
+
+
 static int rw_address_const[ADXL_DEV_RW_COUNT] = {29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 49, 56};
 static int ro_address_const[ADXL_DEV_RO_COUNT] = {0, 43, 48, 50, 51, 52, 53, 54, 55, 57};
 static int reserved_address_const[ADXL_DEV_RESERVED_COUNT] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,58,59,60,61,62,63};
@@ -31,12 +38,26 @@ typedef struct {
 	int8_t ofsz;
 }adxl_offset;
 
+
+typedef struct {
+	int16_t x;
+	int16_t y;
+	int16_t z;
+}adxl_data;
+
+typedef struct {
+	float x;
+	float y;
+	float z;
+}adxl_data_float;
+
 typedef struct {
     int has_init;
     adxl_cfg *cfg;
     adxl_dev *dev;
     int init_flaq;
     adxl_offset offset;
+    adxl_data data;
 } axi_adxl;
 
 
@@ -212,3 +233,10 @@ int axi_adxl_get_int_map(axi_adxl *ptr, uint8_t mask);
 // 0x30 
 int axi_adxl_get_int_source(axi_adxl *ptr, uint8_t *interrupt_mask);
 int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask);
+
+#define axi_adxl_get_datax(ptr) (int16_t)(((uint16_t)adxl_dev_get_datax1((ptr)->dev)<<8) + ((uint16_t)adxl_dev_get_datax0((ptr)->dev)))
+#define axi_adxl_get_datay(ptr) (int16_t)(((uint16_t)adxl_dev_get_datay1((ptr)->dev)<<8) + ((uint16_t)adxl_dev_get_datay0((ptr)->dev)))
+#define axi_adxl_get_dataz(ptr) (int16_t)(((uint16_t)adxl_dev_get_dataz1((ptr)->dev)<<8) + ((uint16_t)adxl_dev_get_dataz0((ptr)->dev)))
+
+int axi_adxl_get_data(axi_adxl *ptr, adxl_data *data);
+int axi_adxl_get_data_float(axi_adxl *ptr, adxl_data_float *data_float);

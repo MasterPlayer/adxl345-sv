@@ -48,3 +48,5 @@ int selector_axi_adxl_set_ofsy(axi_adxl *ptr);
 int selector_axi_adxl_set_ofsz(axi_adxl *ptr);
 int selector_axi_adxl_change_int_map(axi_adxl *ptr);
 int selector_axi_adxl_get_int_source(axi_adxl *ptr);
+int selector_axi_adxl_get_data(axi_adxl *ptr);
+int selector_axi_adxl_get_data_float(axi_adxl *ptr);

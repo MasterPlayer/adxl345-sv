@@ -1873,7 +1873,7 @@ int axi_adxl_get_int_source(axi_adxl *ptr, uint8_t *interrupt_mask){
 		return ADXL_LINK_LOST;
 	}
 
-	*interrupt_mask = adxl_dev_get_int_source(ptr);
+	*interrupt_mask = adxl_dev_get_int_source(ptr->dev);
 
 	return ADXL_OK;
 }
@@ -1881,8 +1881,101 @@ int axi_adxl_get_int_source(axi_adxl *ptr, uint8_t *interrupt_mask){
 
 
 int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask){
-	return (adxl_dev_get_int_source(ptr) & interrupt_mask) ? TRUE : FALSE;
+	return (adxl_dev_get_int_source(ptr->dev) & interrupt_mask) ? TRUE : FALSE;
 }
 
 
+
+
+
+int axi_adxl_get_data(axi_adxl *ptr, adxl_data *data){
+
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_DATA] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_DATA] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	(*data).x = ((int16_t)adxl_dev_get_datax1(ptr->dev) << 8) + (int16_t)adxl_dev_get_datax0(ptr->dev);
+	(*data).y = ((int16_t)adxl_dev_get_datay1(ptr->dev) << 8) + (int16_t)adxl_dev_get_datay0(ptr->dev);
+	(*data).z = ((int16_t)adxl_dev_get_dataz1(ptr->dev) << 8) + (int16_t)adxl_dev_get_dataz0(ptr->dev);
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_get_data_float(axi_adxl *ptr, adxl_data_float *data_float){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_DATA_FLOAT] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_DATA_FLOAT] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	int16_t x = (int16_t)axi_adxl_get_datax(ptr);
+	int16_t y = (int16_t)axi_adxl_get_datay(ptr);
+	int16_t z = (int16_t)axi_adxl_get_datax(ptr);
+
+	if (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_FULL_RES){
+		data_float->x = (float)x/SENSITIVITY_FULL_RES;
+		data_float->y = (float)y/SENSITIVITY_FULL_RES;
+		data_float->z = (float)z/SENSITIVITY_FULL_RES;
+
+	}else{
+		switch (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_RANGE_MASK){
+
+			case DATA_FORMAT_RANGE_2G:
+				data_float->x = (float)x/SENSITIVITY_2G;
+				data_float->y = (float)y/SENSITIVITY_2G;
+				data_float->z = (float)z/SENSITIVITY_2G;
+			break;
+
+			case DATA_FORMAT_RANGE_4G:
+				data_float->x = (float)x/SENSITIVITY_4G;
+				data_float->y = (float)y/SENSITIVITY_4G;
+				data_float->z = (float)z/SENSITIVITY_4G;
+			break;
+
+			case DATA_FORMAT_RANGE_8G:
+				data_float->x = (float)x/SENSITIVITY_8G;
+				data_float->y = (float)y/SENSITIVITY_8G;
+				data_float->z = (float)z/SENSITIVITY_8G;
+			break;
+
+			case DATA_FORMAT_RANGE_16G:
+				data_float->x = (float)x/SENSITIVITY_16G;
+				data_float->y = (float)y/SENSITIVITY_16G;
+				data_float->z = (float)z/SENSITIVITY_16G;
+			break;
+
+			default :
+				printf("[ADXL_GET_DATA_FLOAT] : \r\n");
+			break;
+		}
+	}
+
+	return ADXL_OK;
+}
 

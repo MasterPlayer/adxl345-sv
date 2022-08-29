@@ -1234,89 +1234,90 @@ int selector_axi_adxl_change_int_map(axi_adxl *ptr){
     printf("1. DATA_READY [currently mapped ");
     if (axi_adxl_get_int_map(ptr, DATA_READY)){
         textcolor(DEFAULT, BLACK, RED);
-        printf("<INT1>]\r\n");
+        printf("<INT1>]");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
-        printf("<INT0>]\r\n");
+        printf("<INT0>]");
     }
     textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
 
     printf("2. SINGLE_TAP [currently mapped ");
     if (axi_adxl_get_int_map(ptr, SINGLE_TAP)){
         textcolor(DEFAULT, BLACK, RED);
-        printf("<INT1>]\r\n");
+        printf("<INT1>]");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
-        printf("<INT0>]\r\n");
+        printf("<INT0>]");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
 
     printf("3. DOUBLE_TAP [currently mapped ");
     if (axi_adxl_get_int_map(ptr, DOUBLE_TAP)){
         textcolor(DEFAULT, BLACK, RED);
-        printf("<INT1>]\r\n");
+        printf("<INT1>]");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
-        printf("<INT0>]\r\n");
+        printf("<INT0>]");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
 
     printf("4. ACTIVITY [currently mapped ");
     if (axi_adxl_get_int_map(ptr, ACTIVITY)){
         textcolor(DEFAULT, BLACK, RED);
-        printf("<INT1>]\r\n");
+        printf("<INT1>]");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
-        printf("<INT0>]\r\n");
+        printf("<INT0>]");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
 
     printf("5. INACTIVITY [currently mapped ");
     if (axi_adxl_get_int_map(ptr, INACTIVITY)){
         textcolor(DEFAULT, BLACK, RED);
-        printf("<INT1>]\r\n");
+        printf("<INT1>]");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
-        printf("<INT0>]\r\n");
+        printf("<INT0>]");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
 
     printf("6. FREE_FALL [currently mapped ");
     if (axi_adxl_get_int_map(ptr, FREE_FALL)){
         textcolor(DEFAULT, BLACK, RED);
-        printf("<INT1>]\r\n");
+        printf("<INT1>]");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
-        printf("<INT0>]\r\n");
+        printf("<INT0>]");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
 
     printf("7. WATERMARK [currently mapped ");
     if (axi_adxl_get_int_map(ptr, WATERMARK)){
         textcolor(DEFAULT, BLACK, RED);
-        printf("<INT1>]\r\n");
+        printf("<INT1>]");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
-        printf("<INT0>]\r\n");
+        printf("<INT0>]");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
 
     printf("8. OVERRUN [currently mapped ");
     if (axi_adxl_get_int_map(ptr, OVERRUN)){
         textcolor(DEFAULT, BLACK, RED);
-        printf("<INT1>]\r\n");
+        printf("<INT1>]");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
-        printf("<INT0>]\r\n");
+        printf("<INT0>]");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
 
     char str [256];
     char *str_ptr = str;
@@ -1352,7 +1353,7 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
 
     printf("[MENU] : selected show which interrupt last asserted\r\n");
 
-    if (axi_adxl_has_int_source(ptr, DATA_READY)){
+    if ((axi_adxl_has_int_source(ptr, DATA_READY)) && (axi_adxl_interrupt_enabled(ptr, DATA_READY)) ){
         textcolor(DEFAULT, BLACK, GREEN);
 
     }else{
@@ -1363,7 +1364,7 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    if (axi_adxl_has_int_source(ptr, SINGLE_TAP)){
+    if ((axi_adxl_has_int_source(ptr, SINGLE_TAP))&& (axi_adxl_interrupt_enabled(ptr, SINGLE_TAP)) ){
         textcolor(DEFAULT, BLACK, GREEN);
 
     }else{
@@ -1374,7 +1375,7 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    if (axi_adxl_has_int_source(ptr, DOUBLE_TAP)){
+    if ((axi_adxl_has_int_source(ptr, DOUBLE_TAP))&& (axi_adxl_interrupt_enabled(ptr, DOUBLE_TAP)) ){
         textcolor(DEFAULT, BLACK, GREEN);
 
     }else{
@@ -1385,7 +1386,7 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    if (axi_adxl_has_int_source(ptr, ACTIVITY)){
+    if ((axi_adxl_has_int_source(ptr, ACTIVITY)) && (axi_adxl_interrupt_enabled(ptr, ACTIVITY)) ){
         textcolor(DEFAULT, BLACK, GREEN);
 
     }else{
@@ -1396,7 +1397,7 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    if (axi_adxl_has_int_source(ptr, INACTIVITY)){
+    if ((axi_adxl_has_int_source(ptr, INACTIVITY)) && (axi_adxl_interrupt_enabled(ptr, INACTIVITY)) ){
         textcolor(DEFAULT, BLACK, GREEN);
 
     }else{
@@ -1407,7 +1408,7 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    if (axi_adxl_has_int_source(ptr, FREE_FALL)){
+    if ((axi_adxl_has_int_source(ptr, FREE_FALL)) && (axi_adxl_interrupt_enabled(ptr, FREE_FALL)) ){
         textcolor(DEFAULT, BLACK, GREEN);
 
     }else{
@@ -1418,7 +1419,7 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    if (axi_adxl_has_int_source(ptr, WATERMARK)){
+    if ((axi_adxl_has_int_source(ptr, WATERMARK)) && (axi_adxl_interrupt_enabled(ptr, WATERMARK)) ){
         textcolor(DEFAULT, BLACK, GREEN);
 
     }else{
@@ -1429,7 +1430,7 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
-    if (axi_adxl_has_int_source(ptr, OVERRUN)){
+    if ((axi_adxl_has_int_source(ptr, OVERRUN)) && (axi_adxl_interrupt_enabled(ptr, OVERRUN)) ){
         textcolor(DEFAULT, BLACK, GREEN);
 
     }else{
@@ -1443,3 +1444,23 @@ int selector_axi_adxl_get_int_source(axi_adxl *ptr){
     return status;
 }
 
+
+int selector_axi_adxl_get_data(axi_adxl *ptr){
+	int status = axi_adxl_get_data(ptr, &(ptr->data));
+	printf("[MENU] : selected printing text from data registers\r\n");
+	printf("X : %d\r\n", ptr->data.x);
+	printf("Y : %d\r\n", ptr->data.y);
+	printf("Z : %d\r\n", ptr->data.z);
+
+	return status;
+}
+
+
+int selector_axi_adxl_get_data_float(axi_adxl *ptr){
+	adxl_data_float data;
+	int status = axi_adxl_get_data_float(ptr, &data);
+	printf("[MENU] : selected printing float text from data register\r\n");
+	printf("X : %4.6f \tY : %4.6f \tZ : %4.6f\r\n", data.x, data.y, data.z);
+	return status;
+
+}
