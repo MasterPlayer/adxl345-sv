@@ -275,3 +275,7 @@ int axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr);
 int axi_adxl_set_linking_mode(axi_adxl *ptr, int state);
 int axi_adxl_has_linking_mode(axi_adxl *ptr);
 int axi_adxl_get_linking_mode(axi_adxl *ptr, int *state);
+
+int axi_adxl_set_autosleep_mode(axi_adxl *ptr, int state);
+int axi_adxl_has_autosleep_mode(axi_adxl *ptr);
+int axi_adxl_get_autosleep_mode(axi_adxl *ptr, int *state)

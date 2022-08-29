@@ -2286,3 +2286,72 @@ int axi_adxl_get_linking_mode(axi_adxl *ptr, int *state){
 int axi_adxl_has_linking_mode(axi_adxl *ptr){
 	return (adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_LINK_MASK)? TRUE : FALSE;
 }
+
+
+
+int axi_adxl_set_autosleep_mode(axi_adxl *ptr, int state) {
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_AUTOSLP] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_AUTOSLP] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("Current state of autosleep is ");
+	if (adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_AUTO_SLEEP_MASK){
+		textcolor(DEFAULT, STD, RED);
+		printf("actived");
+	}else{
+		textcolor(DEFAULT, BLACK, GREEN);
+		printf("inactived");
+	}
+    textcolor(DEFAULT, STD, STD);
+	printf("\r\n");
+
+	adxl_dev_set_power_ctl(ptr->dev, (adxl_dev_get_power_ctl(ptr->dev) & ~POWER_CTL_AUTO_SLEEP_MASK) ^ (state & POWER_CTL_AUTO_SLEEP_MASK));	
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_has_autosleep_mode(axi_adxl *ptr) {
+	return (adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_AUTO_SLEEP_MASK) ? TRUE : FALSE;
+}
+
+
+
+int axi_adxl_get_autosleep_mode(axi_adxl *ptr, int *state) {
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_AUTOSLP] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_AUTOSLP] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*state = adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_AUTO_SLEEP_MASK;
+
+	return ADXL_OK;
+}
+
+
