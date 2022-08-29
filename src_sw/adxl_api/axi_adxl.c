@@ -2142,7 +2142,7 @@ int axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries){
 		return ADXL_LINK_LOST;
 	}
 
-	*entries = adxl_dev_get_fifo_status(adxl->dev) & FIFO_STATUS_ENTRIES_MASK;
+	*entries = adxl_dev_get_fifo_status(ptr->dev) & FIFO_STATUS_ENTRIES_MASK;
 
 	return ADXL_OK;
 
@@ -2151,5 +2151,5 @@ int axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries){
 
 
 int axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr){
-	return (adxl_dev_get_fifo_status(adxl->dev) & FIFO_STATUS_TRIGGER_MASK)	? TRUE : FALSE;
+	return (adxl_dev_get_fifo_status(ptr->dev) & FIFO_STATUS_TRIGGER_MASK)	? TRUE : FALSE;
 }
