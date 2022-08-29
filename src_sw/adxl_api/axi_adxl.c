@@ -2107,7 +2107,7 @@ int axi_adxl_get_trigger(axi_adxl *ptr, uint8_t *trigger_flaq){
 		return ADXL_LINK_LOST;
 	}
 
-	*trigger_flaq = (adxl_dev_get_fifo_ctl(ptr->dev) & ~FIFO_CTL_TRIGGER);
+	*trigger_flaq = (adxl_dev_get_fifo_ctl(ptr->dev) & FIFO_CTL_TRIGGER);
 
 	return ADXL_OK;
 
