@@ -247,10 +247,11 @@ int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask);
 
 int axi_adxl_get_data(axi_adxl *ptr, adxl_data *data);
 int axi_adxl_get_data_float(axi_adxl *ptr, adxl_data_float *data_float);
-
+// 0x38
 int axi_adxl_set_fifo_mode(axi_adxl *ptr, enum fifo_mode_enum fifo_mode);
 int axi_adxl_has_fifo_mode(axi_adxl *ptr, enum fifo_mode_enum fifo_mode);
-
+int axi_adxl_set_trigger(axi_adxl *ptr, uint32_t trigger_flaq);
+int axi_adxl_get_trigger(axi_adxl *ptr, uint32_t *trigger_flaq);
 int axi_adxl_set_samples(axi_adxl *ptr, uint8_t samples);
 int axi_adxl_get_samples(axi_adxl *ptr, uint8_t *samples);
 // 0x39

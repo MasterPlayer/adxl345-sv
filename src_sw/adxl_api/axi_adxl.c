@@ -2064,6 +2064,57 @@ int axi_adxl_has_fifo_mode(axi_adxl *ptr, enum fifo_mode_enum fifo_mode){
 
 
 
+int axi_adxl_set_trigger(axi_adxl *ptr, uint8_t trigger_flaq){
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_TRIGGER] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_TRIGGER] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	adxl_dev_set_fifo_ctl(ptr->dev, (adxl_dev_get_fifo_ctl(ptr->dev) & ~FIFO_CTL_TRIGGER) | trigger_flaq);
+
+	return ADXL_OK;
+
+}	
+
+
+
+int axi_adxl_get_trigger(axi_adxl *ptr, uint8_t *trigger_flaq){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_TRIGGER] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_TRIGGER] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*trigger_flaq = (adxl_dev_get_fifo_ctl(ptr->dev) & ~FIFO_CTL_TRIGGER);
+
+	return ADXL_OK;
+
+}
+
+
+
 int axi_adxl_set_samples(axi_adxl *ptr, uint8_t samples){
 
 	if (ptr->init_flaq != 1){
@@ -2136,7 +2187,7 @@ int axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries){
 
 	if (!adxl_cfg_ctl_link(ptr->cfg)) {
 	    textcolor(DEFAULT, RED, STD);
-		printf("\t[ADXL_GET_SAMPLES] : Link down");
+		printf("\t[ADXL_GET_ENTRIES] : Link down");
 	    textcolor(DEFAULT, STD, STD);
 	    printf("\r\n");
 		return ADXL_LINK_LOST;

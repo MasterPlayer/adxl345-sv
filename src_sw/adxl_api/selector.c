@@ -1578,7 +1578,7 @@ int selector_axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr){
     printf("[MENU] : selected show trigger of FIFO status\r\n");
     printf("Trigger status : ");
     if (axi_adxl_has_fifo_sts_trigger(ptr)) {
-        textcolor(DEFAULT, BLACK, GREEN);
+        textcolor(DEFAULT, BLACK, RED);
         printf("Triggered");
     }else{
         textcolor(DEFAULT, BLACK, GREEN);
@@ -1588,4 +1588,54 @@ int selector_axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr){
     printf("\r\n");
 
     return ADXL_OK;
+}
+
+
+
+int selector_axi_adxl_set_trigger(axi_adxl *ptr){
+    printf("[MENU] : selected set trigger of FIFO \r\n");
+    uint8_t trigger;
+    int status = axi_adxl_get_trigger(ptr, &trigger);
+    printf("Current state of trigger ");
+    if (trigger){
+        textcolor(DEFAULT, BLACK, RED);
+        printf("actived");
+    }else{
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("inactived");
+    }
+    textcolor(DEFAULT, STD, STD);
+    printf("Change status?\r\n");
+
+    char str [256];
+    char *str_ptr = str;
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+    if (value){
+        axi_adxl_set_trigger(ptr, (~trigger & FIFO_CTL_TRIGGER));
+    }
+
+}
+
+
+
+int selector_axi_adxl_get_trigger(axi_adxl *ptr){
+
+    printf("[MENU] : selected get trigger of FIFO \r\n");
+    uint8_t trigger;
+    int status = axi_adxl_get_trigger(ptr, &trigger);
+    printf("Current state of trigger ");
+    if (trigger){
+        textcolor(DEFAULT, BLACK, RED);
+        printf("actived");
+    }else{
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("inactived");
+    }
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+    return status;
+
 }

@@ -310,7 +310,6 @@ int menu(axi_adxl *ptr, int mode){
             status = selector_axi_adxl_has_fifo_sts_trigger(ptr);
         break;
 
-
         case 100 :
             status = selector_axi_adxl_dev_debug_register_space(ptr);
         break;
@@ -318,7 +317,6 @@ int menu(axi_adxl *ptr, int mode){
         case 101 :
         	status = selector_axi_adxl_get_offsets(ptr);
 		break;
-
 
         default :
             printf("[MENU] : incorrect selection : 0x%02x\r\n", mode);

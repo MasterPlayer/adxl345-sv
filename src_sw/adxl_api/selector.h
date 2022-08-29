@@ -55,3 +55,5 @@ int selector_axi_adxl_set_samples(axi_adxl *ptr);
 int selector_axi_adxl_get_samples(axi_adxl *ptr);
 int selector_axi_adxl_get_fifo_sts_entries(axi_adxl *ptr);
 int selector_axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr);
+int selector_axi_adxl_set_trigger(axi_adxl *ptr);
+int selector_axi_adxl_get_trigger(axi_adxl *ptr);
