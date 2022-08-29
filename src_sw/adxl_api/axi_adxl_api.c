@@ -108,6 +108,8 @@ void print_menu(){
     printf("\t     500. \tPrint data from data registers [REG_50]\r\n");
     printf("\t     501. \tPrint float data from data registers [REG_50]\r\n");
     printf("\t    5678. \tFIFO mode setup [REG_56][BIT_7][BIT_6]\r\n");
+    printf("\t    5650. \tFIFO trigger setup[REG_56][BIT_5]\r\n");
+    printf("\t    5651. \tFIFO trigger show current_state [REG_56][BIT_5]\r\n");
     printf("\t56432100. \tSamples set [REG_56][BIT_4][BIT_3][BIT_2][BIT_1][BIT_0]\r\n"); 
     printf("\t56432101. \tSamples get [REG_56][BIT_4][BIT_3][BIT_2][BIT_1][BIT_0]\r\n"); 
     printf("\t    5750. \tFIFO entries get [REG_57][BIT_5][BIT_4][BIT_3][BIT_2][BIT_1][BIT_0]\r\n");
@@ -296,6 +298,14 @@ int menu(axi_adxl *ptr, int mode){
 
         case 5678:
             status = selector_axi_adxl_set_fifo_mode(ptr);
+        break;
+
+        case 5650 :
+        	status = selector_axi_adxl_set_trigger(ptr);
+		break;
+
+        case 5651 :
+        	status = selector_axi_adxl_get_trigger(ptr);
         break;
 
         case 56432100 : 

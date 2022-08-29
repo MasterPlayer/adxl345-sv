@@ -137,7 +137,7 @@ typedef struct {
 #define DATA_FORMAT_RANGE_MASK          0x03//000000xx   RANGE
 
 #define FIFO_CTL_FIFO_MODE              0xC0 // xx000000
-#define FIFO_CTL_TRIGGER                0x40 // 00x00000
+#define FIFO_CTL_TRIGGER                0x20 // 00x00000
 #define FIFO_CTL_SAMPLES                0x1F // 000xxxxx
 
 #define FIFO_STATUS_ENTRIES_MASK 		0x3F
