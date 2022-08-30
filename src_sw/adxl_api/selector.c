@@ -1791,7 +1791,7 @@ int selector_axi_adxl_set_autosleep_mode(axi_adxl *ptr){
 
     int status = 0;
 
-    printf("Current state of linking mode is ");
+    printf("Current state of autosleep mode is ");
     if (axi_adxl_has_autosleep_mode(ptr)){
         textcolor(DEFAULT, BLACK, RED);
         printf("actived");
@@ -1834,4 +1834,122 @@ int selector_axi_adxl_has_autosleep_mode(axi_adxl *ptr){
     }
     textcolor(DEFAULT, STD, STD);
 
+}
+
+
+
+int selector_axi_adxl_set_sleep_mode(axi_adxl *ptr){
+    printf("[MENU] : selected sleep mode change\r\n");
+
+    int status = 0;
+
+    printf("Current state of sleep mode is ");
+    if (axi_adxl_has_sleep_mode(ptr)){
+        textcolor(DEFAULT, BLACK, RED);
+        printf("actived");
+    }else{
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("inactived");
+    }
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+    printf("Switch state?\r\n");
+
+    char str [256];
+    char *str_ptr = str;
+    while((*str_ptr++=getchar ()) != 13);
+    *str_ptr = '\0';
+    uint8_t value = atoi(str);
+
+    uint8_t autoslp;
+    axi_adxl_get_sleep_mode(ptr, &autoslp);
+
+    if (value){
+        status = axi_adxl_set_sleep_mode(ptr, (~autoslp) & POWER_CTL_AUTO_SLEEP_MASK);
+    }
+
+    return status;
+}
+
+
+
+int selector_axi_adxl_has_sleep_mode(axi_adxl *ptr){
+    printf("[MENU] : selected check sleep mode");
+
+    printf("Current state of sleep is ");
+    if (axi_adxl_has_sleep_mode(ptr)){
+        textcolor(DEFAULT, BLACK, RED);
+        printf("actived");
+    }else{
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("inactived");
+    }
+    textcolor(DEFAULT, STD, STD);
+
+}
+
+
+
+
+
+
+int selector_axi_adxl_set_wakeup(axi_adxl *ptr){
+
+    printf("[MENU] : selected changing wakeup mode\r\n");
+    int status = 0;
+    char str [256];
+    char *str_ptr = str;
+    printf("Enter new wakeup mode\r\n");
+    
+    if (axi_adxl_has_wakeup(ptr, WAKEUP_8HZ)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("1. 8 Hz");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_wakeup(ptr, WAKEUP_4HZ)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("2. 4 Hz");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_wakeup(ptr, WAKEUP_2HZ)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("3. 2 Hz");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (axi_adxl_has_wakeup(ptr, WAKEUP_1HZ)){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("4. 1 Hz");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    uint8_t value = atoi(str);
+
+    switch (value){
+        case 1 : status = axi_adxl_set_wakeup(ptr, WAKEUP_8HZ); break;
+        case 2 : status = axi_adxl_set_wakeup(ptr, WAKEUP_4HZ); break;
+        case 3 : status = axi_adxl_set_wakeup(ptr, WAKEUP_2HZ); break;
+        case 4 : status = axi_adxl_set_wakeup(ptr, WAKEUP_1HZ); break;
+        default : return ADXL_UNCORRECT_VALUE;
+    }
+
+    return status;
 }

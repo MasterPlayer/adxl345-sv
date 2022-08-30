@@ -1858,6 +1858,7 @@ int axi_adxl_change_int_map(axi_adxl *ptr, uint8_t int_mask){
 
 
 int axi_adxl_get_int_map(axi_adxl *ptr, uint8_t mask){
+
 	return (adxl_dev_get_int_map(ptr->dev) & mask);
 }
 
@@ -1881,6 +1882,7 @@ int axi_adxl_get_int_source(axi_adxl *ptr, uint8_t *interrupt_mask){
 
 
 int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask){
+
 	return (adxl_dev_get_int_source(ptr->dev) & interrupt_mask) ? TRUE : FALSE;
 }
 
@@ -1889,7 +1891,6 @@ int axi_adxl_has_int_source(axi_adxl *ptr, uint8_t interrupt_mask){
 
 
 int axi_adxl_get_data(axi_adxl *ptr, adxl_data *data){
-
 
 	if (ptr->init_flaq != 1){
 	    textcolor(DEFAULT, RED, STD);
@@ -2202,23 +2203,27 @@ int axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries){
 
 
 int axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr){
+
 	return (adxl_dev_get_fifo_status(ptr->dev) & FIFO_STATUS_TRIGGER_MASK)	? TRUE : FALSE;
 }
 
 
 
 int axi_adxl_has_act_status(axi_adxl *ptr, enum act_tap_status_enum act){
+
 	return (adxl_dev_get_act_tap_status(ptr->dev) & act) ? TRUE : FALSE;
 }
 
 
 
 int axi_adxl_has_tap_status(axi_adxl *ptr, enum act_tap_status_enum tap){
+
 	return (adxl_dev_get_act_tap_status(ptr->dev) & tap) ? TRUE : FALSE;
 }
 
 
 int axi_adxl_has_sleep_status(axi_adxl *ptr){
+
 	return (adxl_dev_get_act_tap_status(ptr->dev) & ASLEEP) ? TRUE : FALSE;
 }
 
@@ -2284,6 +2289,7 @@ int axi_adxl_get_linking_mode(axi_adxl *ptr, int *state){
 
 
 int axi_adxl_has_linking_mode(axi_adxl *ptr){
+
 	return (adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_LINK_MASK)? TRUE : FALSE;
 }
 
@@ -2326,6 +2332,7 @@ int axi_adxl_set_autosleep_mode(axi_adxl *ptr, int state) {
 
 
 int axi_adxl_has_autosleep_mode(axi_adxl *ptr) {
+
 	return (adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_AUTO_SLEEP_MASK) ? TRUE : FALSE;
 }
 
@@ -2335,7 +2342,7 @@ int axi_adxl_get_autosleep_mode(axi_adxl *ptr, int *state) {
 
 	if (ptr->init_flaq != 1){
 	    textcolor(DEFAULT, RED, STD);
-		printf("\t[ADXL_SET_AUTOSLP] : has no init device");
+		printf("\t[ADXL_GET_SLP] : has no init device");
 	    textcolor(DEFAULT, STD, STD);
 	    printf("\r\n");
 		return ADXL_UNINIT;
@@ -2343,7 +2350,7 @@ int axi_adxl_get_autosleep_mode(axi_adxl *ptr, int *state) {
 
 	if (!adxl_cfg_ctl_link(ptr->cfg)) {
 	    textcolor(DEFAULT, RED, STD);
-		printf("\t[ADXL_SET_AUTOSLP] : Link down");
+		printf("\t[ADXL_GET_SLP] : Link down");
 	    textcolor(DEFAULT, STD, STD);
 	    printf("\r\n");
 		return ADXL_LINK_LOST;
@@ -2354,4 +2361,157 @@ int axi_adxl_get_autosleep_mode(axi_adxl *ptr, int *state) {
 	return ADXL_OK;
 }
 
+
+
+int axi_adxl_set_sleep_mode(axi_adxl *ptr, int state){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_SLP] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_SLP] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("Current state of sleep is ");
+
+	if (adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_SLEEP_MASK){
+		textcolor(DEFAULT, STD, RED);
+		printf("actived");
+	}else{
+		textcolor(DEFAULT, BLACK, GREEN);
+		printf("inactived");
+	}
+    textcolor(DEFAULT, STD, STD);
+
+	printf("\r\n");
+
+	adxl_dev_set_power_ctl(ptr->dev, (adxl_dev_get_power_ctl(ptr->dev) & ~POWER_CTL_SLEEP_MASK) ^ (state & POWER_CTL_SLEEP_MASK));	
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_has_sleep_mode(axi_adxl *ptr){
+
+	return (adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_SLEEP_MASK) ? TRUE : FALSE;
+}
+
+
+
+int axi_adxl_get_sleep_mode(axi_adxl *ptr, int state){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_SLP] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_GET_SLP] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	*state = adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_SLEEP_MASK;
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_set_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_WKP] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_WKP] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("[ADXL_SET_WKP] : changing wakeup mode from ");
+
+	switch(adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_WAKEUP_MASK){
+		case WAKEUP_8HZ : 
+			printf("8 Hz ");
+		break;
+
+		case WAKEUP_4HZ : 
+			printf("4 Hz ");
+		break;
+
+		case WAKEUP_2HZ : 
+			printf("2 Hz ");
+		break;
+
+		case WAKEUP_1HZ : 
+			printf("1 Hz ");
+		break;
+
+		default : 
+			printf("<undefined> ");
+			return ADXL_UNCORRECT_VALUE;
+		break;
+
+	}
+
+	printf("to ");
+
+	switch(wakeup){
+		case WAKEUP_8HZ : 
+			printf("8 Hz\r\n");
+		break;
+
+		case WAKEUP_4HZ : 
+			printf("4 Hz\r\n");
+		break;
+
+		case WAKEUP_2HZ : 
+			printf("2 Hz\r\n");
+		break;
+
+		case WAKEUP_1HZ : 
+			printf("1 Hz\r\n");
+		break;
+
+		default : 
+			printf("<undefined> ");
+			return ADXL_UNCORRECT_VALUE;
+		break;
+
+	}
+
+	adxl_dev_set_power_ctl(ptr->dev, (adxl_dev_get_power_ctl(ptr->dev) & ~POWER_CTL_WAKEUP_MASK) | fifo_mode);
+
+	return ADXL_OK;
+}
+
+
+
+int axi_adxl_has_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup){
+
+	return ((adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_WAKEUP_MASK) == wakeup) ? TRUE : FALSE;
+}
 

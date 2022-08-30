@@ -151,6 +151,14 @@ enum act_tap_status_enum{
 };
 
 
+enum wakeup_enum{
+    WAKEUP_8HZ = 0x00,
+    WAKEUP_4HZ = 0x01,
+    WAKEUP_2HZ = 0x02,
+    WAKEUP_1HZ = 0x03
+};
+
+
 // measure precision in G or Seconds
 #define SCALE_THRESH_TAP        (0.0625)
 #define SCALE_OFS               (0.015625)        //15.6 us
@@ -279,3 +287,10 @@ int axi_adxl_get_linking_mode(axi_adxl *ptr, int *state);
 int axi_adxl_set_autosleep_mode(axi_adxl *ptr, int state);
 int axi_adxl_has_autosleep_mode(axi_adxl *ptr);
 int axi_adxl_get_autosleep_mode(axi_adxl *ptr, int *state);
+
+int axi_adxl_set_sleep_mode(axi_adxl *ptr, int state);
+int axi_adxl_has_sleep_mode(axi_adxl *ptr);
+int axi_adxl_get_sleep_mode(axi_adxl *ptr, int state);
+
+int axi_adxl_set_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup);
+int axi_adxl_has_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup);

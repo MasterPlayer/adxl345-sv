@@ -68,3 +68,8 @@ int selector_axi_adxl_has_linking_mode(axi_adxl *ptr);
 
 int selector_axi_adxl_set_autosleep_mode(axi_adxl *ptr);
 int selector_axi_adxl_has_autosleep_mode(axi_adxl *ptr);
+
+int selector_axi_adxl_set_sleep_mode(axi_adxl *ptr);
+int selector_axi_adxl_has_sleep_mode(axi_adxl *ptr);
+
+int selector_axi_adxl_set_wakeup(axi_adxl *ptr);

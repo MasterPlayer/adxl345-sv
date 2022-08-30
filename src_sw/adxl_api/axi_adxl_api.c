@@ -98,6 +98,8 @@ void print_menu(){
     printf("\t      41. \tFreefall time change [REG_41]\r\n");
     printf("\t      42. \tTAP axes control[REG_42]\r\n");
     printf("\t      44. \tBandwidth rate setup [REG_44]\r\n");
+    printf("\t    4510. \tWakeUp switch state [REG_45][BIT_1][BIT_0]\r\n");
+    printf("\t     452. \tSwitch sleep mode\r\n");
     printf("\t    4531. \tMeasure start [REG_45][BIT_3][ENABLE]\r\n");
     printf("\t    4530. \tMeasure stop [REG_45][BIT_3][DISABLE]\r\n");
     printf("\t     454. \tSwitch autosleep mode\r\n");
@@ -127,6 +129,8 @@ void print_menu(){
     printf("\t103. Get TAP status\r\n");
     printf("\t104. Get SLEEP status\r\n");
     printf("\t105. Get Linking mode\r\n");
+    printf("\t106. Get AutoSleep mode\r\n");
+    printf("\t107. Get Sleep mode\r\n");
 
 }
 
@@ -192,6 +196,14 @@ int menu(axi_adxl *ptr, int mode){
 
         case 4530 : 
             status = selector_axi_adxl_measurement_stop(ptr); 
+        break;
+
+        case 4510 : 
+            status = selector_axi_adxl_set_wakeup(ptr);
+        break;
+
+        case 452 : 
+            status = selector_axi_adxl_set_sleep_mode(ptr);
         break;
 
         case 454 : 
@@ -361,6 +373,15 @@ int menu(axi_adxl *ptr, int mode){
         case 105 : 
             selector_axi_adxl_has_linking_mode(ptr);
         break;
+
+        case 106 : 
+            selector_axi_adxl_has_autosleep_mode(ptr);
+        break;
+
+        case 107 : 
+            selector_axi_adxl_has_sleep_mode(ptr);
+        break;
+
 
         default :
             printf("[MENU] : incorrect selection : 0x%02x\r\n", mode);
