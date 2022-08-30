@@ -1769,7 +1769,7 @@ int selector_axi_adxl_set_linking_mode(axi_adxl *ptr){
 
 
 int selector_axi_adxl_has_linking_mode(axi_adxl *ptr){
-    printf("[MENU] : selected check linking mode");
+    printf("[MENU] : selected check linking mode\r\n");
 
     printf("Current state of linking mode is ");
     if (axi_adxl_has_linking_mode(ptr)){
@@ -1780,7 +1780,7 @@ int selector_axi_adxl_has_linking_mode(axi_adxl *ptr){
         printf("inactived");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n")
 }
 
 
@@ -1822,7 +1822,7 @@ int selector_axi_adxl_set_autosleep_mode(axi_adxl *ptr){
 
 
 int selector_axi_adxl_has_autosleep_mode(axi_adxl *ptr){
-    printf("[MENU] : selected check autosleep mode");
+    printf("[MENU] : selected check autosleep mode\r\n");
 
     printf("Current state of autosleep is ");
     if (axi_adxl_has_autosleep_mode(ptr)){
@@ -1833,7 +1833,8 @@ int selector_axi_adxl_has_autosleep_mode(axi_adxl *ptr){
         printf("inactived");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
+    return ADXL_OK;
 }
 
 
@@ -1874,7 +1875,7 @@ int selector_axi_adxl_set_sleep_mode(axi_adxl *ptr){
 
 
 int selector_axi_adxl_has_sleep_mode(axi_adxl *ptr){
-    printf("[MENU] : selected check sleep mode");
+    printf("[MENU] : selected check sleep mode\r\n");
 
     printf("Current state of sleep is ");
     if (axi_adxl_has_sleep_mode(ptr)){
@@ -1885,7 +1886,8 @@ int selector_axi_adxl_has_sleep_mode(axi_adxl *ptr){
         printf("inactived");
     }
     textcolor(DEFAULT, STD, STD);
-
+    printf("\r\n");
+    return ADXL_OK;
 }
 
 

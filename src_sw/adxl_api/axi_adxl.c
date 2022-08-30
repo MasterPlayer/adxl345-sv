@@ -2408,7 +2408,7 @@ int axi_adxl_has_sleep_mode(axi_adxl *ptr){
 
 
 
-int axi_adxl_get_sleep_mode(axi_adxl *ptr, int state){
+int axi_adxl_get_sleep_mode(axi_adxl *ptr, int *state){
 
 	if (ptr->init_flaq != 1){
 	    textcolor(DEFAULT, RED, STD);
@@ -2503,7 +2503,7 @@ int axi_adxl_set_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup){
 
 	}
 
-	adxl_dev_set_power_ctl(ptr->dev, (adxl_dev_get_power_ctl(ptr->dev) & ~POWER_CTL_WAKEUP_MASK) | fifo_mode);
+	adxl_dev_set_power_ctl(ptr->dev, (adxl_dev_get_power_ctl(ptr->dev) & ~POWER_CTL_WAKEUP_MASK) | wakeup);
 
 	return ADXL_OK;
 }

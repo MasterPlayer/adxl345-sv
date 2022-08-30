@@ -290,7 +290,7 @@ int axi_adxl_get_autosleep_mode(axi_adxl *ptr, int *state);
 
 int axi_adxl_set_sleep_mode(axi_adxl *ptr, int state);
 int axi_adxl_has_sleep_mode(axi_adxl *ptr);
-int axi_adxl_get_sleep_mode(axi_adxl *ptr, int state);
+int axi_adxl_get_sleep_mode(axi_adxl *ptr, int *state);
 
 int axi_adxl_set_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup);
 int axi_adxl_has_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup);
