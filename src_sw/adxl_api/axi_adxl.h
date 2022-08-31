@@ -294,3 +294,17 @@ int axi_adxl_get_sleep_mode(axi_adxl *ptr, int *state);
 
 int axi_adxl_set_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup);
 int axi_adxl_has_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup);
+
+int axi_adxl_selftest(axi_adxl *ptr, int state);
+int axi_adxl_has_selftest(axi_adxl *ptr);
+
+int axi_adxl_set_spi_mode(axi_adxl *ptr, int mode);
+int axi_adxl_has_spi_mode(axi_adxl *ptr);
+
+int axi_adxl_invert(axi_adxl *ptr, int mode);
+int axi_adxl_has_inverted(axi_adxl *ptr);
+
+int axi_adxl_justify(axi_adxl *ptr, int mode);
+int axi_adxl_has_justify(axi_adxl *ptr);
+
+

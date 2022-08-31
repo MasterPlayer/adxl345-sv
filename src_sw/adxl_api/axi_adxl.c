@@ -2515,3 +2515,184 @@ int axi_adxl_has_wakeup(axi_adxl *ptr, enum wakeup_enum wakeup){
 	return ((adxl_dev_get_power_ctl(ptr->dev) & POWER_CTL_WAKEUP_MASK) == wakeup) ? TRUE : FALSE;
 }
 
+
+
+int axi_adxl_selftest(axi_adxl *ptr, int state){
+
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SLFTST] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SLFTST] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("[ADXL_SLFTST] : change selftest from ");
+	if (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_SELFTEST_MASK){
+		printf("actived to ");
+	}else{
+		printf("inactived to ");
+	}
+	if (state == DATA_FORMAT_SELFTEST_MASK){
+		printf("actived\r\n");
+	}else{
+		printf("inactived\r\n");
+	}
+
+	adxl_dev_set_data_format(ptr->dev, (adxl_dev_get_data_format(ptr->dev) & ~DATA_FORMAT_SELFTEST_MASK) ^ state);
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_has_selftest(axi_adxl *ptr){
+	return (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_SELFTEST_MASK) ? TRUE : FALSE;
+}
+
+int axi_adxl_set_spi_mode(axi_adxl *ptr, int mode){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_SPI] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_SET_SPI] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("[ADXL_SET_SPI] : change status from \r\n");
+	if (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_SPI_MASK){
+		printf("3 WIRE SPI ");
+	}else{
+		printf("4 WIRE SPI ");
+	}
+	printf("to ");
+	if (mode & DATA_FORMAT_SPI_MASK){
+		printf("3 WIRE SPI\r\n");
+	}else{
+		printf("4 WIRE SPI\r\n");
+	}
+
+	adxl_dev_set_data_format(ptr->dev, (adxl_dev_get_data_format(ptr->dev) & ~DATA_FORMAT_SPI_MASK) ^ mode );
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_has_spi_mode(axi_adxl *ptr){
+	return (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_SPI_MASK) ? TRUE : FALSE;
+}
+
+
+
+int axi_adxl_invert(axi_adxl *ptr, int mode){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_INVRT] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_INVRT] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("[ADXL_INVRT] : change statement from ");
+	if (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_INT_INVERT_MASK){
+		printf("INVERTED to ");
+	}else{
+		printf("NON-INVERTED to");
+	}
+
+	if (mode & DATA_FORMAT_INT_INVERT_MASK){
+		printf("INVERTED\r\n");
+	}else{
+		printf("NON-INVERTED\r\n");
+	}
+	adxl_dev_set_data_format(ptr->dev, (adxl_dev_get_data_format(ptr->dev) & ~DATA_FORMAT_INT_INVERT_MASK) ^ (mode & DATA_FORMAT_INT_INVERT_MASK) );
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_has_inverted(axi_adxl *ptr){
+	return (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_INT_INVERT_MASK) ? TRUE : FALSE;
+}
+
+
+
+int axi_adxl_justify(axi_adxl *ptr, int mode){
+
+	if (ptr->init_flaq != 1){
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_JUSTIFY] : has no init device");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_UNINIT;
+	}
+
+	if (!adxl_cfg_ctl_link(ptr->cfg)) {
+	    textcolor(DEFAULT, RED, STD);
+		printf("\t[ADXL_JUSTIFY] : Link down");
+	    textcolor(DEFAULT, STD, STD);
+	    printf("\r\n");
+		return ADXL_LINK_LOST;
+	}
+
+	printf("[ADXL_JUSTIFY] : change statement from ");
+
+	if (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_JUSTIFY_MASK){
+		printf("MSB to ");
+	}else{
+		printf("LSB to ");
+	}
+
+	if (mode & DATA_FORMAT_JUSTIFY_MASK){
+		printf("MSB\r\n");
+	}else{
+		printf("LSB\r\n");
+	}
+
+	adxl_dev_set_data_format(ptr->dev, (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_JUSTIFY_MASK) ^ (mode & DATA_FORMAT_JUSTIFY_MASK));
+
+	return ADXL_OK;
+
+}
+
+
+
+int axi_adxl_has_justify(axi_adxl *ptr){
+	return (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_JUSTIFY_MASK) ? TRUE : FALSE;
+}
+
+
+
+

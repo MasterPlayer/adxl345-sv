@@ -1780,7 +1780,7 @@ int selector_axi_adxl_has_linking_mode(axi_adxl *ptr){
         printf("inactived");
     }
     textcolor(DEFAULT, STD, STD);
-    printf("\r\n")
+    printf("\r\n");
 }
 
 
@@ -1955,3 +1955,73 @@ int selector_axi_adxl_set_wakeup(axi_adxl *ptr){
 
     return status;
 }
+
+
+int selector_axi_adxl_selftest(axi_adxl *ptr){
+
+    printf("[MENU] : selected switch of selftest mode\r\n");
+
+    int status = 0;
+    char str [256];
+
+    char *str_ptr = str;
+
+    int selected_value = 0;
+
+    printf("Enter new wakeup mode\r\n");
+    printf("1. Selftest on");
+    printf("2. Selftest off");
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    selected_value = atoi(str);
+
+    switch (selected_value){
+    	case 1 : status = axi_adxl_selftest(ptr, DATA_FORMAT_SELFTEST_MASK); break;
+    	case 2 : status = axi_adxl_selftest(ptr, ~DATA_FORMAT_SELFTEST_MASK); break;
+    	default : return ADXL_UNCORRECT_VALUE;
+    }
+
+    return status;
+
+}
+
+
+
+int selector_axi_adxl_has_selftest(axi_adxl *ptr){
+
+}
+
+int selector_axi_adxl_set_spi_mode(axi_adxl *ptr){
+
+}
+
+
+
+int selector_axi_adxl_get_spi_mode(axi_adxl *ptr){
+
+}
+
+int selector_axi_adxl_invert(axi_adxl *ptr){
+
+}
+
+
+int selector_axi_adxl_has_inverted(axi_adxl *ptr){
+
+}
+
+
+int selector_axi_adxl_justify(axi_adxl *ptr){
+
+}
+
+
+
+int selector_axi_adxl_has_justify(axi_adxl *ptr){
+
+}
+
+
