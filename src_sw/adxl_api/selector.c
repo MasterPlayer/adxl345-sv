@@ -1969,8 +1969,8 @@ int selector_axi_adxl_selftest(axi_adxl *ptr){
     int selected_value = 0;
 
     printf("Enter new wakeup mode\r\n");
-    printf("1. Selftest on");
-    printf("2. Selftest off");
+    printf("1. Selftest on\r\n");
+    printf("2. Selftest off\r\n");
 
     while((*str_ptr++=getchar ()) != 13);
 
@@ -1991,36 +1991,166 @@ int selector_axi_adxl_selftest(axi_adxl *ptr){
 
 
 int selector_axi_adxl_has_selftest(axi_adxl *ptr){
-
+    printf("[MENU] : selected show status of selftest mode\r\n");
+    printf("Selftest mode ");
+    if (axi_adxl_has_selftest(ptr)) {
+        textcolor(DEFAULT, BLACK, RED);
+        printf("actived");
+    } else {
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("inactived");
+    }
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n")
+    return ADXL_OK;
 }
+
+
 
 int selector_axi_adxl_set_spi_mode(axi_adxl *ptr){
 
+    printf("[MENU] : selected switch of spi mode\r\n");
+
+    int status = 0;
+    char str [256];
+
+    char *str_ptr = str;
+
+    int selected_value = 0;
+
+    printf("Enter new spi mode\r\n");
+    printf("1. 3 wire spi\r\n");
+    printf("2. 4 wire spi\r\n");
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    selected_value = atoi(str);
+
+    switch (selected_value){
+        case 1 : status = axi_adxl_set_spi_mode(ptr, DATA_FORMAT_SPI_MASK); break;
+        case 2 : status = axi_adxl_set_spi_mode(ptr, ~DATA_FORMAT_SPI_MASK); break;
+        default : return ADXL_UNCORRECT_VALUE;
+    }
+
+    return status;
+
 }
 
 
 
-int selector_axi_adxl_get_spi_mode(axi_adxl *ptr){
-
+int selector_axi_adxl_has_spi_mode(axi_adxl *ptr){
+    printf("[MENU] : selected show status of spi mode\r\n");
+    printf("SPI mode ");
+    if (axi_adxl_has_spi_mode(ptr)) {
+        textcolor(DEFAULT, BLACK, RED);
+        printf("3 wire");
+    } else {
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("4 wire");
+    }
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n")
+    return ADXL_OK;
 }
+
+
 
 int selector_axi_adxl_invert(axi_adxl *ptr){
+
+    printf("[MENU] : selected switch of interrupt invert\r\n");
+
+    int status = 0;
+    char str [256];
+
+    char *str_ptr = str;
+
+    int selected_value = 0;
+
+    printf("Enter new spi mode\r\n");
+    printf("1. Direct interrupts\r\n");
+    printf("2. Inverted interrupts\r\n");
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    selected_value = atoi(str);
+
+    switch (selected_value){
+        case 1 : status = axi_adxl_invert(ptr, DATA_FORMAT_INT_INVERT_MASK); break;
+        case 2 : status = axi_adxl_invert(ptr, ~DATA_FORMAT_INT_INVERT_MASK); break;
+        default : return ADXL_UNCORRECT_VALUE;
+    }
+
+    return status;
 
 }
 
 
 int selector_axi_adxl_has_inverted(axi_adxl *ptr){
-
+    printf("[MENU] : selected show status of interrupt inversion\r\n");
+    printf("Inversion interrupts");
+    if (axi_adxl_has_inverted(ptr)) {
+        textcolor(DEFAULT, BLACK, RED);
+        printf("Inverted");
+    } else {
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("Directed");
+    }
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n")
+    return ADXL_OK;
 }
 
 
 int selector_axi_adxl_justify(axi_adxl *ptr){
+
+    printf("[MENU] : selected switch of justify function (MSB or LSB)\r\n");
+
+    int status = 0;
+    char str [256];
+
+    char *str_ptr = str;
+
+    int selected_value = 0;
+
+    printf("Enter new justify\r\n");
+    printf("1. MSB\r\n");
+    printf("2. LSB\r\n");
+
+    while((*str_ptr++=getchar ()) != 13);
+
+    *str_ptr = '\0';
+
+    selected_value = atoi(str);
+
+    switch (selected_value){
+        case 1 : status = axi_adxl_justify(ptr, DATA_FORMAT_JUSTIFY_MASK); break;
+        case 2 : status = axi_adxl_justify(ptr, ~DATA_FORMAT_JUSTIFY_MASK); break;
+        default : return ADXL_UNCORRECT_VALUE;
+    }
+
+    return status;
 
 }
 
 
 
 int selector_axi_adxl_has_justify(axi_adxl *ptr){
+    printf("[MENU] : selected show status of justify\r\n");
+    printf("Current data presentation mode ");
+    if (axi_adxl_has_justify(ptr)) {
+        textcolor(DEFAULT, BLACK, RED);
+        printf("MSB");
+    } else {
+        textcolor(DEFAULT, BLACK, GREEN);
+        printf("LSB");
+    }
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n")
+    return ADXL_OK;
 
 }
 

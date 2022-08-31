@@ -109,6 +109,10 @@ void print_menu(){
     printf("\t      47. \tInterrupt map changing [REG_47]\r\n");
     printf("\t      48. \tGet last actived interrupt [REG_48]\r\n");
     printf("\t   49310. \tRange change [REG_49][BIT_3][BIT_1][BIT_0]\r\n");
+    printf("\t     497. \tSelftest switch [REG_49][BIT_7]\r\n"); 
+    printf("\t     496. \tSPI Mode switch [REG_49][BIT_6]\r\n");
+    printf("\t     495. \tInterrupt invert switch [REG_49][BIT5\r\n");
+    printf("\t     492. \tJustify mode switch [REG_49][BIT_2]\r\n"); 
     printf("\t     500. \tPrint data from data registers [REG_50]\r\n");
     printf("\t     501. \tPrint float data from data registers [REG_50]\r\n");
     printf("\t    5678. \tFIFO mode setup [REG_56][BIT_7][BIT_6]\r\n");
@@ -131,7 +135,10 @@ void print_menu(){
     printf("\t105. Get Linking mode\r\n");
     printf("\t106. Get AutoSleep mode\r\n");
     printf("\t107. Get Sleep mode\r\n");
-
+    printf("\t108. Get SelfTest\r\n");
+    printf("\t109. Get SPI mode\r\n");
+    printf("\t110. Get Interrupt inversion\r\n");
+    printf("\t111. Get Justify\r\n");
 }
 
 
@@ -225,6 +232,23 @@ int menu(axi_adxl *ptr, int mode){
         case 49310 : 
             status = selector_axi_adxl_change_range(ptr);
         break;
+
+        case 497 : 
+            status = selector_axi_adxl_selftest(ptr);
+        break;
+
+        case 496 : 
+            status = selector_axi_adxl_set_spi_mode(ptr);
+        break;
+
+        case 495 : 
+            status = selector_axi_adxl_invert(ptr);
+        break;
+
+        case 492 : 
+            status = selector_axi_adxl_justify(ptr);
+        break;
+
 
         case 29 : //0x1D
             status = selector_axi_adxl_change_thresh_tap(ptr);
@@ -380,6 +404,22 @@ int menu(axi_adxl *ptr, int mode){
 
         case 107 : 
             selector_axi_adxl_has_sleep_mode(ptr);
+        break;
+
+        case 108 : 
+            status = selector_axi_adxl_has_selftest(ptr);
+        break;
+
+        case 109 : 
+            status = selector_axi_adxl_has_spi_mode(ptr);
+        break;
+
+        case 110 : 
+            status = selector_axi_adxl_has_inverted(ptr);
+        break;
+
+        case 111 : 
+            status = selector_axi_adxl_has_justify(ptr);
         break;
 
 

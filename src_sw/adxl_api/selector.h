@@ -78,7 +78,7 @@ int selector_axi_adxl_selftest(axi_adxl *ptr);
 int selector_axi_adxl_has_selftest(axi_adxl *ptr);
 
 int selector_axi_adxl_set_spi_mode(axi_adxl *ptr);
-int selector_axi_adxl_get_spi_mode(axi_adxl *ptr);
+int selector_axi_adxl_has_spi_mode(axi_adxl *ptr);
 
 int selector_axi_adxl_invert(axi_adxl *ptr);
 int selector_axi_adxl_has_inverted(axi_adxl *ptr);
