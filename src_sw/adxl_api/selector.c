@@ -2001,7 +2001,7 @@ int selector_axi_adxl_has_selftest(axi_adxl *ptr){
         printf("inactived");
     }
     textcolor(DEFAULT, STD, STD);
-    printf("\r\n")
+    printf("\r\n");
     return ADXL_OK;
 }
 
@@ -2051,7 +2051,7 @@ int selector_axi_adxl_has_spi_mode(axi_adxl *ptr){
         printf("4 wire");
     }
     textcolor(DEFAULT, STD, STD);
-    printf("\r\n")
+    printf("\r\n");
     return ADXL_OK;
 }
 
@@ -2100,7 +2100,7 @@ int selector_axi_adxl_has_inverted(axi_adxl *ptr){
         printf("Directed");
     }
     textcolor(DEFAULT, STD, STD);
-    printf("\r\n")
+    printf("\r\n");
     return ADXL_OK;
 }
 
@@ -2149,7 +2149,7 @@ int selector_axi_adxl_has_justify(axi_adxl *ptr){
         printf("LSB");
     }
     textcolor(DEFAULT, STD, STD);
-    printf("\r\n")
+    printf("\r\n");
     return ADXL_OK;
 
 }
