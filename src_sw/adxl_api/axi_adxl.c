@@ -178,25 +178,24 @@ void axi_adxl_dev_debug_register_space(adxl_dev *ptr){
 int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, uint8_t iic_address){
 
 	// Setup baseaddresses of component for sw struct
-    printf("\t[ADXL_INIT] : set address to pointers\r\n");
+    printf("\t\t[ADXL_INIT] : set address to pointers\r\n");
 
     ptr->cfg = (adxl_cfg*)baseaddr_cfg;
     ptr->dev = (adxl_dev*)baseaddr_dev;
 
-    printf("\t\tconfiguration address space : 0x%08x\r\n", baseaddr_cfg);
-    printf("\t\tconfiguration address space : 0x%08x\r\n", baseaddr_dev);
+    printf("\t\t\tconfiguration address space : 0x%08x\r\n", baseaddr_cfg);
+    printf("\t\t\tconfiguration address space : 0x%08x\r\n", baseaddr_dev);
 
     int timer = TIMER_LIMIT;
-
 
     /*If component working with device, we must stop them for correct initialization*/
     if (adxl_cfg_ctl_work(ptr->cfg) || adxl_cfg_ctl_interval_requestion(ptr->cfg)){
     	
-    	printf("\t[ADXL_INIT] : component currently perform operation\r\n");
+    	printf("\t\t[ADXL_INIT] : component currently perform operation\r\n");
 
     	if (adxl_cfg_ctl_interval_requestion(ptr->cfg)){
 			
-			printf("\t[ADXL_INIT] : interval requestion disable ");
+			printf("\t\t[ADXL_INIT] : interval requestion disable ");
 			
 			adxl_cfg_ctl_interval_requestion_disable(ptr->cfg);
 
@@ -225,7 +224,7 @@ int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, u
     	/*Unallow interrupts if allowed before*/
     	if (adxl_cfg_ctl_irq_allowed(ptr->cfg)){
     		
-    		printf("\t[ADXL_INIT] : irq allowed. Unallow process ");
+    		printf("\t\t[ADXL_INIT] : irq allowed. Unallow process ");
     		
     		adxl_cfg_ctl_irq_unallow(ptr->cfg);
 			
@@ -249,13 +248,13 @@ int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, u
 
     }
 
-    printf("\t[ADXL_INIT] : reset internal logic");
+    printf("\t\t[ADXL_INIT] : reset internal logic ");
     timer = TIMER_LIMIT;
     adxl_cfg_ctl_reset(ptr->cfg);
     while (!adxl_cfg_ctl_reset_completed(ptr->cfg)){
     	if (timer == 0) {
 			textcolor(DEFAULT, BLACK, RED);
-    		printf(" failed");
+    		printf("failed");
 			textcolor(DEFAULT, STD, STD);
 			printf("\r\n");
     		return ADXL_RESET_INFINITE;
@@ -264,19 +263,34 @@ int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, u
     	timer--;
     }
 	textcolor(DEFAULT, BLACK, GREEN);
-    printf(" completed");
+    printf("completed");
 	textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
 
 	/*Set I2C Address for work with device*/
-    printf("\t[ADXL_INIT] : set iic address for device : ");
+    printf("\t\t[ADXL_INIT] : install iic address of device <0x%02x> ", iic_address);
+	adxl_cfg_ctl_set_iic_address(ptr->cfg, iic_address);
+
+	timer = TIMER_LIMIT;
+
+	while (adxl_cfg_ctl_get_iic_address(ptr->cfg) != iic_address) {
+		if (timer == 0) {
+			textcolor(DEFAULT, BLACK, RED);
+			printf("failure");
+			textcolor(DEFAULT, STD, STD);
+			printf("\r\n");
+			return ADXL_TIMEOUT;
+		}
+		printf(".");
+		timer--;
+	}
+
 	textcolor(DEFAULT, BLACK, GREEN);
-    printf("0x%02x", iic_address);
+	printf("completed");
 	textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
-    adxl_cfg_ctl_set_iic_address(ptr->cfg, iic_address);
 
-    printf("\t[ADXL_INIT] : perform single request ");
+    printf("\t\t[ADXL_INIT] : perform single request ");
     adxl_cfg_ctl_single_request(ptr->cfg);
     timer = TIMER_LIMIT;
     while (!adxl_cfg_ctl_single_request_complete(ptr->cfg)){
@@ -297,7 +311,7 @@ int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, u
 
     timer = TIMER_LIMIT;
 
-    printf("\t[ADXL_INIT] : link ");
+    printf("\t\t[ADXL_INIT] : link ");
     while (!adxl_cfg_ctl_link(ptr->cfg)) {
     	if (timer == 0){
     		textcolor(DEFAULT, BLACK, RED);
@@ -333,6 +347,7 @@ int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, u
  * before reset, check about :
  * 1) Interval requestion is disabled
  * 2) ADXL_IRQ unallowed
+ *
  * */
 int axi_adxl_reset(axi_adxl *ptr){
 
@@ -473,7 +488,7 @@ int axi_adxl_perform_interval_requestion(axi_adxl *ptr, uint32_t requestion_inte
 
 	if (ptr->init_flaq != 1) {
 	    textcolor(DEFAULT, RED, STD);
-		printf("\t[ADXL_INTERVAL_REQ] : has no init device");
+		printf("\t\t[ADXL_INTERVAL_REQ] : has no init device");
 		textcolor(DEFAULT, STD, STD);
 		printf("\r\n");
 		return ADXL_UNINIT;
@@ -482,9 +497,10 @@ int axi_adxl_perform_interval_requestion(axi_adxl *ptr, uint32_t requestion_inte
 	adxl_cfg_set_request_interval(ptr->cfg, requestion_interval);
 
 	adxl_cfg_ctl_interval_requestion_enable(ptr->cfg);
+
 	int timer = TIMER_LIMIT;
 
-	printf("[ADXL_INTERVAL_REQ] : interval requestion ");
+	printf("\t\t[ADXL_INTERVAL_REQ] : interval requestion ");
 
 	while(!adxl_cfg_ctl_interval_requestion(ptr->cfg)){
 		if (timer == 0){
@@ -508,9 +524,10 @@ int axi_adxl_perform_interval_requestion(axi_adxl *ptr, uint32_t requestion_inte
 
 
 int axi_adxl_disable_interval_requestion(axi_adxl *ptr){
+
 	if (ptr->init_flaq != 1) {
 	    textcolor(DEFAULT, RED, STD);
-		printf("\t[ADXL_DISABLE_INTERVAL_REQ] : has no init device");
+		printf("\t\t[ADXL_DISABLE_INTERVAL_REQ] : has no init device");
 	    textcolor(DEFAULT, STD, STD);
 	    printf("\r\n");
 		return ADXL_UNINIT;
@@ -518,13 +535,34 @@ int axi_adxl_disable_interval_requestion(axi_adxl *ptr){
 
 	if (!adxl_cfg_ctl_link(ptr->cfg)){
 	    textcolor(DEFAULT, RED, STD);
-		printf("\t[ADXL_DISABLE_INTERVAL_REQ] : link lost");
+		printf("\t\t[ADXL_DISABLE_INTERVAL_REQ] : link lost");
 	    textcolor(DEFAULT, STD, STD);
 	    printf("\r\n");
 		return ADXL_LINK_LOST;
 	}
 
 	adxl_cfg_ctl_interval_requestion_disable(ptr->cfg);
+
+	int timer = TIMER_LIMIT;
+
+	printf("\t\t[ADXL_INTERVAL_REQ] : disable requestion ");
+
+	while(adxl_cfg_ctl_interval_requestion(ptr->cfg)){
+		if (timer == 0){
+			textcolor(DEFAULT, BLACK, RED);
+			printf("failed");
+			textcolor(DEFAULT, STD, STD);
+			printf("\r\n");
+			return ADXL_TIMEOUT;
+		}
+		timer--;
+		printf(".");
+	}
+	textcolor(DEFAULT, BLACK, GREEN);
+	printf("completed");
+	textcolor(DEFAULT, STD, STD);
+	printf("\r\n");
+
 
     return ADXL_OK;
 }
@@ -535,14 +573,14 @@ int axi_adxl_perform_single_request(axi_adxl *ptr, uint8_t address, uint8_t size
 
 	if (ptr->init_flaq != 1) {
 	    textcolor(DEFAULT, RED, STD);
-		printf("\t[ADXL_PRFRM_SNGL_REQ] : has no init device\r\n");
+		printf("\t\t[ADXL_PRFRM_SNGL_REQ] : has no init device\r\n");
 	    textcolor(DEFAULT, STD, STD);
 		return ADXL_UNINIT;
 	}
 
 	if (size < 1 || size > 58) {
 	    textcolor(DEFAULT, RED, STD);
-		printf("\t[ADXL_PRFRM_SNGL_REQ] : incorrect value: ");
+		printf("\t\t[ADXL_PRFRM_SNGL_REQ] : incorrect value: ");
 	    textcolor(DEFAULT, BLACK, RED);
 		printf("%d", size);
 	    textcolor(DEFAULT, STD, STD);
@@ -563,7 +601,7 @@ int axi_adxl_perform_single_request(axi_adxl *ptr, uint8_t address, uint8_t size
     while (!adxl_cfg_ctl_single_request_complete(ptr->cfg)){
     	if (timer == 0) {
     	    textcolor(DEFAULT, BLACK, RED);
-    		printf(" FAILED");
+    		printf("FAILED");
     		textcolor(DEFAULT, STD, STD);
     		printf("\r\n");
     		return ADXL_NO_COMPLETE_SINGLE_REQUEST;

@@ -11,6 +11,15 @@ void adxl_intr_handler(void *callback);
 int menu(axi_adxl *ptr, int mode);
 int gic_init(XScuGic *ptr, axi_adxl* adxl_ptr);
 
+const char *error_parser[] = { "SUCCESS", "UNINITIALIZED", "LINK LOST", "INFINITE RESET", "UNCOMPLETE REQUEST", "CANNOT STOP", "UNCORRECT VALUE", "TIMEOUT" };
+const char *function_list[] = {
+	"CFG_DBG",
+	"CFG_RST",
+	"CFG_INIT",
+	"SNGL_REQ",
+	"INT_REQ_EN"
+};
+
 
 int main() {
 
@@ -18,8 +27,7 @@ int main() {
 
     int status = 0;
     int mode = 0;
-    char s[256];
-
+    int enter = 0;
     axi_adxl adxl;
     XScuGic gic;
 
@@ -29,25 +37,25 @@ int main() {
 
         print_menu();
 
-        char *p = s;
-
-        while((*p++=getchar ()) != 13);
-        *p = '\0';
-        mode = atoi(s);
-
+        scanf("%d", &mode);
+    	enter = 0;
         status = menu(&adxl, mode);
-
+        int status_err = status * -1;
         if (status != ADXL_OK){
             textcolor(DEFAULT, STD, STD);
-            printf("[MAIN] : current operation performed with error ");
+            printf("[MAIN] : <%s> current operation performed with error ", function_list[mode]);
             textcolor(DEFAULT, BLACK, RED);
-            printf("<%d>", status);
+            int status_err = status * -1;
+            printf("<%d> : [%s]", status, error_parser[status_err]);
             textcolor(DEFAULT, STD, STD);
             printf("\r\n");
+        } else {
+            printf("\t[MENU] : <%s> completed, status : [%s]\r\n", function_list[mode], error_parser[status_err]);
         }
-        while(!getchar()){
 
-        }
+        while (enter != 1)
+        	scanf("%d", &enter);
+
     }
 
     cleanup_platform();
@@ -425,6 +433,8 @@ int menu(axi_adxl *ptr, int mode){
 
         default :
             printf("[MENU] : incorrect selection : 0x%02x\r\n", mode);
+            status = ADXL_UNCORRECT_VALUE;
+		break;
 
     }
 

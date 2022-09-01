@@ -14,7 +14,6 @@
 #define ADXL_CANNOT_STOP -5
 #define ADXL_UNCORRECT_VALUE -6
 #define ADXL_TIMEOUT -7
-
 /* Regsiter of device access */
 #define ADXL_DEV_RW_COUNT 20
 #define ADXL_DEV_RO_COUNT 10

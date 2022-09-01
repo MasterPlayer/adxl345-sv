@@ -12,18 +12,16 @@ int selector_axi_adxl_cfg_debug(axi_adxl *ptr){
 
 // 01 
 int selector_axi_adxl_reset(axi_adxl *ptr){
-    printf("[MENU] : reset component selected\r\n");
-    int status = axi_adxl_reset(ptr);
-    return status;
+    printf("\t[MENU] : reset component selected\r\n");
+    return axi_adxl_reset(ptr);
 }
 
 
 
 // 02
 int selector_axi_adxl_init(axi_adxl *ptr){
-    printf("[MENU] : initialization of component selected\r\n");
-    int status = axi_adxl_init(ptr, ADXL_CFG_BASEADDRESS, ADXL_DEV_BASEADDRESS, ADXL_IIC_ADDRESS);
-    return status;
+    printf("\t[MENU] : initialization of component selected\r\n");
+    return axi_adxl_init(ptr, ADXL_CFG_BASEADDRESS, ADXL_DEV_BASEADDRESS, ADXL_IIC_ADDRESS);
 }
 
 
@@ -31,101 +29,68 @@ int selector_axi_adxl_init(axi_adxl *ptr){
 // 03
 int selector_axi_adxl_perform_single_request(axi_adxl *ptr){
 
-    printf("[MENU] : single request by component selected\r\n");
+    uint8_t address;
+    uint8_t size;
 
-    char str [256];
-    char *str_ptr = str;
-
-    printf("[MENU] : Enter start address : ");
-    while((*str_ptr++=getchar ()) != 13);
-    *str_ptr = '\0';
-    uint8_t address = atoi(str);
+    printf("\t[MENU] : selected perform single request\r\n");
+    printf("\t[MENU] : Enter start address : ");
+    scanf("%d", &address);
     printf("%d\r\n", address);
-
-    str_ptr = &str[0];
-
-    printf("[MENU] : Enter size : ");
-    while((*str_ptr++=getchar ()) != 13);
-    *str_ptr = '\0';
-    uint8_t size = atoi(str);
+    printf("\t[MENU] : Enter size : ");
+    scanf("%d", &size);
     printf("%d\r\n", size);
-
-    int status = axi_adxl_perform_single_request(ptr, address, size);
-    return status;
+    return axi_adxl_perform_single_request(ptr, address, size);
 }
 
 
 //04
 int selector_axi_adxl_perform_interval_requestion(axi_adxl *ptr){
 
-    printf("[MENU] : enable interval requestion by component selected\r\n");
+    printf("\t[MENU] : enable interval requestion by component selected\r\n");
+    printf("\t[MENU] : Enter bandwidth value : ");
 
-    char str [256];
-    char *str_ptr = str;
+    uint8_t value;
+    scanf("%d", &value);
 
-    printf("[MENU] : Enter bandwidth value : ");
-
-    while((*str_ptr++=getchar ()) != 13);
-    *str_ptr = '\0';
-    uint8_t value = atoi(str);
-    printf("%d\r\n", value);
-
-    int status = axi_adxl_perform_interval_requestion(ptr, value);
-
-    return status;
+    return axi_adxl_perform_interval_requestion(ptr, value);
 }
 
 
 //05
 int selector_axi_adxl_disable_interval_requestion(axi_adxl *ptr){
 
-    printf("[MENU] : disable interval requestion by component selected\r\n");
+    printf("\t[MENU] : select disable interval requestion by component\r\n");
 
-    int status = axi_adxl_disable_interval_requestion(ptr);
-    return status;
+    return axi_adxl_disable_interval_requestion(ptr);
 }
 
 
 //06
 int selector_axi_adxl_irq_allow(axi_adxl *ptr){
 
-    printf("[MENU] : allow irq by component selected\r\n");
+    printf("\t[MENU] : selected allow irq\r\n");
 
-    int status = axi_adxl_irq_allow(ptr);
-    return status;
+    return axi_adxl_irq_allow(ptr);
 }
 
 
 
 //07
 int selector_axi_adxl_irq_unallow(axi_adxl *ptr){
-
-    printf("[MENU] : unallow irq by component selected\r\n");
-
-    int status = axi_adxl_irq_unallow(ptr);
-    return status;
+    printf("\t[MENU] : selected unallow irq\r\n");
+    return  axi_adxl_irq_unallow(ptr);
 }
 
 
 
 //08
 int selector_axi_adxl_calibration(axi_adxl *ptr){
-
-    printf("[MENU] : calibration selected\r\n");
-
-    char str [256];
-    char *str_ptr = str;
-
-    printf("[MENU] : Enter power of 2 for calibration: ");
-
-    while((*str_ptr++=getchar ()) != 13);
-    *str_ptr = '\0';
-    uint8_t value = atoi(str);
+    printf("\t[MENU] : calibration selected\r\n");
+    printf("\t[MENU] : Enter power of 2 for calibration: ");
+    uint8_t value;
+    scanf("%d", &value);
     printf("%d(calibration count : %d)\r\n", value, (1<<value));
-
-    int status = axi_adxl_calibration(ptr, value);
-
-    return status;
+    return axi_adxl_calibration(ptr, value);
 }
 
 
@@ -133,30 +98,20 @@ int selector_axi_adxl_calibration(axi_adxl *ptr){
 //09
 int selector_axi_adxl_set_iic_address(axi_adxl *ptr){
 
-    printf("[MENU] : setup new address for I2C device selected\r\n");
-
-    char str [256];
-    char *str_ptr = str;
-    printf("[MENU] : Enter new address of i2c device in decimal: ");
-    while((*str_ptr++=getchar ()) != 13);
-    *str_ptr = '\0';
-    uint8_t value = atoi(str);
+    printf("\t[MENU] : setup new address for I2C device selected\r\n");
+    uint8_t value;
+    scanf("%d", &value);
     printf("%d (hex address : 0x%02x)\r\n", value, value);
-    int status = axi_adxl_set_iic_address(ptr, value);
-    return status;
+    return axi_adxl_set_iic_address(ptr, value);
 }
 
 
 //50
 int selector_axi_adxl_set_bw_rate(axi_adxl *ptr){
 
-    printf("[MENU] : setup BW_RATE for device selected\r\n");
+    int status;
 
-    char str [256];
-    char *str_ptr = str;
-
-    int status = ADXL_OK;
-
+    printf("\t[MENU] : setup BW_RATE for device selected\r\n");
     printf("\t0. 0.10 Hz \r\n");
     printf("\t1. 0.20 Hz \r\n");
     printf("\t2. 0.39 Hz \r\n");
@@ -180,11 +135,11 @@ int selector_axi_adxl_set_bw_rate(axi_adxl *ptr){
     printf("\t20. 25 Hz low power\r\n");
     printf("\t21. 12_5 Hz low power\r\n");
 
-    printf("Enter bandwidth value : ");
-    while((*str_ptr++=getchar ()) != 13);
-    *str_ptr = '\0';
-    uint8_t value = atoi(str);
-    printf("%d\r\n", value);
+    printf("\tEnter bandwidth value : ");
+
+    uint8_t value;
+    scanf("%d", &value);
+
     switch (value){
         case  0 : status = axi_adxl_set_bw_rate(ptr, BW_RATE_0_10); break;
         case  1 : status = axi_adxl_set_bw_rate(ptr, BW_RATE_0_20); break;
@@ -208,7 +163,7 @@ int selector_axi_adxl_set_bw_rate(axi_adxl *ptr){
         case 19 : status = axi_adxl_set_bw_rate(ptr, BW_RATE_50_LP); break;
         case 20 : status = axi_adxl_set_bw_rate(ptr, BW_RATE_25_LP); break;
         case 21 : status = axi_adxl_set_bw_rate(ptr, BW_RATE_12_5_LP); break;
-       default : status = ADXL_UNCORRECT_VALUE;
+        default : status = ADXL_UNCORRECT_VALUE;
     }
     return status;
 }
@@ -217,33 +172,30 @@ int selector_axi_adxl_set_bw_rate(axi_adxl *ptr){
 //51
 int selector_axi_adxl_measurement_start(axi_adxl *ptr){
  
-    printf("[MENU] : start measure\r\n");
-    int status = axi_adxl_measurement_start(ptr);
-    return status;
+    printf("\t[MENU] : start measure\r\n");
+    return axi_adxl_measurement_start(ptr);
 }
 
 
 //52
 int selector_axi_adxl_measurement_stop(axi_adxl *ptr){
-    printf("[MENU] : stop measure\r\n");
-    int status = axi_adxl_measurement_stop(ptr);
-    return status;
+    printf("\t[MENU] : stop measure\r\n");
+    return axi_adxl_measurement_stop(ptr);
 }
 
 
 //53
 int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
-    char str [256];
-    char *str_ptr = str;
     int value; 
     int status = ADXL_OK;
-    printf("[MENU] : Selected which event for interrupt\r\n");
+
+    printf("\t[MENU] : Selected which event for interrupt\r\n");
     if (axi_adxl_interrupt_enabled(ptr, DATA_READY)){
 	    textcolor(DEFAULT, BLACK, GREEN);
     }else{
 	    textcolor(DEFAULT, BLACK, RED);
     }
-    printf("1. DATA_READY");
+    printf("\t1. DATA_READY");
     textcolor(DEFAULT, STD, STD);
     printf("\r\n");
 
@@ -252,7 +204,7 @@ int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
     }else{
 	    textcolor(DEFAULT, BLACK, RED);
     }
-    printf("2. SINGLE TAP");
+    printf("\t2. SINGLE TAP");
     textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
 
@@ -261,7 +213,7 @@ int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
     }else{
 	    textcolor(DEFAULT, BLACK, RED);
     }
-    printf("3. DOUBLE TAP");
+    printf("\t3. DOUBLE TAP");
     textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
 
@@ -270,7 +222,7 @@ int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
     }else{
 	    textcolor(DEFAULT, BLACK, RED);
     }
-    printf("4. ACTIVITY");
+    printf("\t4. ACTIVITY");
     textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
 
@@ -279,7 +231,7 @@ int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
     }else{
 	    textcolor(DEFAULT, BLACK, RED);
     }
-    printf("5. INACTIVITY");
+    printf("\t5. INACTIVITY");
     textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
 
@@ -288,7 +240,7 @@ int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
     }else{
 	    textcolor(DEFAULT, BLACK, RED);
     }
-    printf("6. FREE FALL");
+    printf("\t6. FREE FALL");
     textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
 
@@ -297,7 +249,7 @@ int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
     }else{
 	    textcolor(DEFAULT, BLACK, RED);
     }
-	printf("7. WATERMARK");
+	printf("\t7. WATERMARK");
     textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
 
@@ -306,15 +258,12 @@ int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
     }else{
 	    textcolor(DEFAULT, BLACK, RED);
     }
-	printf("8. OVERRUN");
+	printf("\t8. OVERRUN");
     textcolor(DEFAULT, STD, STD);
 	printf("\r\n");
 
     printf("Which interrupt will be enabled : ");
-    while((*str_ptr++=getchar ()) != 13);
-    *str_ptr = '\0';
-    value = atoi(str);
-    printf("%d\r\n", value);
+    scanf("%d", &value);
 
     switch (value){
         case 1 : status = axi_adxl_interrupt_enable(ptr, DATA_READY); break;
@@ -334,27 +283,25 @@ int selector_axi_adxl_interrupt_enable(axi_adxl *ptr){
 
 //54
 int selector_axi_adxl_interrupt_disable(axi_adxl *ptr){
-    char str [256];
-    char *str_ptr = str;
 
-    int status = ADXL_OK;
-    printf("[MENU] : Selected which interrupt must be disabled\r\n");
-    if (axi_adxl_interrupt_enabled(ptr, DATA_READY)){
-  	    textcolor(DEFAULT, BLACK, GREEN);
-      }else{
-  	    textcolor(DEFAULT, BLACK, RED);
-      }
-      printf("1. DATA_READY");
-      textcolor(DEFAULT, STD, STD);
-      printf("\r\n");
+    int status;
+    printf("\t[MENU] : Selected which interrupt must be disabled\r\n");
+	if (axi_adxl_interrupt_enabled(ptr, DATA_READY)){
+		textcolor(DEFAULT, BLACK, GREEN);
+	}else{
+		textcolor(DEFAULT, BLACK, RED);
+	}
+	printf("1. DATA_READY");
+	textcolor(DEFAULT, STD, STD);
+	printf("\r\n");
 
-      if (axi_adxl_interrupt_enabled(ptr, SINGLE_TAP)){
-  	    textcolor(DEFAULT, BLACK, GREEN);
-      }else{
-  	    textcolor(DEFAULT, BLACK, RED);
-      }
-      printf("2. SINGLE TAP");
-      textcolor(DEFAULT, STD, STD);
+	if (axi_adxl_interrupt_enabled(ptr, SINGLE_TAP)){
+		textcolor(DEFAULT, BLACK, GREEN);
+	}else{
+		textcolor(DEFAULT, BLACK, RED);
+	}
+	printf("2. SINGLE TAP");
+textcolor(DEFAULT, STD, STD);
   	printf("\r\n");
 
   	if (axi_adxl_interrupt_enabled(ptr, DOUBLE_TAP)){
@@ -412,10 +359,9 @@ int selector_axi_adxl_interrupt_disable(axi_adxl *ptr){
   	printf("\r\n");
 
     printf("Which interrupt will be disabled : ");
-    while((*str_ptr++=getchar ()) != 13);
-    *str_ptr = '\0';
-    uint8_t value = atoi(str);
-    printf("%d\r\n", value);
+
+    uint8_t value;
+	scanf("%d", &value);
 
     switch (value){
         case 1 : status = axi_adxl_interrupt_disable(ptr, DATA_READY); break;
