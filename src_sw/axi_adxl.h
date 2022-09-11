@@ -6,7 +6,8 @@
 #include "text_color.h"
 
 
-#define AXI_ADXL_LOGGING 1
+//#define AXI_ADXL_LOGGING_CFG
+//#define AXI_ADXL_LOGGING_DEV
 
 #define ADXL_OK 0
 #define ADXL_UNINIT -1
