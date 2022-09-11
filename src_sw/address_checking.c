@@ -1,6 +1,7 @@
 #include "axi_adxl.h"
 
 
+
 int check_access_rw(int address){
 	int flaq = 0;
 	for (int i = 0; i < ADXL_DEV_RW_COUNT; i++){
@@ -33,4 +34,15 @@ int check_access_reserved(int address){
 		}
 	}
 	return flaq;
+}
+
+
+
+int extract_function_list_address(int data) {
+	for (int i = 0; i < FUNCTIONS_COUNT; i++) {
+		if (data == function_index_list[i]) {
+			return i;
+		}
+	}
+	return ADXL_NON_FUNCTION;
 }

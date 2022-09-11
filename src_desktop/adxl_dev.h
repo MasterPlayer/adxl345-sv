@@ -1,10 +1,5 @@
 #pragma once
 
-#include <stdint.h>
-#include <stdio.h>
-#include <xil_types.h>
-
-
 typedef struct {
     uint8_t device_id_reg;
     uint8_t reserved1_reg;
@@ -70,7 +65,11 @@ typedef struct {
     uint8_t reserved61_reg;
     uint8_t reserved62_reg;
     uint8_t reserved63_reg;
-} adxl_dev;
+}adxl_dev;
+
+#define TRUE 1
+#define FALSE 0
+
 
 #define ACT_INACT_CTL_ACT_ACDC_MASK     0x80
 #define ACT_INACT_CTL_ACT_X_EN_MASK     0x40
@@ -140,10 +139,11 @@ typedef struct {
 #define DATA_FORMAT_RANGE_MASK          0x03//000000xx   RANGE
 
 #define FIFO_CTL_FIFO_MODE              0xC0 // xx000000
-#define FIFO_CTL_TRIGGER                0x40 // 00x00000
+#define FIFO_CTL_TRIGGER                0x20 // 00x00000
 #define FIFO_CTL_SAMPLES                0x1F // 000xxxxx
 
-#define FIFO_STATUS_ENTRIES_MASK 		0x7F
+#define FIFO_STATUS_ENTRIES_MASK 		0x3F
+#define FIFO_STATUS_TRIGGER_MASK        0x80
 
 #define DATA_FORMAT_FULL_RES 			0x08
 
@@ -227,3 +227,5 @@ typedef struct {
 #define adxl_dev_get_fifo_ctl(ptr) ((ptr)->fifo_ctl_reg)
 
 #define adxl_dev_get_fifo_status(ptr) ((ptr)->fifo_status_reg)
+
+

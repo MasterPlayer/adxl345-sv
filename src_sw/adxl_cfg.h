@@ -78,15 +78,14 @@ typedef struct {
 #define adxl_cfg_calibration(ptr) (ptr)->calibration_count_reg |= CFG_CAL_START_MASK
 #define adxl_cfg_calibration_completed(ptr) ((ptr)->calibration_count_reg & CFG_CAL_COMPLETE_MASK) ? TRUE : FALSE
 #define adxl_cfg_calibration_in_progress(ptr) ((ptr)->calibration_count_reg & CFG_CAL_IN_PROGRESS_MASK) ? TRUE : FALSE
-#define adxl_cfg_set_calibration_count_limit(ptr, limit) ((ptr)->calibration_count_reg = (limit & CFG_CAL_COUNT_LIMIT_MASK))
+#define adxl_cfg_set_calibration_count_limit(ptr, limit) ((ptr)->calibration_count_reg = ((~CFG_CAL_COUNT_LIMIT_MASK & (ptr)->calibration_count_reg) | (limit & CFG_CAL_COUNT_LIMIT_MASK)))
 #define adxl_cfg_get_calibration_count_limit(ptr) ((ptr)->calibration_count_reg & CFG_CAL_COUNT_LIMIT_MASK)
 
-#define adxl_cfg_ctl_get_read_valid_count(ptr) ((ptr)->read_valid_count_reg)
+#define adxl_cfg_get_read_valid_count(ptr) ((ptr)->read_valid_count_reg)
+#define adxl_cfg_get_write_valid_count(ptr) ((ptr)->write_valid_count_reg)
 
-#define adxl_cfg_ctl_get_write_valid_count(ptr) ((ptr)->write_valid_count_reg)
-
-#define adxl_cfg_ctl_get_read_transactions_lsb(ptr) ((ptr)->read_transactions_lsb_reg)
-#define adxl_cfg_ctl_get_read_transactions_msb(ptr) ((ptr)->read_transactions_msb_reg)
+#define adxl_cfg_get_read_transactions_lsb(ptr) ((ptr)->read_transactions_lsb_reg)
+#define adxl_cfg_get_read_transactions_msb(ptr) ((ptr)->read_transactions_msb_reg)
 
 #define adxl_cfg_get_clk_period(ptr) ((ptr)->clk_period_reg)
 
@@ -102,3 +101,5 @@ typedef struct {
 #define adxl_cfg_set_single_req_params_size(ptr, data) (ptr)->single_req_params_reg = (((ptr)->single_req_params_reg & ~CFG_SINGLE_REQ_PARAMS_SIZE_MASK) + ((((uint32_t)data) << 8) & CFG_SINGLE_REQ_PARAMS_SIZE_MASK))
 #define adxl_cfg_get_single_req_params_address(ptr) ((ptr)->single_req_params_reg & CFG_SINGLE_REQ_PARAMS_ADDRESS_MASK)
 #define adxl_cfg_get_single_req_params_size(ptr) (((ptr)->single_req_params_reg & CFG_SINGLE_REQ_PARAMS_SIZE_MASK) >> 8)
+
+
