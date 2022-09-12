@@ -5,9 +5,7 @@
 #include <math.h>
 #include "text_color.h"
 
-
-//#define AXI_ADXL_LOGGING_CFG
-//#define AXI_ADXL_LOGGING_DEV
+#define AXI_ADXL_LOGGING 1
 
 #define ADXL_OK 0
 #define ADXL_UNINIT -1
@@ -39,15 +37,15 @@ static int reserved_address_const[ADXL_DEV_RESERVED_COUNT] = {1,2,3,4,5,6,7,8,9,
 #define FUNCTIONS_COUNT   89
 
 static int function_index_list[FUNCTIONS_COUNT] = {
-      0,   1,   2,   3,   4,   5,   6,   7,   8,
-     11,  15,  17,  24, 290, 291, 300, 301, 310,
-    311, 320, 321, 322, 330, 331, 340, 341, 350,
-    351, 360, 361, 370, 371, 380, 381, 390, 391,
-    392, 393, 394, 395, 396, 397, 400, 401, 410,
-    411, 420, 421, 430, 431, 432, 440, 441, 450,
-    451, 452, 453, 454, 455, 456, 457, 458, 459,
-    461, 460, 470, 471, 480, 490, 491, 492, 493,
-    494, 495, 496, 497, 498, 500, 501, 560, 561,
+      0,   1,   2,   3,   4,   5,   6,   7,   8, 
+     11,  15,  17,  24, 290, 291, 300, 301, 310, 
+    311, 320, 321, 322, 330, 331, 340, 341, 350, 
+    351, 360, 361, 370, 371, 380, 381, 390, 391, 
+    392, 393, 394, 395, 396, 397, 400, 401, 410, 
+    411, 420, 421, 430, 431, 432, 440, 441, 450, 
+    451, 452, 453, 454, 455, 456, 457, 458, 459, 
+    461, 460, 470, 471, 480, 490, 491, 492, 493, 
+    494, 495, 496, 497, 498, 500, 501, 560, 561, 
     562, 563, 564, 565, 570, 571, 100, 120
 };
 
@@ -183,7 +181,7 @@ enum wakeup_enum{
 
 
 enum int_map_enum {
-    INT0 = 0x00,
+    INT0 = 0x00, 
     INT1 = 0x01
 };
 
@@ -302,7 +300,7 @@ int axi_adxl_get_latent(axi_adxl *ptr, uint8_t *latent);
 // 0x23
 int axi_adxl_set_window(axi_adxl *ptr, uint8_t window);
 int axi_adxl_get_window(axi_adxl *ptr, uint8_t *window);
-// 0x24
+// 0x24 
 int axi_adxl_set_thresh_act(axi_adxl *ptr, uint8_t thresh_act);
 int axi_adxl_get_thresh_act(axi_adxl *ptr, uint8_t *thresh_act);
 // 0x25
@@ -365,7 +363,7 @@ int axi_adxl_has_sleep_mode(axi_adxl* ptr);
 int axi_adxl_set_wakeup(axi_adxl* ptr, enum wakeup_enum wakeup);
 int axi_adxl_get_wakeup(axi_adxl* ptr, enum wakeup_enum *wakeup);
 int axi_adxl_is_wakeup(axi_adxl* ptr, enum wakeup_enum wakeup);
-// 0x2E
+// 0x2E 
 int axi_adxl_enable_int_enable(axi_adxl* ptr, enum int_mask_enum intr);
 int axi_adxl_disable_int_enable(axi_adxl* ptr, enum int_mask_enum intr);
 int axi_adxl_is_int_enable(axi_adxl* ptr, enum int_mask_enum intr);
@@ -400,7 +398,7 @@ int axi_adxl_is_range(axi_adxl* ptr, enum range_enum range);
 // 0x38 [BIT 7:6]
 int axi_adxl_set_fifo_mode(axi_adxl* ptr, enum fifo_mode_enum fifo_mode);
 int axi_adxl_is_fifo_mode(axi_adxl* ptr, enum fifo_mode_enum fifo_mode);
-// 0x38 [BIT 5]
+// 0x38 [BIT 5] 
 int axi_adxl_enable_trigger(axi_adxl *ptr);
 int axi_adxl_disable_trigger(axi_adxl *ptr);
 int axi_adxl_has_trigger(axi_adxl *ptr);
@@ -419,4 +417,14 @@ int axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr);
 
 int axi_adxl_get_data(axi_adxl *ptr, adxl_data *data);
 int axi_adxl_get_data_float(axi_adxl *ptr, adxl_data_float *data_float);
+// 0x38
+// 0x39
+
+
+
+
+
+
+
+
 

@@ -6,14 +6,15 @@ library IEEE;
 
 entity axi_adxl345_vhd is
     generic (
-        S_AXI_LITE_DEV_DATA_WIDTH   :           integer := 32                                                                   ;
-        S_AXI_LITE_DEV_ADDR_WIDTH   :           integer := 6                                                                    ;
-        DEFAULT_DEVICE_ADDRESS      :           std_logic_Vector ( 6 downto 0 ) := "1010011"                                    ;
-        DEFAULT_REQUEST_INTERVAL    :           integer := 1000                                                                 ;
-        S_AXI_LITE_CFG_DATA_WIDTH   :           integer := 32                                                                   ;
-        S_AXI_LITE_CFG_ADDR_WIDTH   :           integer := 6                                                                    ;
-        CLK_PERIOD                  :           integer := 100000000                                                            ; 
-        RESET_DURATION              :           integer := 1000
+        S_AXI_LITE_DEV_DATA_WIDTH   : integer  := 32        ;
+        S_AXI_LITE_DEV_ADDR_WIDTH   : integer  := 32        ;
+        DEFAULT_DEVICE_ADDRESS      : std_logic_Vector ( 6 downto 0 ) := "1010011"  ;
+        DEFAULT_REQUESTION_INTERVAL : integer  := 1000      ;
+        DEFAULT_CALIBRATION_MODE    : integer  := 8         ;
+        S_AXI_LITE_CFG_DATA_WIDTH   : integer  := 32        ;
+        S_AXI_LITE_CFG_ADDR_WIDTH   : integer  := 32        ;
+        CLK_PERIOD                  : integer  := 100000000 ;
+        RESET_DURATION              : integer  := 1000
     );
     port (
         CLK                         :   in      std_logic                                                                       ;
@@ -85,14 +86,15 @@ architecture axi_adxl345_vhd_arch of axi_adxl345_vhd is
 
     component axi_adxl345 
         generic (
-            S_AXI_LITE_DEV_DATA_WIDTH   :           integer := 32                                                                   ;
-            S_AXI_LITE_DEV_ADDR_WIDTH   :           integer := 6                                                                    ;
-            DEFAULT_DEVICE_ADDRESS      :           std_logic_Vector ( 6 downto 0 ) := "1010011"                                    ;
-            DEFAULT_REQUEST_INTERVAL    :           integer := 1000                                                                 ;
-            S_AXI_LITE_CFG_DATA_WIDTH   :           integer := 32                                                                   ;
-            S_AXI_LITE_CFG_ADDR_WIDTH   :           integer := 6                                                                    ;
-            CLK_PERIOD                  :           integer := 100000000                                                            ; 
-            RESET_DURATION              :           integer := 1000
+            S_AXI_LITE_DEV_DATA_WIDTH   : integer  := 32        ;
+            S_AXI_LITE_DEV_ADDR_WIDTH   : integer  := 32        ;
+            DEFAULT_DEVICE_ADDRESS      : std_logic_Vector ( 6 downto 0 ) := "1010011"  ;
+            DEFAULT_REQUESTION_INTERVAL : integer  := 1000      ;
+            DEFAULT_CALIBRATION_MODE    : integer  := 8         ;
+            S_AXI_LITE_CFG_DATA_WIDTH   : integer  := 32        ;
+            S_AXI_LITE_CFG_ADDR_WIDTH   : integer  := 32        ;
+            CLK_PERIOD                  : integer  := 100000000 ;
+            RESET_DURATION              : integer  := 1000
         );
         port (
             CLK                         :   in      std_logic                                                                       ;
@@ -160,11 +162,13 @@ begin
             S_AXI_LITE_DEV_DATA_WIDTH   =>  S_AXI_LITE_DEV_DATA_WIDTH           ,
             S_AXI_LITE_DEV_ADDR_WIDTH   =>  S_AXI_LITE_DEV_ADDR_WIDTH           ,
             DEFAULT_DEVICE_ADDRESS      =>  DEFAULT_DEVICE_ADDRESS              ,
-            DEFAULT_REQUEST_INTERVAL    =>  DEFAULT_REQUEST_INTERVAL            ,
+            DEFAULT_REQUESTION_INTERVAL =>  DEFAULT_REQUESTION_INTERVAL         ,
+            DEFAULT_CALIBRATION_MODE    =>  DEFAULT_CALIBRATION_MODE            ,
             S_AXI_LITE_CFG_DATA_WIDTH   =>  S_AXI_LITE_CFG_DATA_WIDTH           ,
             S_AXI_LITE_CFG_ADDR_WIDTH   =>  S_AXI_LITE_CFG_ADDR_WIDTH           ,
             CLK_PERIOD                  =>  CLK_PERIOD                          ,
             RESET_DURATION              =>  RESET_DURATION                       
+
         )
         port map (
             CLK                         =>  CLK                                 ,
