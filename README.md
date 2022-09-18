@@ -9,7 +9,13 @@
 
 Фактически, является прослойкой с некоторым внутренним функционалом между устройством и процессором. 
 
+Способ организации обычного подключения:
 
+![image](https://user-images.githubusercontent.com/45385195/190915665-3b935188-340b-48e3-8684-f7d8bad636c1.png)
+
+Организация подключения компонента: 
+
+![image](https://user-images.githubusercontent.com/45385195/190915854-4f238de4-a355-454c-9040-9e1d4095c064.png)
 
 Работу компонента следует рассматривать в двух режимах:
 1) Работа в pooling-режиме;
@@ -17,9 +23,11 @@
 
 Необходимость подобного компонента обуславливается тем, что при его отсутствии, при обычной организации, контроллер I2C процессора соединяется с компонентом напрямую (включая контроллер прерываний). Соединение процессора и ADXL345 напрямую негативно влияет на производительность первого, так как при выполнении любой операции запроса данных от устройства необходимо ожидание этих самих данных при работе в pooling-режиме, при котором исполнение кода процессором приостанавливается до тех пор, пока не будут считаны данные от устройства. 
 
+Данный компонент решает эту ситуацию таким образом, что актуальные данные всегда хранятся во внутренней памяти компонента, и процессор может обращаться к этой памяти по высокоскоростному (относительно скорости IIC-интерфейса) интерфейсу для получения данных через интерфейс AXI-Lite. 
+
 ![image](https://user-images.githubusercontent.com/45385195/190867208-7fad59d3-53f9-447b-97e2-0401d6005dc0.png)
 
-При работе с прерываниями, существует необходимость запроса данных в процессе обработки прерываний. 
+При работе с прерываниями, существует необходимость запроса данных в процессе обработки прерываний. Это действие необходимо для того, чтобы опустить сигнал прерывания от устройства в ноль. До тех пор, пока не будет произведено чтение внутренних регистров устройства, прерывание будет активным. 
 
 ![image](https://user-images.githubusercontent.com/45385195/190867266-62cf96a7-1c27-48f2-9168-67e1be40496c.png)
 
@@ -42,9 +50,9 @@
 ## Организация аппаратной части
 
 Функционал компонента позволяет: 
-1) Организация обработки прерывания
-2) Запрос данных от ADXL345 по таймеру
-3) Механизм калибровки устройства
+1) Механизм обработки прерывания
+2) Механизм запроса данных от ADXL345 по внутреннему таймеру, задаваемому пользователем
+3) Механизм калибровки устройства (инициируется пользователем, и не требует его участия в вычислениях)
 4) Разрешение/запрет прерываний
  - Организация механизма обработки прерывания посредством чтения регистров устройства
 5) Сбор статистики использования
@@ -60,16 +68,58 @@
 7) Управление компонентом (сброс/реинициализация)
 8) Запрос указанного количества данных с ADXL345 с указанного адреса
 
-
-
 ## Организация софтовой части 
 
 Организация софта включает в себя два отдельных блока: работа с регистрами компонента(config, cfg) и работа с регистрами устроства (device, dev)
 
 ### Configuration register 
 
-Регистровое пространство предназначено для управления компонентом. 
+Регистровое пространство предназначено для управления компонентом и содержит набор регистров и полей с различными правами доступа к этим полям/регистрам. 
 
+В таблице представлен список регистров, полей, маска нахождения поля в регистре и набор функций
+
+ADDR | REG[BIT] | FIELD NAME | ACCESS | MASK | Functions
+-----|----------|------------|--------|------|----------                
+0x00 | ctl_reg[31:24] | VERSION_MAJOR | RO | 0xFF000000 | axi_adxl_get_version_major(axi_adxl* ptr, uint8_t* major)
+0x00 | ctl_reg[23:16] | VERSION_MINOR | RO | 0x00FF0000 | axi_adxl_get_version_minor(axi_adxl* ptr, uint8_t* minor)
+0x00 | ctl_reg[15] | LINK_ON | RO | 0x00008000 | axi_adxl_has_link(axi_adxl* ptr)
+0x00 | ctl_reg[14:8] | I2C_ADDRESS | R/W | 0x00007F00 | axi_adxl_get_iic_address(axi_adxl *ptr, uint8_t *iic_address)
+0x00 | ctl_reg[14:8] | I2C_ADDRESS | R/W | 0x00007F00 | axi_adxl_set_iic_address(axi_adxl *ptr, uint8_t iic_address)
+0x00 | ctl_reg[7] | ON_WORK | RO | 0x00000080 | axi_adxl_has_work(axi_adxl* ptr)
+0x00 | ctl_reg[6] | SINGLE_REQUEST_COMPLETE | RO | 0x00000040 | axi_adxl_has_single_request_completed(axi_adxl* ptr)
+0x00 | ctl_reg[5] | RESERVED | | |            
+0x00 | ctl_reg[4] | INTR_ACK | WC | 0x00000010 | axi_adxl_irq_ack(axi_adxl *ptr)
+0x00 | ctl_reg[3] | SINGLE_REQUEST | R/W | 0x00000008 | axi_adxl_enable_single_request(axi_adxl *ptr)
+0x00 | ctl_reg[2] | IRQ_ALLOW | R/W | 0x00000004 | axi_adxl_has_irq_allow(axi_adxl* ptr)
+0x00 | ctl_reg[2] | IRQ_ALLOW | R/W | 0x00000004 | axi_adxl_switch_irq_allow(axi_adxl *ptr)
+0x00 | ctl_reg[1] | INTERVAL_REQUESTION | R/W | 0x00000002 | axi_adxl_enable_interval_requestion(axi_adxl *ptr, uint32_t requestion_interval)
+0x00 | ctl_reg[1] | INTERVAL_REQUESTION | R/W | 0x00000002 | axi_adxl_disable_interval_requestion(axi_adxl *ptr)
+0x00 | ctl_reg[1] | INTERVAL_REQUESTION | R/W | 0x00000002 | axi_adxl_has_interval_requestion(axi_adxl *ptr)
+0x00 | ctl_reg[0] | RESET_LOGIC | R/W | 0x00000001 | axi_adxl_has_reset(axi_adxl *ptr)
+0x00 | ctl_reg[0] | RESET_LOGIC | R/W | 0x00000001 | axi_adxl_reset(axi_adxl *ptr)
+0x04 | request_interval_reg[31:0] | REQUESTION INTERVAL | R/W | 0xFFFFFFFF | axi_adxl_set_requestion_interval(axi_adxl* ptr, uint32_t requestion_interval)
+0x04 | request_interval_reg[31:0] | REQUESTION INTERVAL | R/W | 0xFFFFFFFF | axi_adxl_get_requestion_interval(axi_adxl* ptr, uint32_t* requestion_interval)
+0x08 | calibration_count_reg[17] | IN_PROGRESS | RO | 0x00020000 | axi_adxl_has_calibration_in_progress(axi_adxl *ptr)
+0x08 | calibration_count_reg[16] | COMPLETE | RO | 0x00010000 | axi_adxl_has_calibration_complete(axi_adxl* ptr)
+0x08 | calibration_count_reg[8] | START | R/W | 0x00000100 | axi_adxl_calibration_start(axi_adxl *ptr)
+0x08 | calibration_count_reg[4:0] | PWR_COUNT_LIMIT | R/W | 0x0000001F | axi_adxl_set_calibration_pwr_count_limit(axi_adxl* ptr, uint8_t pwr_count_limit)
+0x08 | calibration_count_reg[4:0] | PWR_COUNT_LIMIT | R/W | 0x0000001F | axi_adxl_get_calibration_pwr_count_limit(axi_adxl* ptr, uint8_t* pwr_count_limit)
+0x0C | read_valid_count_reg[31:0] | READ_VALID_COUNT | RO | 0xFFFFFFFF | axi_adxl_get_read_valid_count(axi_adxl* ptr, uint32_t* read_valid_count)
+0x10 | write_valid_count_reg[31:0] | WRITE_VALID_COUNT | RO | 0xFFFFFFFF | axi_adxl_get_write_valid_count(axi_adxl* ptr, uint32_t* write_valid_count)
+0x14 | read_transactions_lsb_reg[31:0] | READ_TRANSACTIONS_LSB | RO | 0xFFFFFFFF | axi_adxl_get_read_transactions(axi_adxl* ptr, uint64_t* read_transactions)
+0x18 | read_transactions_msb_reg[31:0] | READ_TRANSACTIONS_MSB | RO | 0xFFFFFFFF | axi_adxl_get_read_transactions(axi_adxl* ptr, uint64_t* read_transactions)
+0x1C | clk_period_reg[31:0] | CLK_PERIOD | RO | 0xFFFFFFFF | axi_adxl_get_clk_period(axi_adxl* ptr, uint32_t* clk_period)
+0x20 | opt_request_interval_lsb_reg[31:0] | OPT_REQUEST_INTERVAL_LSB | RO | 0xFFFFFFFF | axi_adxl_get_opt_request_interval(axi_adxl* ptr, uint64_t* opt_request_interval)
+0x24 | opt_request_interval_msb_reg[15:0] | OPT_REQUEST_INTERVAL_MSB | RO | 0x0000FFFF | axi_adxl_get_opt_request_interval(axi_adxl* ptr, uint64_t* opt_request_interval)
+0x28 | data_width_reg[31:0] | DATA_WIDTH | RO | 0xFFFFFFFF | axi_adxl_get_data_width(axi_adxl* ptr, uint32_t* data_width)
+0x2C | calibration_time_lsb_reg[31:0] | CALIBRATION_TIME_LSB | RO | 0xFFFFFFFF | axi_adxl_get_calibration_time(axi_adxl* ptr, uint64_t* calibration_time)
+0x30 | calibration_time_msb_reg[31:0] | CALIBRATION_TIME_MSB | RO | 0xFFFFFFFF | axi_adxl_get_calibration_time(axi_adxl* ptr, uint64_t* calibration_time)
+0x34 | write_transactions_lsb_reg[31:0] | WRITE_TRANSACTIONS_LSB | RO | 0xFFFFFFFF | axi_adxl_get_write_transactions(axi_adxl* ptr, uint64_t* write_transactions)
+0x38 | write_transactions_msb_reg[31:0] | WRITE_TRANSACTIONS_MSB | RO | 0xFFFFFFFF | axi_adxl_get_write_transactions(axi_adxl* ptr, uint64_t* write_transactions)
+0x3C | single_req_params_reg[5:0] | START_ADDRESS | R/W | 0x0000003F | axi_adxl_set_start_address(axi_adxl* ptr, uint8_t start_address)
+0x3C | single_req_params_reg[5:0] | START_ADDRESS | R/W | 0x0000003F | axi_adxl_get_start_address(axi_adxl* ptr, uint8_t *start_address)
+0x3C | single_req_params_reg[13:8] | SIZE | R/W | 0x00003F00 | axi_adxl_set_size(axi_adxl* ptr, uint8_t size)
+0x3C | single_req_params_reg[13:8] | SIZE | R/W | 0x00003F00 | axi_adxl_get_size(axi_adxl* ptr, uint8_t* size)
 
 ### Device register
 
@@ -270,3 +320,4 @@ ADDR | REG[BIT]           | FIELD NAME   | FUNCTIONS |
 0x38 | FIFO_CTL[4:0]      | SAMPLES      | axi_adxl_get_samples(axi_adxl *ptr, uint8_t *samples)
 0x39 | FIFO_STATUS[5:0]   | ENTRIES      | axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries)
 0x39 | FIFO_STATUS[7]     | TRIGGER      | axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr)
+
