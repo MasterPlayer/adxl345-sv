@@ -113,7 +113,9 @@ const char* function_list[] = {
     "GET_FIFO_ENTRIES",  // 570
     "GET_FIFO_TRIGGER",  // 571
     "DUMP_DEVICE_REGISTER_SPACE", // 100
-    "DEBUG_MODE" // 120
+    "DEBUG_MODE", // 120
+	"SET_OUTPUT_RULES", // 121
+	"GET_OUTPUT_RULES" //122
 };
 
 
@@ -280,6 +282,8 @@ void print_menu(){
     printf("\r\n");
     printf("\t100. Dump device register space\r\n");
     printf("\t120. Debug mode\r\n");
+    printf("\t121. Set output rule\r\n");
+    printf("\t122. Get output rule\r\n");
 
 
 
@@ -470,7 +474,10 @@ int menu(axi_adxl *ptr, int mode){
         case 571 : status = selector_axi_adxl_has_fifo_sts_trigger(ptr); break;
 
         case 100 : status = selector_axi_adxl_dev_debug_register_space(ptr); break;
+
         case 120 : status = dbg_set_reg(ptr); break;
+        case 121 : status = selector_axi_adxl_set_output_rules(ptr); break;
+        case 122 : status = selector_axi_adxl_get_output_rules(ptr); break;
 
         default :
             printf("[MENU] : incorrect selection : 0x%02x\r\n", mode);
@@ -529,10 +536,7 @@ void adxl_intr_handler(void *callback){
         printf("[IRQ] : bad returning status : %d", status);
     }
 
-    adxl_data_float data;
-    axi_adxl_get_data_float(ptr, &data);
-
-    if ((axi_adxl_is_int_source(ptr, DATA_READY)) && (axi_adxl_is_int_enable(ptr, DATA_READY))){
+     if ((axi_adxl_is_int_source(ptr, DATA_READY)) && (axi_adxl_is_int_enable(ptr, DATA_READY))){
         printf("[DR] ");
     }
 
@@ -564,7 +568,7 @@ void adxl_intr_handler(void *callback){
         printf("[OV] ");
     }
 
-    printf("X : %4.6f \tY : %4.6f \tZ : %4.6f\r\n", data.x, data.y, data.z);
+    axi_adxl_print(ptr);
 
     axi_adxl_irq_ack(ptr);
 
