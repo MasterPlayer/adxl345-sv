@@ -2,9 +2,12 @@
 
 
 
-
-void axi_adxl_dev_debug_register_space(adxl_dev* ptr) {
+int axi_adxl_dev_debug_register_space(axi_adxl* ptr) {
 	int byte_cnt = 0;
+
+	if (!axi_adxl_has_init(ptr)){
+		return ADXL_UNINIT;
+	}
 
 	printf("\t|| [0] \t| [1] \t| [2] \t| [3] \t|\r\n");
 	printf("========================================\r\n");
@@ -34,7 +37,7 @@ void axi_adxl_dev_debug_register_space(adxl_dev* ptr) {
 		}
 
 
-		printf(" 0x%02x\t", *((uint8_t*)ptr + i));
+		printf(" 0x%02x\t", *((uint8_t*)(ptr->dev) + i));
 
 		textcolor(DEFAULT, STD, STD);
 
@@ -49,6 +52,8 @@ void axi_adxl_dev_debug_register_space(adxl_dev* ptr) {
 		}
 
 	}
+
+	return ADXL_OK;
 }
 
 /// <summary>
@@ -3859,7 +3864,7 @@ int axi_adxl_get_data_float(axi_adxl* ptr, adxl_data_float* data_float) {
 
 	int16_t x = (int16_t)axi_adxl_get_datax(ptr);
 	int16_t y = (int16_t)axi_adxl_get_datay(ptr);
-	int16_t z = (int16_t)axi_adxl_get_datax(ptr);
+	int16_t z = (int16_t)axi_adxl_get_dataz(ptr);
 
 	if (adxl_dev_get_data_format(ptr->dev) & DATA_FORMAT_FULL_RES) {
 		data_float->x = (float)x / SENSITIVITY_FULL_RES;

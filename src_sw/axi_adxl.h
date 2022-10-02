@@ -5,9 +5,11 @@
 #include <math.h>
 #include "text_color.h"
 
+#define PI           3.14159265358979323846
 
-//#define AXI_ADXL_LOGGING_CFG
-//#define AXI_ADXL_LOGGING_DEV
+//#define AXI_ADXL_LOGGING_CFG 0
+//#define AXI_ADXL_LOGGING_DEV 0
+#define AXI_ADXL_LOGGING_SW 1
 
 #define ADXL_OK 0
 #define ADXL_UNINIT -1
@@ -36,7 +38,7 @@ static int rw_address_const[ADXL_DEV_RW_COUNT] = {29, 30, 31, 32, 33, 34, 35, 36
 static int ro_address_const[ADXL_DEV_RO_COUNT] = {0, 43, 48, 50, 51, 52, 53, 54, 55, 57};
 static int reserved_address_const[ADXL_DEV_RESERVED_COUNT] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,58,59,60,61,62,63};
 
-#define FUNCTIONS_COUNT   89
+#define FUNCTIONS_COUNT   91
 
 static int function_index_list[FUNCTIONS_COUNT] = {
       0,   1,   2,   3,   4,   5,   6,   7,   8,
@@ -48,7 +50,8 @@ static int function_index_list[FUNCTIONS_COUNT] = {
     451, 452, 453, 454, 455, 456, 457, 458, 459,
     461, 460, 470, 471, 480, 490, 491, 492, 493,
     494, 495, 496, 497, 498, 500, 501, 560, 561,
-    562, 563, 564, 565, 570, 571, 100, 120
+    562, 563, 564, 565, 570, 571, 100, 120, 121,
+	122
 };
 
 typedef struct {
@@ -70,12 +73,25 @@ typedef struct {
 	float z;
 }adxl_data_float;
 
+
+typedef struct {
+	float roll;
+	float pitch;
+}adxl_data_pitch_roll;
+
+enum output_rule_enum{
+	XYZ_INTEGER,
+	XYZ_GRAVITY,
+	ROLL_PITCH
+};
+
 typedef struct {
     adxl_cfg *cfg;
     adxl_dev *dev;
     int init_flaq;
     adxl_offset offset;
     adxl_data data;
+    int output_rule;
 } axi_adxl;
 
 
@@ -220,8 +236,7 @@ enum spi_enum {
 #define axi_adxl_get_datay(ptr) (int16_t)(((uint16_t)adxl_dev_get_datay1((ptr)->dev)<<8) + ((uint16_t)adxl_dev_get_datay0((ptr)->dev)))
 #define axi_adxl_get_dataz(ptr) (int16_t)(((uint16_t)adxl_dev_get_dataz1((ptr)->dev)<<8) + ((uint16_t)adxl_dev_get_dataz0((ptr)->dev)))
 
-
-void axi_adxl_dev_debug_register_space(adxl_dev *ptr);
+int axi_adxl_dev_debug_register_space(axi_adxl *ptr);
 
 int axi_adxl_init(axi_adxl *ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, uint8_t iic_address);
 
@@ -419,4 +434,12 @@ int axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr);
 
 int axi_adxl_get_data(axi_adxl *ptr, adxl_data *data);
 int axi_adxl_get_data_float(axi_adxl *ptr, adxl_data_float *data_float);
+int axi_adxl_get_pitch_roll(axi_adxl *ptr, adxl_data_pitch_roll *data_pitch_roll);
+
+
+int axi_adxl_set_output_rule(axi_adxl *ptr, enum output_rule_enum output_rule);
+int axi_adxl_get_output_rule(axi_adxl *ptr, int *output_rule);
+int axi_adxl_is_output_rule(axi_adxl *ptr, enum output_rule_enum output_rule);
+int axi_adxl_print(axi_adxl *ptr);
+
 

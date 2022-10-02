@@ -21,6 +21,8 @@ int axi_adxl_init(axi_adxl* ptr, uint32_t baseaddr_cfg, uint32_t baseaddr_dev, u
 	printf("\t\t\tconfiguration address space : 0x%08x\r\n", baseaddr_dev);
 #endif
 
+	ptr->output_rule = 0;
+
 	int timer = TIMER_LIMIT;
 
 
