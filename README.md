@@ -388,6 +388,7 @@ ADDR | REG[BIT]           | FIELD NAME   | FUNCTIONS |
 0x39 | FIFO_STATUS[5:0]   | ENTRIES      | axi_adxl_get_fifo_sts_entries(axi_adxl *ptr, uint8_t *entries)
 0x39 | FIFO_STATUS[7]     | TRIGGER      | axi_adxl_has_fifo_sts_trigger(axi_adxl *ptr)
 
-
+# Лог изменений
+Старт лога начинается с версии
 
 
