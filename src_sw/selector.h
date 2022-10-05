@@ -7,6 +7,7 @@
 
 
 
+
 int selector_axi_adxl_cfg_debug(axi_adxl *ptr);
 int selector_axi_adxl_reset(axi_adxl *ptr);
 int selector_axi_adxl_init(axi_adxl *ptr);
