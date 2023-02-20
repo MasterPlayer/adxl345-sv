@@ -7,6 +7,7 @@
 
 
 
+
 int selector_axi_adxl_cfg_debug(axi_adxl *ptr);
 int selector_axi_adxl_reset(axi_adxl *ptr);
 int selector_axi_adxl_init(axi_adxl *ptr);
@@ -161,3 +162,7 @@ int selector_axi_adxl_has_inverted(axi_adxl *ptr);
 
 int selector_axi_adxl_justify(axi_adxl *ptr);
 int selector_axi_adxl_has_justify(axi_adxl *ptr);
+
+
+int selector_axi_adxl_set_output_rules(axi_adxl *ptr);
+int selector_axi_adxl_get_output_rules(axi_adxl *ptr);

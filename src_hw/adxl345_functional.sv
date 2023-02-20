@@ -65,15 +65,17 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     localparam [7:0] ADDRESS_WRITE_END   = 8'h38;
 
     // constant parameters for comparison
-    localparam [5:0] DEVICE_ID_ADDR      = 6'h00;
-    localparam [5:0] OFSX_ADDR           = 6'h1E;
-    localparam [5:0] BW_RATE_ADDR        = 6'h2C;
-    localparam [5:0] INT_SOURCE_ADDR     = 6'h30;
-    localparam [5:0] DATA_FORMAT_ADDR    = 6'h31;
-    localparam [5:0] DATAX0_ADDR         = 6'h32;
-    localparam [5:0] DATAX1_ADDR         = 6'h33;
-    localparam [5:0] DATAY1_ADDR         = 6'h35;
-    localparam [5:0] DATAZ1_ADDR         = 6'h37;
+    localparam [5:0] DEVICE_ID_ADDR   = 6'h00;
+    localparam [5:0] OFSX_ADDR        = 6'h1E;
+    localparam [5:0] BW_RATE_ADDR     = 6'h2C;
+    localparam [5:0] INT_ENABLE_ADDR  = 6'h2E;
+    localparam [5:0] INT_SOURCE_ADDR  = 6'h30;
+    localparam [5:0] DATA_FORMAT_ADDR = 6'h31;
+    localparam [5:0] DATAX0_ADDR      = 6'h32;
+    localparam [5:0] DATAX1_ADDR      = 6'h33;
+    localparam [5:0] DATAY1_ADDR      = 6'h35;
+    localparam [5:0] DATAZ1_ADDR      = 6'h37;
+    localparam [5:0] FIFO_STATUS_ADDR = 6'h39;
 
     localparam [7:0] DEVICE_ID           = 8'hE5;
 
@@ -131,7 +133,10 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         UPD_INCREMENT_ADDR_ST   ,
 
         CAL_TX_OFS_ST           ,
-        CAL_SHIFT_ST             
+        CAL_SHIFT_ST            ,
+
+        FIFO_TX_ADDR_PTR_ST     ,
+        STUB_ST                   
     } fsm;
 
     fsm current_state = IDLE_CHK_REQ_ST;
@@ -178,13 +183,25 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     logic need_calibration_flaq = 1'b0;
 
 
-    logic [47:0] cal_optimal_request_timer_limit        = '{default:0};
-    logic [47:0] cal_optimal_request_timer              = '{default:0};
-    logic [ 7:0] bw_rate_reg                            = '{default:0};
-    logic [ 7:0] data_format_reg                        = '{default:0};
-    logic        allow_cal_optimal_request_timer        = 1'b0        ;
-    logic        has_cal_optimal_request_timer_exceeded = 1'b0        ;
-    logic        has_calibration_count_exceeded         = 1'b0        ;
+    logic [47:0] cal_optimal_request_timer_limit = '{default:0};
+    logic [47:0] cal_optimal_request_timer       = '{default:0};
+
+    // saved registers in internal
+    logic [7:0] bw_rate_reg     = '{default:0}; // 0x2C
+    logic [7:0] int_enable_reg  = '{default:0}; // 0x2E
+    logic [7:0] int_source_reg  = '{default:0}; // 0x30 register
+    logic [7:0] data_format_reg = '{default:0}; // 0x32
+    logic [7:0] fifo_status_reg = '{default:0}; // 0x39 register
+
+    // saved fields from registers (as latches, not regs)
+    logic [5:0] fifo_status_reg_entries; // 0x39 [5:0]
+
+    // enabled_interrupts flaqs
+    logic has_watermark_intr = 1'b0;
+
+    logic allow_cal_optimal_request_timer        = 1'b0;
+    logic has_cal_optimal_request_timer_exceeded = 1'b0;
+    logic has_calibration_count_exceeded         = 1'b0;
 
     // fields of registers
     logic       data_format_full_res_field = 1'b0        ; // address 0x31, bit 3
@@ -242,6 +259,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
     logic require_update_flaq = 1'b0; // flaq for update internal <read>memory after changes on <write>memory and device memory 
 
     logic [31:0] calibration_count_limit_shifter = '{default:0};
+
 
 
 
@@ -373,6 +391,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
     always_ff @(posedge CLK) begin : write_memory_wea_processing 
+
         write_memory_wea <= {4{WVALID}} & write_mask_register[WADDR] & WSTRB;
     end 
 
@@ -389,6 +408,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
     always_comb begin : write_memory_addra_processing
+
         write_memory_addra = WADDR;
     end 
 
@@ -417,6 +437,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
     // if needed request, OR for this register
     always_ff @(posedge CLK) begin : request_flaq_processing 
+
         request_flaq <= SINGLE_REQUEST | requestion_interval_assigned | interrupt | has_cal_optimal_request_timer_exceeded | require_update_flaq;
     end 
 
@@ -566,6 +587,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
     always_comb begin : read_memory_addrb_processing
+
         read_memory_addrb = RADDR;
     end 
 
@@ -660,6 +682,120 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
 
+    always_ff @(posedge CLK) begin : int_source_reg_processing 
+        if (read_memory_addra == INT_SOURCE_ADDR) begin 
+            if (read_memory_wea) begin 
+                int_source_reg <= read_memory_dina;
+            end else begin 
+                int_source_reg <= int_source_reg;
+            end 
+        end else begin 
+            int_source_reg <= int_source_reg;
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : fifo_status_reg_processing 
+        if (read_memory_addra == FIFO_STATUS_ADDR) begin 
+            if (read_memory_wea) begin 
+                fifo_status_reg <= read_memory_dina;
+            end else begin 
+                fifo_status_reg <= fifo_status_reg;
+            end 
+        end else begin 
+            fifo_status_reg <= fifo_status_reg;
+        end 
+    end 
+
+
+
+    always_comb begin : fifo_status_reg_entries_processing 
+        fifo_status_reg_entries = fifo_status_reg[5:0];
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : int_enable_reg_processing 
+        if (read_memory_addra == INT_ENABLE_ADDR) begin 
+            if (read_memory_wea) begin 
+                int_enable_reg <= read_memory_dina;
+            end else begin 
+                int_enable_reg <= int_enable_reg;
+            end 
+        end else begin 
+            int_enable_reg <= int_enable_reg;
+        end 
+    end 
+
+
+
+    always_ff @(posedge CLK) begin : has_watermark_intr_processing 
+        if (int_source_reg[1] & int_enable_reg[1]) begin 
+            has_watermark_intr <= 1'b1;
+        end else begin 
+            has_watermark_intr <= 1'b0;
+        end 
+    end 
+
+
+
+    logic [ 5:0] fifo_memory_addra = '{default:0};
+    logic [ 7:0] fifo_memory_dina  = '{default:0};
+    logic [ 3:0] fifo_memory_addrb = '{default:0};
+    logic [31:0] fifo_memory_doutb               ;
+    logic        fifo_memory_wea                 ;
+
+
+
+    xpm_memory_sdpram #(
+        .ADDR_WIDTH_A           (6              ), // DECIMAL
+        .ADDR_WIDTH_B           (4              ), // DECIMAL
+        .AUTO_SLEEP_TIME        (0              ), // DECIMAL
+        .BYTE_WRITE_WIDTH_A     (8              ), // DECIMAL
+        .CASCADE_HEIGHT         (0              ), // DECIMAL
+        .CLOCKING_MODE          ("common_clock" ), // String
+        .ECC_MODE               ("no_ecc"       ), // String
+        .MEMORY_INIT_FILE       ("none"         ), // String
+        .MEMORY_INIT_PARAM      ("0"            ), // String
+        .MEMORY_OPTIMIZATION    ("true"         ), // String
+        .MEMORY_PRIMITIVE       ("auto"         ), // String
+        .MEMORY_SIZE            (512            ), // DECIMAL
+        .MESSAGE_CONTROL        (0              ), // DECIMAL
+        .READ_DATA_WIDTH_B      (32             ), // DECIMAL
+        .READ_LATENCY_B         (1              ), // DECIMAL
+        .READ_RESET_VALUE_B     ("0"            ), // String
+        .RST_MODE_A             ("SYNC"         ), // String
+        .RST_MODE_B             ("SYNC"         ), // String
+        .SIM_ASSERT_CHK         (0              ), // DECIMAL; 0=disable simulation messages, 1=enable simulation messages
+        .USE_EMBEDDED_CONSTRAINT(0              ), // DECIMAL
+        .USE_MEM_INIT           (1              ), // DECIMAL
+        .WAKEUP_TIME            ("disable_sleep"), // String
+        .WRITE_DATA_WIDTH_A     (8              ), // DECIMAL
+        .WRITE_MODE_B           ("no_change"    )  // String
+    ) xpm_memory_sdpram_fifo_inst (
+        .dbiterrb      (                 ), // 1-bit output: Status signal to indicate double bit error occurrence
+        .sbiterrb      (                 ), // 1-bit output: Status signal to indicate single bit error occurrence
+        .doutb         (fifo_memory_doutb), // READ_DATA_WIDTH_B-bit output: Data output for port B read operations.
+        .addra         (fifo_memory_addra), // ADDR_WIDTH_A-bit input: Address for port A write operations.
+        .addrb         (fifo_memory_addrb), // ADDR_WIDTH_B-bit input: Address for port B read operations.
+        .clka          (CLK              ), // 1-bit input: Clock signal for port A. Also clocks port B when
+        .clkb          (CLK              ), // 1-bit input: Clock signal for port B when parameter CLOCKING_MODE is
+        .dina          (fifo_memory_dina ), // WRITE_DATA_WIDTH_A-bit input: Data input for port A write operations.
+        .ena           (1'b1             ), // 1-bit input: Memory enable signal for port A. Must be high on clock
+        .enb           (1'b1             ), // 1-bit input: Memory enable signal for port B. Must be high on clock
+        .injectdbiterra(1'b0             ), // 1-bit input: Controls double bit error injection on input data when
+        .injectsbiterra(1'b0             ), // 1-bit input: Controls single bit error injection on input data when
+        .regceb        (1'b1             ), // 1-bit input: Clock Enable for the last register stage on the output
+        .rstb          (RESET            ), // 1-bit input: Reset signal for the final port B output register stage.
+        .sleep         (1'b0             ), // 1-bit input: sleep signal to enable the dynamic power saving feature.
+        .wea           (fifo_memory_wea  )  // WRITE_DATA_WIDTH_A/BYTE_WRITE_WIDTH_A-bit input: Write enable vector
+    );
+
+
+
+
+
     fifo_out_sync_tuser_xpm #(
         .DATA_WIDTH(8      ),
         .USER_WIDTH(8      ),
@@ -707,6 +843,9 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             CAL_TX_OFS_ST : 
                 out_din_user[0] <= 1'b0; // writing operation for clear OFSX OFSY OFSZ
 
+            FIFO_TX_ADDR_PTR_ST : 
+                out_din_user[0] <= 1'b0; // is writing data to dev
+
             default : 
                 out_din_user[0] <= out_din_user[0];
         endcase // current_state
@@ -725,7 +864,11 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
             REQ_TX_READ_DATA_ST : 
                 if (interrupt) begin 
-                    out_din_data <= 8'h08;
+                    if (has_watermark_intr) begin 
+                        out_din_data <= 8'h06; // new
+                    end else begin 
+                        out_din_data <= 8'h0A;
+                    end 
                 end else begin 
                     if (has_cal_optimal_request_timer_exceeded) begin 
                         out_din_data <= 8'h06;
@@ -754,6 +897,13 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                     4'h3 : out_din_data <= calibration_vector[15: 8];
                     4'h4 : out_din_data <= calibration_vector[23:16];
                     default out_din_data <= out_din_data;
+                endcase // word_counter
+
+            FIFO_TX_ADDR_PTR_ST : 
+                case (word_counter) 
+                    4'h0    : out_din_data <= 8'h01; // how many bytes write
+                    4'h1    : out_din_data <= address_ptr; // address pointer
+                    default : out_din_data <= out_din_data;
                 endcase // word_counter
 
             default : 
@@ -791,6 +941,12 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                     default out_din_last <= out_din_last;
                 endcase // word_counter
 
+            FIFO_TX_ADDR_PTR_ST : 
+                case (word_counter) 
+                    4'h0    : out_din_last <= 1'b0;
+                    4'h1    : out_din_last <= 1'b1;
+                    default : out_din_last <= out_din_last;
+                endcase // word_counter
 
             default : 
                 out_din_last <= out_din_last;
@@ -824,6 +980,13 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                 end 
 
             CAL_TX_OFS_ST : 
+                if (!out_awfull) begin 
+                    out_wren <= 1'b1;
+                end else begin 
+                    out_wren <= 1'b0;
+                end 
+
+            FIFO_TX_ADDR_PTR_ST : 
                 if (!out_awfull) begin 
                     out_wren <= 1'b1;
                 end else begin 
@@ -869,6 +1032,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
     always_ff @(posedge CLK) begin : calibration_count_limit_processing 
+
         calibration_count_limit <= calibration_count_limit_rom[calibration_mode_reg];
     end 
 
@@ -969,6 +1133,17 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                         current_state <= current_state;
                     end 
 
+                FIFO_TX_ADDR_PTR_ST : 
+                    if (!out_awfull) begin 
+                        if (word_counter == 4'h1) begin 
+                            current_state <= STUB_ST;
+                        end else begin 
+                            current_state <= current_state;
+                        end 
+                    end else begin 
+                        current_state <= current_state;
+                    end 
+
                 default             : 
                     current_state <= current_state;
             endcase // current_state
@@ -982,7 +1157,11 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
             
             IDLE_CHK_REQ_ST : 
                 if (interrupt) begin 
-                    address_ptr <= INT_SOURCE_ADDR;
+                    if (has_watermark_intr) begin 
+                        address_ptr <= DATAX0_ADDR;
+                    end else begin 
+                        address_ptr <= INT_SOURCE_ADDR;
+                    end 
                 end else begin 
                     if (has_cal_optimal_request_timer_exceeded) begin 
                         address_ptr <= DATAX0_ADDR;
@@ -1027,6 +1206,14 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
                 end else begin 
                     word_counter <= word_counter;
                 end 
+
+            FIFO_TX_ADDR_PTR_ST: 
+                if (!out_awfull) begin 
+                    word_counter <= word_counter + 1;
+                end else begin 
+                    word_counter <= word_counter;
+                end 
+
 
             default : 
                 word_counter <= '{default:0};
@@ -1421,12 +1608,14 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
     always_ff @(posedge CLK) begin : cal_offset_x_processing
+
         cal_average_x <= cal_average_x_shifter[15:0];
     end 
 
 
 
     always_ff @(posedge CLK) begin : cal_offset_y_processing
+
         cal_average_y <= cal_average_y_shifter[15:0];
     end 
 
@@ -1603,9 +1792,13 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
         end 
     end 
 
+
+
     always_comb begin 
+
         CALIBRATION_IN_PROGRESS = calibration_process;
     end 
+
 
 
     always_ff @(posedge CLK) begin : CALIBRATION_TIME_processing 
@@ -1623,6 +1816,7 @@ module adxl345_functional #(parameter integer CLK_PERIOD = 100000000) (
 
 
     always_comb begin : OPT_REQUEST_INTERVAL_processing 
+
         OPT_REQUEST_INTERVAL = cal_optimal_request_timer_limit;
     end 
 

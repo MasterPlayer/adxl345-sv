@@ -37,9 +37,9 @@ module tb_device_imitation (
         8'h00, 8'h00, 8'h00, 8'h00, // 0x24
         8'h00, 8'h00, 8'h00, 8'h00, // 0x28
         8'h0F, 8'h00, 8'h00, 8'h00, // 0x2C
-        8'h80, 8'h30, 8'hF0, 8'hFF, // 0x30
+        8'h02, 8'h30, 8'hF0, 8'hFF, // 0x30
         8'hF0, 8'hFF, 8'hF0, 8'hFF, // 0x34
-        8'h00, 8'h00, 8'h00, 8'h00  // 0x38
+        8'h08, 8'h08, 8'h00, 8'h00  // 0x38
     };
 
 
@@ -390,14 +390,18 @@ module tb_device_imitation (
         IIC_SCL_O = d_iic_scl;
     end 
 
+
+
     always_comb begin 
         interrupt_register = register_file[46];
     end 
 
+
+
     always_ff @(posedge clk) begin 
         case (current_state)
             READ_OP : 
-                if (ptr == 8'h30) begin  
+                if (ptr == 8'h32) begin  
                     if (valid_event) begin 
                         has_readed_interrupt_register <= 1'b1;
                     end else begin 
@@ -413,7 +417,11 @@ module tb_device_imitation (
         endcase // current_state
     end 
 
+
+
     logic [31:0] interrupt_timer = '{default:0};
+
+
 
     always_ff @(posedge clk) begin 
         if (interrupt_register == 0) begin 
@@ -431,6 +439,8 @@ module tb_device_imitation (
         end 
     end 
 
+
+
     always_comb begin 
         if (interrupt_timer == 0) begin 
             IRQ <= 1'b1;
@@ -438,5 +448,7 @@ module tb_device_imitation (
             IRQ <= 1'b0; 
         end 
     end 
+
+    
 
 endmodule

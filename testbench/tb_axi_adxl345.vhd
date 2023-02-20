@@ -32,7 +32,7 @@ architecture tb_axi_adxl345_arch of tb_axi_adxl345 is
             S_AXI_LITE_DEV_DATA_WIDTH   :           integer                         := 32                           ;
             S_AXI_LITE_DEV_ADDR_WIDTH   :           integer                         := 6                            ;
             DEFAULT_DEVICE_ADDRESS      :           std_logic_Vector ( 6 downto 0 ) := "1010011"                    ;
-            DEFAULT_REQUESTION_INTERVAL    :           integer                         := 1000                         ;
+            DEFAULT_REQUESTION_INTERVAL :           integer                         := 1000                         ;
             DEFAULT_CALIBRATION_MODE    :           integer                         := 8                            ;
             S_AXI_LITE_CFG_DATA_WIDTH   :           integer                         := 32                           ;
             S_AXI_LITE_CFG_ADDR_WIDTH   :           integer                         := 8                            ;
@@ -345,36 +345,22 @@ begin
         if CLK'event AND CLK = '1' then 
             if (ADXL_IRQ = '1') then 
                 case (interrupt_i) is 
-                    when    100000  => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF14"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when    100001  => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF14"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when    100002  => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF14"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
-                    when    others  => cfg_awaddr <= cfg_awaddr; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
+                    when   291 => CFG_AWADDR <= X"00"; CFG_AWVALID <= '1'; CFG_WDATA <= X"FFFFFF14"; CFG_WSTRB <= X"1"; CFG_WVALID <= '1'; CFG_BREADY <= '1';
+                    when   292 => CFG_AWADDR <= X"00"; CFG_AWVALID <= '1'; CFG_WDATA <= X"FFFFFF14"; CFG_WSTRB <= X"1"; CFG_WVALID <= '1'; CFG_BREADY <= '1';
+                    when   293 => CFG_AWADDR <= X"00"; CFG_AWVALID <= '0'; CFG_WDATA <= X"FFFFFF14"; CFG_WSTRB <= X"1"; CFG_WVALID <= '0'; CFG_BREADY <= '1';
+                    when others => CFG_AWADDR <= CFG_AWADDR; CFG_AWVALID <= '0'; CFG_WDATA <= CFG_WDATA; CFG_WSTRB <= CFG_WSTRB; CFG_WVALID <= '0'; CFG_BREADY <= '0';
                 end case;
             else
-                case i is 
-
-                    --when    300     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    --when    301     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    --when    302     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"FFFFFF08"; cfg_wstrb <= x"1"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-                    when  10000     => cfg_awaddr <= x"04"; cfg_awvalid <= '1'; cfg_wdata <= x"00000000"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when  10001     => cfg_awaddr <= x"04"; cfg_awvalid <= '1'; cfg_wdata <= x"00000000"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when  10002     => cfg_awaddr <= x"04"; cfg_awvalid <= '0'; cfg_wdata <= x"00000000"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-                    when  11000     => cfg_awaddr <= x"3C"; cfg_awvalid <= '1'; cfg_wdata <= x"00000632"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when  11001     => cfg_awaddr <= x"3C"; cfg_awvalid <= '1'; cfg_wdata <= x"00000632"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when  11002     => cfg_awaddr <= x"3C"; cfg_awvalid <= '0'; cfg_wdata <= x"00000632"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-                    when  20000     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when  20001     => cfg_awaddr <= x"00"; cfg_awvalid <= '1'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '1'; cfg_bready <= '1';
-                    when  20002     => cfg_awaddr <= x"00"; cfg_awvalid <= '0'; cfg_wdata <= x"00005308"; cfg_wstrb <= x"F"; cfg_wvalid <= '0'; cfg_bready <= '1';
-
-                    when others     => cfg_awaddr <= cfg_awaddr; cfg_awprot <= cfg_awprot; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
+                case i is
+                    when 1000   => CFG_AWADDR <= X"00"; CFG_AWVALID <= '1'; CFG_WDATA <= X"FFFFFF04"; CFG_WSTRB <= X"1"; CFG_WVALID <= '1'; CFG_BREADY <= '1';
+                    when 1001   => CFG_AWADDR <= X"00"; CFG_AWVALID <= '1'; CFG_WDATA <= X"FFFFFF04"; CFG_WSTRB <= X"1"; CFG_WVALID <= '1'; CFG_BREADY <= '1';
+                    when 1002   => CFG_AWADDR <= X"00"; CFG_AWVALID <= '0'; CFG_WDATA <= X"FFFFFF04"; CFG_WSTRB <= X"1"; CFG_WVALID <= '0'; CFG_BREADY <= '1';
+                    when others => cfg_awaddr <= cfg_awaddr; cfg_awprot <= cfg_awprot; cfg_awvalid <= '0'; cfg_wdata <= cfg_wdata; cfg_wstrb <= cfg_wstrb; cfg_wvalid <= '0'; cfg_bready <= '0';
                 end case;
             end if;
-
         end if;
     end process;
+
 
 
     interrupt_i_processing : process(CLK)
@@ -395,9 +381,9 @@ begin
         if CLK'event AND CLK = '1' then 
             case i is 
 
-                when  200000   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0000000E"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  200001   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0000000E"; DEV_WSTRB <= x"1"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
-                when  200002   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"0000000E"; DEV_WSTRB <= x"1"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
+                when  200000   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0002000E"; DEV_WSTRB <= x"5"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  200001   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '1'; DEV_WDATA <= x"0002000E"; DEV_WSTRB <= x"5"; DEV_WVALID <= '1'; DEV_BREADY <= '1';
+                when  200002   => DEV_AWADDR <= x"2C"; DEV_AWVALID <= '0'; DEV_WDATA <= x"0002000E"; DEV_WSTRB <= x"5"; DEV_WVALID <= '0'; DEV_BREADY <= '1';
 
                 when others     => DEV_AWADDR <= DEV_AWADDR; DEV_AWVALID <= '0'; DEV_WDATA <= (others => '0'); DEV_WSTRB <= DEV_WSTRB; DEV_WVALID <= '0'; DEV_BREADY <= '0';
             end case;

@@ -4,12 +4,14 @@
 #include "axi_adxl.h"
 #include "selector.h"
 #include <xscugic.h>
-
+#include "axi_timer_avg.h"
 
 void print_menu();
 void adxl_intr_handler(void *callback);
 int menu(axi_adxl *ptr, int mode);
 int gic_init(XScuGic *ptr, axi_adxl* adxl_ptr);
+
+#define AXI_TIMER_AVG_BASEADDRESS 0x40050000
 
 const char* error_parser[] = {
     "SUCCESS",
@@ -113,11 +115,13 @@ const char* function_list[] = {
     "GET_FIFO_ENTRIES",  // 570
     "GET_FIFO_TRIGGER",  // 571
     "DUMP_DEVICE_REGISTER_SPACE", // 100
-    "DEBUG_MODE" // 120
+    "DEBUG_MODE", // 120
+	"SET_OUTPUT_RULES", // 121
+	"GET_OUTPUT_RULES" //122
 };
 
 
-
+axi_timer_avg timer;
 
 int main() {
 
@@ -129,6 +133,11 @@ int main() {
 
     axi_adxl adxl;
     XScuGic gic;
+
+    status = axi_timer_avg_init(&timer, AXI_TIMER_AVG_BASEADDRESS);
+    if (status != TIMER_OK){
+    	printf("[TIMER_FAILURE] : initialize with error : %d\r\n", status);
+    }
 
     gic_init(&gic, &adxl);
 
@@ -280,6 +289,8 @@ void print_menu(){
     printf("\r\n");
     printf("\t100. Dump device register space\r\n");
     printf("\t120. Debug mode\r\n");
+    printf("\t121. Set output rule\r\n");
+    printf("\t122. Get output rule\r\n");
 
 
 
@@ -470,7 +481,10 @@ int menu(axi_adxl *ptr, int mode){
         case 571 : status = selector_axi_adxl_has_fifo_sts_trigger(ptr); break;
 
         case 100 : status = selector_axi_adxl_dev_debug_register_space(ptr); break;
+
         case 120 : status = dbg_set_reg(ptr); break;
+        case 121 : status = selector_axi_adxl_set_output_rules(ptr); break;
+        case 122 : status = selector_axi_adxl_get_output_rules(ptr); break;
 
         default :
             printf("[MENU] : incorrect selection : 0x%02x\r\n", mode);
@@ -521,52 +535,51 @@ int gic_init(XScuGic *ptr, axi_adxl* adxl_ptr){
 
 
 void adxl_intr_handler(void *callback){
+
+	axi_timer_avg_stop(&timer);
+
     axi_adxl *ptr = (axi_adxl*)callback;
     uint8_t interrupt_mask;
     
     int status = axi_adxl_get_int_source(ptr, &interrupt_mask);
     if (status != ADXL_OK){
-        printf("[IRQ] : bad returning status : %d", status);
+        //printf("[IRQ] : bad returning status : %d", status);
     }
 
-    adxl_data_float data;
-    axi_adxl_get_data_float(ptr, &data);
-
-    if ((axi_adxl_is_int_source(ptr, DATA_READY)) && (axi_adxl_is_int_enable(ptr, DATA_READY))){
-        printf("[DR] ");
+     if ((axi_adxl_is_int_source(ptr, DATA_READY)) && (axi_adxl_is_int_enable(ptr, DATA_READY))){
+        //printf("[DR] ");
     }
 
     if ((axi_adxl_is_int_source(ptr, SINGLE_TAP)) && (axi_adxl_is_int_enable(ptr, SINGLE_TAP))){
-        printf("[ST] ");
+        //printf("[ST] ");
     }
 
     if ((axi_adxl_is_int_source(ptr, DOUBLE_TAP)) && (axi_adxl_is_int_enable(ptr, DOUBLE_TAP))){
-        printf("[DT] ");
+        //printf("[DT] ");
     }
 
     if ((axi_adxl_is_int_source(ptr, ACTIVITY)) && (axi_adxl_is_int_enable(ptr, ACTIVITY))){
-        printf("[AC] ");
+        //printf("[AC] ");
     }
 
     if ((axi_adxl_is_int_source(ptr, INACTIVITY)) && (axi_adxl_is_int_enable(ptr, INACTIVITY))){
-        printf("[IA] ");
+        //printf("[IA] ");
     }
 
     if ((axi_adxl_is_int_source(ptr, FREE_FALL)) && (axi_adxl_is_int_enable(ptr, FREE_FALL))){
-        printf("[FF] ");
+        //printf("[FF] ");
     }
 
     if ((axi_adxl_is_int_source(ptr, WATERMARK)) && (axi_adxl_is_int_enable(ptr, WATERMARK))){
-        printf("[WM] ");
+        //printf("[WM] ");
     }
 
     if ((axi_adxl_is_int_source(ptr, OVERRUN)) && (axi_adxl_is_int_enable(ptr, OVERRUN))){
-        printf("[OV] ");
+        //printf("[OV] ");
     }
 
-    printf("X : %4.6f \tY : %4.6f \tZ : %4.6f\r\n", data.x, data.y, data.z);
+//    axi_adxl_print(ptr);
 
     axi_adxl_irq_ack(ptr);
-
     return;
 }

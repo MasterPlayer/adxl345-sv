@@ -1071,9 +1071,9 @@ int selector_axi_adxl_has_interrupt_enabled(axi_adxl* ptr) {
 
 //100
 int selector_axi_adxl_dev_debug_register_space(axi_adxl *ptr){
-    axi_adxl_dev_debug_register_space(ptr->dev);
-    return ADXL_OK;
+    return axi_adxl_dev_debug_register_space(ptr);
 }
+
 
 
 int selector_axi_adxl_change_range(axi_adxl *ptr){
@@ -1968,7 +1968,7 @@ int selector_axi_adxl_get_ofsx(axi_adxl* ptr) {
     int ofs = 0;
 
     int status = axi_adxl_get_ofsx(ptr, &ofs);
-    printf("\t[MENU] : OFSY : 0x%02x [%3.6f g]\r\n", ofs, (float)ofs * SCALE_OFS);
+    printf("\t[MENU] : OFSX : 0x%02x [%3.6f g]\r\n", ofs, (float)ofs * SCALE_OFS);
 
     return status;
 
@@ -3105,3 +3105,74 @@ int dbg_set_reg(axi_adxl *ptr){
     *((uint8_t*)ptr->dev + (uint8_t)reg_address) = value;
     return ADXL_OK;
 }
+
+
+
+int selector_axi_adxl_set_output_rules(axi_adxl *ptr){
+	printf("\t[MENU] : Switch output rules \r\n");
+	int status = ADXL_OK;
+    int xyz_int = axi_adxl_is_output_rule(ptr, XYZ_INTEGER);
+    int xyz_float = axi_adxl_is_output_rule(ptr, XYZ_GRAVITY);
+    int roll_pitch = axi_adxl_is_output_rule(ptr, ROLL_PITCH);
+
+    if (xyz_int){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t0. raw X, Y, Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (xyz_float){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t1. gravity X, Y, Z");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+    if (roll_pitch){
+        textcolor(DEFAULT, BLACK, GREEN);
+    }else{
+        textcolor(DEFAULT, BLACK, RED);
+    }
+    printf("\t2. Roll and pitch");
+    textcolor(DEFAULT, STD, STD);
+    printf("\r\n");
+
+
+    int value = 0;
+    scanf("%d", &value);
+
+    switch (value){
+        case 0 : status = axi_adxl_set_output_rule(ptr, XYZ_INTEGER); break;
+        case 1 : status = axi_adxl_set_output_rule(ptr, XYZ_GRAVITY); break;
+        case 2 : status = axi_adxl_set_output_rule(ptr, ROLL_PITCH); break;
+        default : return ADXL_UNCORRECT_VALUE;
+    }
+
+    return status;
+}
+
+
+
+int selector_axi_adxl_get_output_rules(axi_adxl *ptr){
+
+    int status = 0;
+    int rule = 0;
+    status = axi_adxl_get_output_rule(ptr, &rule);
+
+    printf("\t[MENU] : output rule is : ");
+
+    switch (rule) {
+        case XYZ_INTEGER: printf("RAW X, Y, Z\r\n"); break;
+        case XYZ_GRAVITY: printf("GRAVITY X, Y, Z\r\n"); break;
+        case ROLL_PITCH: printf("ROLL and PITCH\r\n"); break;
+        default : printf("<undefined>\r\n"); break;
+    }
+
+    return status;
+}
+
